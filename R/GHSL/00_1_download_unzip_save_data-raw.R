@@ -9,18 +9,7 @@
 
 # setup -------------------------------------------------------------------
 
-# load setup file once is crated
-#source('./R/00_setup.R')
-
-#TEMPORARY LIBRARY
-parallel::detectCores()
-options(Ncpus = 4)
-
-library(data.table)
-library(sf)
-library(tidyverse)
-library(janitor)
-library(here)
+source('R/setup.R')
 
 
 # directory ---------------------------------------------------------------

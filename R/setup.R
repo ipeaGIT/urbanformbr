@@ -7,7 +7,7 @@ library(sf)           # leitura e manipulacao de dados espaciais
 library(data.table)   # manipulacao de dados
 library(geobr)        # dados espaciais do brasil
 library(pbapply)      # progress bar
-library(readr)        # rapida leitura de dados 
+library(readr)        # rapida leitura de dados
 library(tidyr)        # manipulacao de dados
 library(stringr)      # operacoes em strings
 library(lubridate)    # dados em data/horario
@@ -16,7 +16,6 @@ library(RColorBrewer) # paleta de cores
 library(extrafont)    # fontes de texto
 #loadfonts()
 
-library(XLConnect)
 library(gganimate)  # install.packages("gganimate")
 library(ggrepel)
 
@@ -45,11 +44,12 @@ library(ggplotify)
 library(grid)
 library(PNADcIBGE)
 library(ggtext)
-library(XLConnect)
 library(cowplot)
 library(gganimate)  # install.packages("gganimate")
 library(ggrepel)
 library(ggnewscale)
+library(magrittr)
+library(XLConnect)
 
 # disable scientific notation
 options(scipen=10000)
@@ -70,4 +70,3 @@ data.table::setDTthreads(percent = 100)
 `%nlike%` = Negate(`%like%`)
 
 
-  
