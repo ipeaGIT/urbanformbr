@@ -164,6 +164,11 @@ f_download_unzip <- function(base, ano, resolucao){
 
 }
 
+
+# * parallel processing ---------------------------------------------------
+
+future::plan(future::multisession)
+
 # * built -----------------------------------------------------------------
 
 # res 30m
@@ -174,30 +179,28 @@ unzip(zipfile = temp, exdir = paste0(ghsl_dir,"/BUILT"))
 #ATTENTION: BUILT res 250 or 1K: USE YEAR 2014 (not 2015)
 
 # res 250
-purrr::walk(.x = c(1975,1990,2000,2014), function(x)
+furrr::future_walk(.x = c(1975,1990,2000,2014), function(x)
   f_download_unzip(base = 'BUILT',ano = x, resolucao = 250)
 )
 
 # res 1k
-purrr::walk(.x = c(1975,1990,2000,2014), function(x)
+furrr::future_walk(.x = c(1975,1990,2000,2014), function(x)
   f_download_unzip(base = 'BUILT',ano = x, resolucao = '1K')
 )
 
 # * pop -------------------------------------------------------------------
 
 # res 250
-purrr::walk(.x = c(1975,1990,2000,2015), function(x)
+furrr::future_walk(.x = c(1975,1990,2000,2015), function(x)
   f_download_unzip(base = 'POP',ano = x, resolucao = 250)
 )
 
 # res 1k
-purrr::walk(.x = c(1975,1990,2000,2015), function(x)
+furrr::future_walk(.x = c(1975,1990,2000,2015), function(x)
   f_download_unzip(base = 'POP',ano = x, resolucao = '1K')
 )
 
 # * smod ------------------------------------------------------------------
-purrr::walk(.x = c(1975,1990,2000,2015), function(x)
-  f_download_unzip(base = 'SMOD',ano = x, resolucao = '1K')
-)
-
+furrr::future_walk(.x = c(1975,1990,2000,2015), function(x)
+  f_download_unzip(base = 'SMOD',ano = x, resolucao = '1K'))
 
