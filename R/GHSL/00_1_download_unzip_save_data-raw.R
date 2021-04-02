@@ -168,6 +168,7 @@ f_download_unzip <- function(base, ano, resolucao){
 # * parallel processing ---------------------------------------------------
 
 future::plan(future::multisession)
+options(future.globals.maxSize = Inf)
 
 # * built -----------------------------------------------------------------
 
