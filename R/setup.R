@@ -51,6 +51,10 @@ library(ggrepel)
 library(ggnewscale)
 library(magrittr)
 library(XLConnect)
+library(geodist)
+
+# options
+mapviewOptions(platform = 'mapdeck')
 
 # disable scientific notation
 options(scipen=10000)
