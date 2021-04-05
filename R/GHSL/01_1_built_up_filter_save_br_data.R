@@ -5,11 +5,17 @@
 # ii. filter data from Brazil polygon
 # iii. saves data as .rds for future cleaning an manipulation
 
+# TO DO LIST:
+## CHECK THE NEED TO STACK RASTER/STARS FILES ON TOP OF EACH OTHER
+## EXPAND THE FUNCTION TO OTHER RESOLUTIONS?
+
 # setup -------------------------------------------------------------------
 
 source('R/setup.R')
 library(stars)
 library(raster)
+library(rgdal)
+#library(terra)
 
 # directory ---------------------------------------------------------------
 
@@ -17,7 +23,6 @@ ghsl_dir <- "//storage6/usuarios/Proj_acess_oport/data-raw/ghsl"
 
 
 # 1 read data -------------------------------------------------------------
-# DO ALL THE YEARS
 
 # * 1.1 read br polygon ---------------------------------------------------
 
@@ -32,11 +37,14 @@ br <- geobr::read_country()
 files_input <- dir(paste0(ghsl_dir,'/BUILT'), pattern = "1K_V2_0.tif$")
 
 files_output <- gsub('GLOBE','BRASIL', files_input)
-files_output <- gsub('.tif','.rds', files_output)
 
-# * 2.2 define function ---------------------------------------------------
+files_output_stars <- gsub('.tif','_stars.rds', files_output)
+files_output_raster <- gsub('.tif','_raster.rds', files_output)
+#files_output_terra <- gsub('.tif','_terra.rds', files_output)
 
-f_save_brasil_raster <- function(input, output){
+# * 2.2 function stars ---------------------------------------------------
+
+f_save_brasil_stars <- function(input, output){
 
   # read ghsl data
   bua <- stars::read_stars(paste0(ghsl_dir,'/BUILT/', input))
@@ -55,19 +63,72 @@ f_save_brasil_raster <- function(input, output){
   }
 
   # save .rds data
-  readr::write_rds(
+  #readr::write_rds(
+  #  bua_crop,
+  #  paste0("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/", output),
+  #  compress = 'gz'
+  #  )
+
+  saveRDS(
     bua_crop,
     paste0("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/", output),
-    compress = 'gz'
-    )
+    compress = 'xz'
+  )
 
 }
 
-# run for multiple years ---------------------------------------------------
+
+# * * 2.2.1 run multiple years --------------------------------------------
 
 #future::plan(future::multisession)
 #options(future.globals.maxSize = Inf)
 
-purrr::walk2(.x = files_input, .y = files_output, function(x,y)
-  f_save_brasil_raster(input = x, output = y)
+purrr::walk2(.x = files_input, .y = files_output_stars, function(x,y)
+  f_save_brasil_stars(input = x, output = y)
   )
+
+
+# * 2.3 function raster ---------------------------------------------------
+
+f_save_brasil_raster <- function(input, output){
+
+  # read ghsl data
+  bua <- raster::raster(paste0(ghsl_dir,'/BUILT/', input))
+
+  # read br outside function
+  #br <- geobr::read_country()
+  # transform br crs to bua crs
+  br <- sf::st_transform(br, raster::projection(bua))
+
+  # crop raster data using br polygon
+  bua_crop <- raster::crop(bua, br)
+
+  # create directory
+  if (!dir.exists("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl")){
+    dir.create("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl")
+  }
+
+  # save .rds data
+  #readr::write_rds(
+  #  bua_crop,
+  #  paste0("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/", output),
+  #  compress = 'gz'
+  #)
+
+  saveRDS(
+    bua_crop,
+    paste0('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/',output),
+    compress = 'xz'
+    )
+
+}
+
+
+# * * 2.2.1 run multiple years --------------------------------------------
+
+#future::plan(future::multisession)
+#options(future.globals.maxSize = Inf)
+
+purrr::walk2(.x = files_input, .y = files_output_raster, function(x,y)
+  f_save_brasil_raster(input = x, output = y)
+)
