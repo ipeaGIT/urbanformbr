@@ -56,7 +56,7 @@ df <- st_centroid(df)
   summary(df_urb_concentration$POP)
 
 
-# only metro areas with population above 300K
+# Check population size of each urban area
 setDT(df_urb_concentration)[, pop_urban_area := sum(POP), by= code_urban_concentration]
 
 summary(df_urb_concentration$pop_urban_area)
