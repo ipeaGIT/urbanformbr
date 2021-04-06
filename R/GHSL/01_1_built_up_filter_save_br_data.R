@@ -21,16 +21,13 @@ library(rgdal)
 
 ghsl_dir <- "//storage6/usuarios/Proj_acess_oport/data-raw/ghsl"
 
-
 # 1 read data -------------------------------------------------------------
 
 # * 1.1 read br polygon ---------------------------------------------------
 
 br <- geobr::read_country()
 
-
 # 2 function and files ------------------------------------------------------
-
 
 # * 2.1 files -------------------------------------------------------------
 
@@ -38,11 +35,17 @@ files_input <- dir(paste0(ghsl_dir,'/BUILT'), pattern = "1K_V2_0.tif$")
 
 files_output <- gsub('GLOBE','BRASIL', files_input)
 
-files_output_stars <- gsub('.tif','_stars.rds', files_output)
-files_output_raster <- gsub('.tif','_raster.rds', files_output)
+files_output_raster <- gsub('.tif','_raster.tif', files_output)
+files_output_stars <- gsub('.tif','_stars.tif', files_output)
+
+
+#files_output_stars <- gsub('.tif','_stars.rds', files_output)
+#files_output_raster <- gsub('.tif','_raster.rds', files_output)
 #files_output_terra <- gsub('.tif','_terra.rds', files_output)
 
-# * 2.2 function stars ---------------------------------------------------
+
+
+# * 2.2 function stars CORRIGIR SALVAR TIF ---------------------------------------------------
 
 f_save_brasil_stars <- function(input, output){
 
@@ -62,17 +65,17 @@ f_save_brasil_stars <- function(input, output){
     dir.create("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl")
   }
 
-  # save .rds data
-  #readr::write_rds(
+  ## ATTENTION don't uses save raster files as .rds.
+  ## See https://stackoverflow.com/a/48512398 for details
+  #saveRDS(
   #  bua_crop,
   #  paste0("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/", output),
-  #  compress = 'gz'
-  #  )
+  #  compress = 'xz'
+  #)
 
-  saveRDS(
-    bua_crop,
-    paste0("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/", output),
-    compress = 'xz'
+  raster::writeRaster(
+    x = bua_crop,
+    filename = paste0('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/', output)
   )
 
 }
@@ -108,17 +111,18 @@ f_save_brasil_raster <- function(input, output){
     dir.create("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl")
   }
 
-  # save .rds data
-  #readr::write_rds(
+  # don't uses save raster files as .rds.
+  # See https://stackoverflow.com/a/48512398 for details
+  #saveRDS(
   #  bua_crop,
-  #  paste0("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/", output),
-  #  compress = 'gz'
-  #)
+  #  paste0('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/',output),
+  #  compress = 'xz'
+  #  )
 
-  saveRDS(
-    bua_crop,
-    paste0('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/',output),
-    compress = 'xz'
+  raster::writeRaster(
+    x = bua_crop,
+    filename = paste0('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/', output),
+    overwrite = T
     )
 
 }
