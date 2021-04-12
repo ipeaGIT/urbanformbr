@@ -26,20 +26,20 @@ urban_areas <- geobr::read_urban_concentrations()
  # df <- read_statistical_grid(code_grid = 'all')
 
  # read locally
- df <- list.files('//storage1/geobr/data_gpkg/statistical_grid/2010',full.names = T) %>%
+ grid_sf <- list.files('//storage1/geobr/data_gpkg/statistical_grid/2010',full.names = T) %>%
          pbapply::pblapply(., FUN = st_read)  %>%
          rbindlist()  %>%
          st_sf()
 
 
 # subset non-empty cells
-df <- subset(df, POP >0)
+ grid_sf <- subset(grid_sf, POP >0)
 
 # subset columns
-df <- select(df, ID_UNICO, POP, geom)
+ grid_sf <- select(grid_sf, ID_UNICO, POP, geom)
 
 # get centroids (faster)
-df <- st_centroid(df)
+df <- st_centroid(grid_sf)
 
 
 
@@ -172,15 +172,16 @@ head(output_df)
 
 
 # merge spatial geometries
-output_sf <- left_join(df_urb_concentration, output_df)
+output_sf <- left_join(output_df, grid_sf)
+output_sf <- st_sf(output_sf)
 head(output_sf)
+
 
 summary(output_df$area10km2)
 summary(output_sf$area10km2)
 nrow(output_df)
 nrow(df_urb_concentration)
 nrow(output_sf)
-
 
 # save
 readr::write_rds(output_sf, '../../data/urbanformbr/density-experienced/density-experienced_urban-concentrations.rds',compress = 'gz')
