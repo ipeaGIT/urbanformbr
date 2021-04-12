@@ -58,6 +58,22 @@ for( code in areas){ # states
   # select area
   temp <- subset(grid_urban_area, code_urban_concentration == code)
 
+  # generate new grid
+  centroids <- st_centroid(temp)
+  new_grid <- st_make_grid(centroids, cellsize = 200)
+  new_grid <- st_sf(new_grid)
+  new_grid2 <- st_join(centroids, new_grid)
+  new_grid2 <- subset(new_grid2, !is.na(nome_1KM))
+  head(new_grid2)
+  plot(new_grid2)
+  # aggregate to 1Km
+  new_grid3 <- temp %>%
+                  group_by(nome_1KM) %>%
+                  summarise(POP = sum(POP, na.rm=T))
+
+   head(new_grid3)
+  plot(new_grid3['POP'])
+
   # calculate the mono/poly centrality of the spatial distribution of BIR74
   output_df <- uci(sf_object = temp, var_name = 'POP' )
   gc(reset = T, full = T)
