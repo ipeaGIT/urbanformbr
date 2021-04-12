@@ -6,7 +6,7 @@ source('./R/setup.R')
 
 ###### read urban concentration areas
 urban_areas <- geobr::read_urban_concentrations()
-states <- unique(metros$abbrev_state)
+
 
   # how many spatial units
   urban_areas$code_urban_concentration %>% unique() %>% length()
@@ -17,8 +17,8 @@ states <- unique(metros$abbrev_state)
 
   urban_areas %>%
     group_by(code_urban_concentration) %>%
-    summarise(p=sum(pop_total_2010)) %>%
-    summary(.$p)
+    mutate(p=sum(pop_total_2010)) %>%
+    .$p %>% summary()
 
 
 ###### load grid data
@@ -111,6 +111,7 @@ future::plan(strategy = 'multisession', workers=10)
 areas <- unique(df_urb_concentration$code_urban_concentration)
 s <- "4316907" ## Santa Maria, RS
 s <- "3550308" ## Sao paulo, SP
+s <- "1100122"
 
 tictoc::tic()
 for( s in areas){ # states
@@ -130,7 +131,8 @@ for( s in areas){ # states
   system.time( output_list <- furrr::future_map(.x=1:nrow(df_urban_areas),
                                                 df_urban_areas,
                                                 points_latlon,
-                                                .f=get_density_vector, .progress =T) )
+                                                .f=get_density_vector,
+                                                .progress =T) )
 
   output_df <- rbindlist(output_list)
   # Tempo Santa Maria (Vetor)
@@ -164,8 +166,14 @@ tictoc::toc()
 ##### bring geometry back
 # read density estimates
 output_files <- list.files('../../data/urbanformbr/density-experienced',pattern = '.csv',full.names = T  )
-output_df <- lapply(output_files, fread) %>% rbindlist()
+output_df <- lapply(output_files, fread, encoding='UTF-8') %>% rbindlist()
 head(output_df)
+
+
+
+# merge spatial geometries
+output_sf <- left_join(df_urb_concentration, output_df)
+head(output_sf)
 
 summary(output_df$area10km2)
 summary(output_sf$area10km2)
@@ -174,12 +182,32 @@ nrow(df_urb_concentration)
 nrow(output_sf)
 
 
-# merge spatial geometries
-output_sf <- left_join(df_urb_concentration, output_df)
-head(output_sf)
-
-
 # save
 readr::write_rds(output_sf, '../../data/urbanformbr/density-experienced/density-experienced_urban-concentrations.rds',compress = 'gz')
+
+
+##### explore ------------------------------
+dens <- readr::read_rds('../../data/urbanformbr/density-experienced/density-experienced_urban-concentrations.rds')
+head(dens)
+
+# check number of urban areas (187)
+dens$code_urban_concentration %>% unique() %>% length()
+
+
+# total Pop vs avg Density
+setDT(dens)
+df1 <- dens[, .(pop_total = sum(POP),
+         density10km2 = weighted.mean(x=pop_density10km2, w=POP),
+         density05km2 = weighted.mean(x=pop_density05km2, w=POP),
+         density01km2 = weighted.mean(x=pop_density01km2, w=POP)), by=code_urban_concentration ]
+
+summary(df1$pop_total)
+
+ggplot(data=df1) +
+  geom_point(aes(x=pop_total, y=density05km2), alpha=.4) +
+  scale_x_continuous(trans='log10')+
+  scale_y_continuous(trans='log10')
+
+
 
 
