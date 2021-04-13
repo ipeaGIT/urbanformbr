@@ -50,6 +50,8 @@ library(gganimate)  # install.packages("gganimate")
 library(ggrepel)
 library(ggnewscale)
 library(magrittr)
+library(maptools)
+library(rgeos)
 library(XLConnect)
 library(geodist)
 
