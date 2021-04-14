@@ -2,9 +2,10 @@
 
 # this script
 # 1 downloads urban concentrations areas (uca) delimited by IBGE
-# 2 filter uca with population >= 100.000
-# 3 dissolve their internal limits..
-# 4 saves the resulting shapefile as .rds for future use @urbanformbr
+# 2 dissolve their internal limits
+# 3 saves two shapefiles as .rds for future use @urbanformbr:
+## 3.1 all the uca present in the IBGE urban concentration dataset
+## 3.2 urban concentration areas with population >= 100000
 
 
 # setup -------------------------------------------------------------------
@@ -22,7 +23,7 @@ f_uca_shapes <- function(){
   # 1 read uca --------------------------------------------------------------
   uca <- geobr::read_urban_concentrations(simplified = F)
 
-  # 2 filter pop ------------------------------------------------------------
+  # 2 create pop sum --------------------------------------------------------
 
   #uca <- uca %>%
   #  dplyr::mutate(
@@ -42,12 +43,6 @@ f_uca_shapes <- function(){
     ),
     by = .(code_urban_concentration)
     ]
-
-  # filter uca with population >= 100000
-  uca <- uca[sum_pop_total_2010_uca >= 100000]
-
-  #uca <- uca %>%
-  #  dplyr::filter(pop_total_2010 >= 100000)
 
   # 3 dissolve internal limits ----------------------------------------------
 
@@ -88,16 +83,24 @@ f_uca_shapes <- function(){
   # reproject crs to 4326
   dissolved <- sf::st_transform(dissolved, 4326)
 
-
   #### CORRIGIR BASE: PERMITIR USAR MAPVIEW -> POR QUE NAO ACEITA NO MOMENTO?
 
   # 4 save resulting shape --------------------------------------------------
 
+    # * 4.1 full uca dataset --------------------------------------------------
   saveRDS(
     object = dissolved,
+    file = '//storage6/usuarios/Proj_acess_oport/data/urbanformbr/urban_area_shapes/urban_area_dissolved.rds',
+    compress = 'xz'
+  )
+
+    # * 4.2 filter pop >= 100000 ----------------------------------------------
+  saveRDS(
+    object = dissolved %>% dplyr::filter(sum_pop_total_2010_uca >= 100000),
     file = '//storage6/usuarios/Proj_acess_oport/data/urbanformbr/urban_area_shapes/urban_area_pop_100000_dissolved.rds',
     compress = 'xz'
   )
+
 
 }
 
