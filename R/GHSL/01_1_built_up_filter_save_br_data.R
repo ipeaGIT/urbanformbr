@@ -106,6 +106,9 @@ f_save_brasil_raster <- function(input, output){
   # crop raster data using br polygon
   bua_crop <- raster::crop(bua, br)
 
+  # mask raster data
+  bua_mask <- raster::mask(bua_crop, br)
+
   # create directory
   if (!dir.exists("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl")){
     dir.create("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl")
@@ -120,7 +123,7 @@ f_save_brasil_raster <- function(input, output){
   #  )
 
   raster::writeRaster(
-    x = bua_crop,
+    x = bua_mask,
     filename = paste0('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/', output),
     overwrite = T
     )
