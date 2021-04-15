@@ -15,69 +15,113 @@ library(raster)
 library(rgdal)
 #library(terra)
 
-# directory ---------------------------------------------------------------
 
-ghsl_dir <- "//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/"
+# directory and files input -----------------------------------------------
 
-# example bhz -------------------------------------------------------------
+# directory
+ghsl_built_dir <- "//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/BUILT/BRASIL/"
 
-# read urban concentration data
-uc <- geobr::read_urban_concentrations()
-# bhz code muni
-#geobr::lookup_muni('Belo Horizonte')
-# filter bhz
-bhz <- uc %>%
-  dplyr::filter(code_urban_concentration == 3106200)
+# files input
+files_input <- dir(ghsl_built_dir, pattern = 'BRASIL.*raster.tif$')
 
+
+# future setting ----------------------------------------------------------
+future::plan(future::multicore)
 
 
 # define function ---------------------------------------------------------
 
-files_input <- dir(ghsl_dir, pattern = 'BRASIL.*raster.tif$')
+f_crop_uca <- function(input){
 
-files_output_raster <- gsub('BRASIL','UC_BHZ', files_input)
+  # raster projection -------------------------------------------------------
+  bua_br_projection <- rgdal::GDALinfo(paste0(ghsl_built_dir, input)) %>%
+    attr('projection')
 
-f_crop_urban_concentration <- function(input, output){
 
-  bua_br <- raster::raster(paste0(ghsl_dir, input))
+  # uca shape ----------------------------------------------------------
+  if (!exists(x = 'uca_all')) {
 
-  bhz <- sf::st_transform(bhz, raster::projection(bua_br))
+    # read uca sf saved at 01_01
+    uca_all <- readr::read_rds('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/urban_area_shapes/urban_area_pop_100000_dissolved.rds')
 
-  bhz_bua <- raster::crop(bua_br, bhz)
+    # add column with clean uca
+    uca_all <- uca_all %>%
+      mutate(name_uca_case = janitor::make_clean_names(name_urban_concentration))
 
-  raster::writeRaster(
-    x = bhz_bua,
-    filename = paste0('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/', output),
-    overwrite = T
+    # arrange uca sf (name order with name_uca_case)
+    uca_all <- uca_all %>%
+      dplyr::arrange(name_uca_case)
+
+    # change uca sf projection (using raster projection)
+    uca_all <- sf::st_transform(uca_all, bua_br_projection)
+
+    # split uca sf into list with a df for each uca
+    uca_split <- base::split(uca_all, uca_all$name_uca_case)
+
+  }
+
+  # built up area brasil data ------------------------------------------
+
+  # read bua brasil raster
+  bua_br <- raster::raster(paste0(ghsl_built_dir, input))
+
+  # crop and mask -----------------------------------------------------------
+
+  # crop raster with each uca sf
+  uca_crop <- furrr::future_map(uca_split, ~raster::crop(bua_br, .))
+
+  # mask raster with each uca sf
+  uca_mask <- furrr::future_map2(
+    .x = uca_crop, .y = uca_split, function(x, y)
+      raster::mask(x = x, mask = y)
   )
+
+  #uca_crop <- purrr::map(uca_split, ~raster::crop(bua_br, .))
+
+  #uca_mask <- purrr::map2(
+  #  .x = uca_crop, .y = uca_split, function(x, y)
+  #    raster::mask(x = x, mask = y)
+  #)
+
+
+  # create directory
+  if (!dir.exists("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/BUILT/UCA")){
+    dir.create("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/BUILT/UCA")
+  }
+
+  # create output name with input
+  files_output <- purrr::map_chr(
+    uca_all$name_uca_case,
+    ~gsub('BRASIL', ., input)
+  )
+
+  # write each mask as raster file
+  purrr::walk2(
+    uca_mask, files_output, function(x,y)
+      raster::writeRaster(
+        x = x,
+        filename = paste0('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/BUILT/UCA/', y),
+        overwrite = T
+      )
+  )
+
+  #furrr::future_map2(
+  #  uca_mask, files_output, function(x,y)
+  #    raster::writeRaster(
+  #      x = x,
+  #      filename = paste0('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/BUILT/UCA/', y, '_raster.tif'),
+  #      overwrite = T
+  #    )
+  #)
 
 }
 
-# multiple years
-purrr::walk2(.x = files_input, .y = files_output_raster, function(x,y)
-  f_crop_urban_concentration(input = x, output = y)
-)
 
 
 
-# APAGAR ------------------------------------------------------------------
+# run for multiple bua years ----------------------------------------------
 
 
-# read built up area raster data 1975
-bua_br <- readr::read_rds('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/GHS_BUILT_LDS1975_BRASIL_R2018A_54009_1K_V2_0_raster.rds')
+purrr::walk(files_input, ~f_crop_uca(.))
 
-# change bhz projection
-bhz <- sf::st_transform(bhz, raster::projection(bua_br))
-
-# crop built up raster with bhz uc borders
-bhz_bua <- raster::crop(bua_br, bhz)
-
-# save bhz raster
-# name files
-name_output <- gsub('BRASIL', 'UC_BHZ', dir(ghsl_dir)[[1]])
-#
-saveRDS(
-  bhz_bua,
-  paste0(ghsl_dir, name_output),
-  compress = 'xz'
-)
+#furrr::future_walk(files_input, ~f_crop_uca(.))

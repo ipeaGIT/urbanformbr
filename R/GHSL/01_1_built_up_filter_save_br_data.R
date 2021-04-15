@@ -6,6 +6,7 @@
 # iii. saves data as .rds for future cleaning an manipulation
 
 # TO DO LIST:
+## FIX OR ERASE STARS FUNCTION
 ## CHECK THE NEED TO STACK RASTER/STARS FILES ON TOP OF EACH OTHER
 ## EXPAND THE FUNCTION TO OTHER RESOLUTIONS?
 
@@ -110,8 +111,8 @@ f_save_brasil_raster <- function(input, output){
   bua_mask <- raster::mask(bua_crop, br)
 
   # create directory
-  if (!dir.exists("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl")){
-    dir.create("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl")
+  if (!dir.exists("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/BUILT/BRASIL")){
+    dir.create("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/BUILT/BRASIL")
   }
 
   # don't uses save raster files as .rds.
@@ -124,7 +125,7 @@ f_save_brasil_raster <- function(input, output){
 
   raster::writeRaster(
     x = bua_mask,
-    filename = paste0('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/', output),
+    filename = paste0('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/BUILT/BRASIL/', output),
     overwrite = T
     )
 
