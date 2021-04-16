@@ -3,7 +3,7 @@
 # this script
 # i. reads data from GHS-BUILT (1km resolution)
 # ii. filter data from Brazil polygon
-# iii. saves data as .rds for future cleaning an manipulation
+# iii. saves brasil raster .tif for for future cleaning and manipulation
 
 # TO DO LIST:
 ## FIX OR ERASE STARS FUNCTION
@@ -13,22 +13,16 @@
 # setup -------------------------------------------------------------------
 
 source('R/setup.R')
-library(stars)
-library(raster)
-library(rgdal)
-#library(terra)
 
 # directory ---------------------------------------------------------------
 
 ghsl_dir <- "//storage6/usuarios/Proj_acess_oport/data-raw/ghsl"
 
-# 1 read data -------------------------------------------------------------
-
-# * 1.1 read br polygon ---------------------------------------------------
+# 1 read polygon data -----------------------------------------------------
 
 br <- geobr::read_country()
 
-# 2 function and files ------------------------------------------------------
+# 2 function and files ----------------------------------------------------
 
 # * 2.1 files -------------------------------------------------------------
 
@@ -109,6 +103,11 @@ f_save_brasil_raster <- function(input, output){
 
   # mask raster data
   bua_mask <- raster::mask(bua_crop, br)
+
+  # code below not run, but can be used to check
+  # according to ghsl data documentation, nodata value = -200
+  # check if there is any negative value (which would compromise area calc)
+  ## any(bua_mask[bua_mask<0])
 
   # create directory
   if (!dir.exists("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/BUILT/BRASIL")){

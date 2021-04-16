@@ -1,24 +1,17 @@
 # description -------------------------------------------------------------
 
 # this script
-# i. reads GHS-BUILT-BRASIL raster data from urban concentration (1km)
+# i. reads GHS-BUILT-BRASIL (1km res) raster from each urban concentration
+#..areas (uca)
 # ii. estimates the density of built up areas
 
 # TO DO LIST
-## CHECK IF NODATA VALUE (-200) INFLUENCES THE ESTIMATION
 ## USE FULL DATA (WORLD) TO COMPARE ESTIMATION WITH SUMMARY STATISTICS AT
 # CORBANE ET AL (2019) OR FLORCZYK ET AL (2019)
 
 # setup -------------------------------------------------------------------
 
 source('R/setup.R')
-library(stars)
-library(raster)
-library(rgdal)
-#library(terra)
-library(exactextractr)
-library(viridis)
-#library(hrbrthemes)
 
 
 # directory ---------------------------------------------------------------

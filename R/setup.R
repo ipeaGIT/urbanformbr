@@ -19,6 +19,11 @@ library(extrafont)    # fontes de texto
 library(gganimate)  # install.packages("gganimate")
 library(ggrepel)
 
+library(stars)
+library(raster)
+library(rgdal)
+library(exactextractr)
+
 library(future)
 library(furrr)
 library(purrr)

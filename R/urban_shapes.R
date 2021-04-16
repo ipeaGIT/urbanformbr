@@ -85,6 +85,14 @@ f_uca_shapes <- function(){
 
   #### CORRIGIR BASE: PERMITIR USAR MAPVIEW -> POR QUE NAO ACEITA NO MOMENTO?
 
+  # add column with clean uca name
+  dissolved <- dissolved %>%
+    dplyr::mutate(name_uca_case = janitor::make_clean_names(name_urban_concentration)) %>%
+  # reorder df by clean uca name
+    dplyr::arrange(name_uca_case) %>%
+  # change column order
+    dplyr::relocate(name_uca_case, .after = name_urban_concentration)
+
   # 4 save resulting shape --------------------------------------------------
 
     # * 4.1 full uca dataset --------------------------------------------------

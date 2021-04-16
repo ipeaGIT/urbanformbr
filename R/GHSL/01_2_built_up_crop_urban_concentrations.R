@@ -1,20 +1,16 @@
 # description -------------------------------------------------------------
 
 # this script
-# i. reads data from GHS-BUILT-BRASIL (1km resolution) saved previously as .rds
-# ii. filter data from urban concentration (uc)
-# devtools::install_github("ipeaGIT/geobr", subdir = "r-package")
-# iii. saves data as .rds for future cleaning an manipulation
+# i. reads data from GHS-BUILT-BRASIL (1km resolution) saved previously
+# ii. filter data from urban concentration areas by IBGE (uca)
+## devtools::install_github("ipeaGIT/geobr", subdir = "r-package")
+# iii. saves raster for each uca and each year
+
 
 
 # setup -------------------------------------------------------------------
 
 source('R/setup.R')
-library(stars)
-library(raster)
-library(rgdal)
-#library(terra)
-
 
 # directory and files input -----------------------------------------------
 
