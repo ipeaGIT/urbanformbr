@@ -37,9 +37,9 @@ f_uca_shapes <- function(){
   uca[
     ,
     `:=` (
-      sum_pop_total_2010_uca = sum(pop_total_2010)#,
-      #sum_pop_urban_2010_uca = sum(pop_urban_2010),
-      #sum_pop_rural_2010_uca = sum(pop_rural_2010)
+      pop_ibge_total_2010 = sum(pop_total_2010)#,
+      #pop_ibge_urban_2010 = sum(pop_urban_2010),
+      #pop_ibge_rural_2010 = sum(pop_rural_2010)
     ),
     by = .(code_urban_concentration)
     ]
@@ -66,16 +66,16 @@ f_uca_shapes <- function(){
   data.table::setnames(
     uca_join,
     c('pop_total_2010','pop_urban_2010','pop_rural_2010'),
-    c('sum_pop_total_2010_uca','sum_pop_urban_2010_uca','sum_pop_rural_2010_uca')
+    c('pop_ibge_total_2010','pop_ibge_urban_2010','pop_ibge_rural_2010')
     )
 
   # dplyr way
   #uca_join <- uca %>%
   #  dplyr::group_by(code_urban_concentration, name_urban_concentration) %>%
   #  summarise(
-  #    sum_pop_total_2010_uca = sum(pop_total_2010)),
-  #sum_pop_urban_2010_uca = sum(pop_urban_2010),
-  #sum_pop_rural_2010_uca = sum(pop_rural_2010)
+  #    pop_ibge_total_2010 = sum(pop_total_2010)),
+  #pop_ibge_urban_2010 = sum(pop_urban_2010),
+  #pop_ibge_rural_2010 = sum(pop_rural_2010)
   #)
 
   dissolved <- dplyr::left_join(dissolved, uca_join)
@@ -104,7 +104,7 @@ f_uca_shapes <- function(){
 
     # * 4.2 filter pop >= 100000 ----------------------------------------------
   saveRDS(
-    object = dissolved %>% dplyr::filter(sum_pop_total_2010_uca >= 100000),
+    object = dissolved %>% dplyr::filter(pop_ibge_total_2010 >= 100000),
     file = '//storage6/usuarios/Proj_acess_oport/data/urbanformbr/urban_area_shapes/urban_area_pop_100000_dissolved.rds',
     compress = 'xz'
   )

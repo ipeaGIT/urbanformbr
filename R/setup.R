@@ -18,6 +18,7 @@ library(extrafont)    # fontes de texto
 
 library(gganimate)  # install.packages("gganimate")
 library(ggrepel)
+library(ggforce)
 
 library(stars)
 library(raster)
