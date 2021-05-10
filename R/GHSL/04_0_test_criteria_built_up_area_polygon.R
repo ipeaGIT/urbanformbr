@@ -52,17 +52,94 @@ funcao <- function(input) {
   str(bua_uca,max.level = 1)
 
 
-666666666666666
   # * funcao raster polygons and classify -----------------------------------
   # ver funcoes p/ obter bh1975 abaixo
-  # incluir goprup_by e summarise depois
+  # incluir group_by e summarise depois
   # deixar o st_transform para depois? o que fazer? ESCLARECER
   # fazer projecao antes ou depois de extrair o valor?
-  f_raster_pol_class <- function(){
+bua_raster <- bua_uca$bage_rs_1975
 
+  f_raster_pol_class <- function(bua_raster){
 
+  bua_pol <- bua_raster %>%
+    # convert raster to polygon (sp)
+    raster::rasterToPolygons() %>%
+    # transform to sf
+    sf::st_as_sf() %>%
+    # rename first column
+    dplyr::rename(bua_value = 1) %>%
+    # create columns classifying area based on cutoff values (0,25,50%)
+    dplyr::mutate(
+      cutoff_0 = dplyr::case_when(
+        bua_value > 0 ~ "Construída",
+        T ~ "Não construida"
+      ),
+      cutoff_10 = dplyr::case_when(
+        bua_value >= 10 ~ "Construída",
+        T ~ "Não construida"
+      ),
+      cutoff_25 = dplyr::case_when(
+        bua_value >= 25 ~ "Construída",
+        T ~ "Não construida"
+      ),
+      cutoff_50 = dplyr::case_when(
+        bua_value >= 50 ~ "Construída",
+        T ~ "Não construida"
+        )
+    )
 
   }
+
+  # run for every uca
+  bua_pol <- purrr::map(bua_uca, f_raster_pol_class)
+
+
+  # * convert crs polygon and summarise -------------------------------------
+  fteste <- function(base, variavel){
+
+    variavel <- rlang::ensym(variavel)
+
+    base %>%
+      dplyr::group_by(!!variavel) %>%
+      dplyr::summarise()
+
+  }
+
+  # create column name vector
+  vetor <- paste0('cutoff_',c(0,10,25,50))
+  # generate converted list of sf df
+  #a <- pmap(list(variavel = vetor), fteste, base = bua_pol$bage_rs_1975)
+
+  bua_convert <- map(bua_pol,
+           ~pmap(list(variavel = vetor), fteste, base = .)
+           )
+
+  fnames <- function(base){
+    rlang::set_names(base, paste0('cutoff_',c(0,10,25,50)))
+  }
+
+  # rename list elements
+  bua_convert <- purrr::map(bua_convert, ~fnames(.))
+  666666666666666
+  # RENOMEAR ELEMENTOS DA LISTA
+
+
+
+
+
+  b <- modify_depth(.x = a, .depth = 2, ~ rlang::set_names(names(.), nm = vector))
+  a <- (a, ~rlang::set_names(., vetor))
+
+  teste2 <- bua_pol$bage_rs_1975 %>%
+    dplyr::group_by(cutoff_50) %>%
+    dplyr::summarise() #%>%
+    sf::st_transform(4326)
+
+  a[[1]] %>%
+    sf::st_transform(4326) %>%
+    ggplot() +
+    geom_sf(aes(fill = cutoff_0)) +
+    viridis::scale_fill_viridis(discrete = T, option = "D")
 
 
   ### PROJECTION: O QUE FAZER? fazer projecao antes ou depois de extrair o valor?
