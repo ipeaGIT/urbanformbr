@@ -19,11 +19,11 @@ ghsl_built_dir <- "//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/BU
 
 # read data ---------------------------------------------------------------
 
-# vetor com cidades e periodos desejados
-#for,bsb,bhz,ctb,poa,rio,sp,nat,man
+# vector with ucas and time period
+# ucas: for,bsb,bhz,ctb,poa,rio,sp,nat,man
 files_cities <- dir(
   "//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/BUILT/UCA/",
-  pattern = "(1975|2014).*(sao_paulo|fortaleza|brasilia|curitiba|belo_horizonte|rio_de_janeiro|bage|porto_alegre)"
+  pattern = "(1975|2014).*(sao_paulo|fortaleza|brasilia|curitiba|belo_horizonte|rio_de_janeiro|bage|porto_alegre|vitoria_es)"
 )
 
 input <- files_cities
@@ -57,7 +57,7 @@ funcao <- function(input) {
   # incluir group_by e summarise depois
   # deixar o st_transform para depois? o que fazer? ESCLARECER
   # fazer projecao antes ou depois de extrair o valor?
-bua_raster <- bua_uca$bage_rs_1975
+  #bua_raster <- bua_uca$bage_rs_1975
 
   f_raster_pol_class <- function(bua_raster){
 
@@ -95,7 +95,7 @@ bua_raster <- bua_uca$bage_rs_1975
 
 
   # * convert crs polygon and summarise -------------------------------------
-  fteste <- function(base, variavel){
+  f_group_summarise <- function(base, variavel){
 
     variavel <- rlang::ensym(variavel)
 
@@ -108,39 +108,100 @@ bua_raster <- bua_uca$bage_rs_1975
   # create column name vector
   vetor <- paste0('cutoff_',c(0,10,25,50))
   # generate converted list of sf df
-  #a <- pmap(list(variavel = vetor), fteste, base = bua_pol$bage_rs_1975)
+  #a <- pmap(list(variavel = vetor), f_group_summarise, base = bua_pol$bage_rs_1975)
 
   bua_convert <- map(bua_pol,
-           ~pmap(list(variavel = vetor), fteste, base = .)
+           ~pmap(list(variavel = vetor), f_group_summarise, base = .)
            )
 
-  fnames <- function(base){
+  f_names <- function(base){
+
     rlang::set_names(base, paste0('cutoff_',c(0,10,25,50)))
+
   }
 
   # rename list elements
-  bua_convert <- purrr::map(bua_convert, ~fnames(.))
-  666666666666666
-  # RENOMEAR ELEMENTOS DA LISTA
+  bua_convert <- purrr::map(bua_convert, ~f_names(.))
+
+  # reproject crs
+  bua_convert <- purrr::modify_depth(
+    .x = bua_convert, .depth = 2, ~ sf::st_transform(., crs = 4326)
+      )
 
 
+  # * plot data -------------------------------------------------------------
+  f_plot <- function(base, column){
+
+    column <- rlang::ensym(column)
+
+    ggplot(data = base, aes(fill = !!column), colour = NA) +
+      geom_sf() +
+      viridis::scale_fill_viridis(discrete = T) +
+      theme_void()
+
+  }
 
 
+  bua_plots <- purrr::map(
+    bua_convert,
+    ~purrr::modify_in(., 1, ~f_plot(., 'cutoff_0'))
+    )
+  bua_plots <- purrr::map(
+    bua_plots,
+    ~purrr::modify_in(., 2, ~f_plot(., 'cutoff_10'))
+  )
+  bua_plots <- purrr::map(
+    bua_plots,
+    ~purrr::modify_in(., 3, ~f_plot(., 'cutoff_25'))
+  )
+  bua_plots <- purrr::map(
+    bua_plots,
+    ~purrr::modify_in(., 4, ~f_plot(., 'cutoff_50'))
+  )
 
-  b <- modify_depth(.x = a, .depth = 2, ~ rlang::set_names(names(.), nm = vector))
-  a <- (a, ~rlang::set_names(., vetor))
+  bua_reduce <- purrr::map(bua_plots, ~purrr::reduce(., `/`))
 
-  teste2 <- bua_pol$bage_rs_1975 %>%
-    dplyr::group_by(cutoff_50) %>%
-    dplyr::summarise() #%>%
-    sf::st_transform(4326)
 
-  a[[1]] %>%
-    sf::st_transform(4326) %>%
-    ggplot() +
-    geom_sf(aes(fill = cutoff_0)) +
-    viridis::scale_fill_viridis(discrete = T, option = "D")
+  f_titulo <- function(plot_mapa, nomes){
 
+    plot_mapa <- plot_mapa + patchwork::plot_annotation(title = nomes)
+
+  }
+
+  bua_reduce <- purrr::map2(
+    .x = bua_reduce, .y = names(bua_reduce), function(x, y)
+      f_titulo(plot_mapa = x, nomes = y)
+      )
+
+  nomes <- unique(str_extract(names(bua_reduce), ".+(?=_\\d{4})"))
+  #nomes <- substr(names(bua_reduce), 1, 8)
+  #nomes <- unique(nomes)
+
+  f_select <- function(lista, nomes){
+
+    lista <- names(lista) %>%
+      stringr::str_detect(nomes) %>%
+      purrr::keep(lista, .)
+
+  }
+
+  bua_select <- purrr::map(nomes, ~f_select(bua_reduce, nomes = .))
+
+  names(bua_select) <- nomes
+
+  bua_compare <- purrr::map(bua_select, function(x)
+    plot_grid(pluck(x, 1), pluck(x, 2))
+    )
+
+
+  # * save data -------------------------------------------------------------
+
+  purrr::walk2(bua_compare, names(bua_compare), function(x,y)
+    ggplot2::ggsave(
+      filename = paste0('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/figures/', y, '.png'),
+      plot = x, dpi = 300, device = 'png'
+      )
+    )
 
   ### PROJECTION: O QUE FAZER? fazer projecao antes ou depois de extrair o valor?
 
@@ -148,104 +209,8 @@ bua_raster <- bua_uca$bage_rs_1975
   # construida para classifica-la como "centro urbano" (e com isso obter..
   # ..o poligono de area construida de cada ano)
 
-  bua_bhz1975 <- raster::raster("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/BUILT/UCA/GHS_BUILT_LDS1975_belo_horizonte_mg_R2018A_54009_1K_V2_0_raster.tif")
-
-  bua_bhz2014 <- raster::raster("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/BUILT/UCA/GHS_BUILT_LDS2014_belo_horizonte_mg_R2018A_54009_1K_V2_0_raster.tif")
-
-  bh1975 <- raster::rasterToPolygons(bua_bhz1975) %>%
-    sf::st_as_sf() %>%
-    dplyr::rename(bua_value = 1) %>%
-    dplyr::mutate(
-      grupo = dplyr::case_when(
-        bua_value > 0 ~ "construida",
-        T ~ "nao consturida"
-      ),
-      segmented = dplyr::case_when(
-        bua_value >= 25 ~ "urban",
-        T ~ "rural"
-      )
-    )
-
-  bh_grupo1975 <- bh1975 %>%
-    sf::st_transform(4326) %>%
-    dplyr::group_by(grupo) %>%
-    dplyr::summarise() %>%
-    ggplot() +
-    geom_sf(aes(fill = grupo)) +
-    viridis::scale_fill_viridis(discrete = T, option = "D")
-
-  bh_segmented1975 <- bh1975 %>%
-    sf::st_transform(4326) %>%
-    dplyr::group_by(segmented) %>%
-    dplyr::summarise() %>%
-    ggplot() +
-    geom_sf(aes(fill = segmented)) +
-    viridis::scale_fill_viridis(discrete = T, option = "D", direction = -1)
 
 
-  bh2014 <- raster::rasterToPolygons(bua_bhz2014) %>%
-    sf::st_as_sf() %>%
-    dplyr::rename(bua_value = 1) %>%
-    dplyr::mutate(
-      grupo = dplyr::case_when(
-        bua_value > 0 ~ "construida",
-        T ~ "nao consturida"
-      ),
-      segmented = dplyr::case_when(
-        bua_value >= 25 ~ "urban",
-        T ~ "rural"
-      )
-    )
-
-  bh_grupo2014 <- bh2014 %>%
-    sf::st_transform(4326) %>%
-    dplyr::group_by(grupo) %>%
-    dplyr::summarise() %>%
-    ggplot() +
-    geom_sf(aes(fill = grupo)) +
-    viridis::scale_fill_viridis(discrete = T, option = "D")
-
-  bh_segmented2014 <- bh2014 %>%
-    sf::st_transform(4326) %>%
-    dplyr::group_by(segmented) %>%
-    dplyr::summarise() %>%
-    ggplot() +
-    geom_sf(aes(fill = segmented)) +
-    viridis::scale_fill_viridis(discrete = T, option = "D", direction = -1)
-
-  bh_grupo1975 + bh_grupo2014
-  bh_segmented1975 + bh_segmented2014
-
-
-
-
-  # read uca shapefiles in one dataset
-  uca_all <- readr::read_rds("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/urban_area_shapes/urban_area_pop_100000_dissolved.rds")
-
-  # change shape crs
-  uca_all <- sf::st_transform(uca_all, raster::projection(purrr::pluck(bua_uca, 1)))
-
-  # split shape dataset into list with each uca as an individual element
-  uca_split <- base::split(uca_all, uca_all$name_uca_case)
-
-  # reorder shape list according to raster list (must do to ensure match)
-  uca_split <- uca_split[order(names(bua_uca))]
-
-  # extract raster information (average built up area within shape)
-  extrair <- purrr::map2(.x = bua_uca, .y = uca_split, function(x, y) f_extrair_mean(x, y))
-
-  # change built up area column name
-  extrair <- purrr::map2(extrair, anos, function(x, y) {
-    data.table::setnames(x, old = "bua_mean", new = paste0("bua_mean", y))
-  })
-
-  # bind all datasets together
-  extrair <- data.table::rbindlist(extrair)
-
-  # left join built up area extracted to uca shape
-  uca_all <- dplyr::left_join(uca_all, extrair, by = c("name_uca_case" = "name_uca_case"))
-
-  return(uca_all)
 }
 
 
