@@ -1,12 +1,21 @@
 # description -------------------------------------------------------------
 
-# this script
-# 1. reads data from built up area cropped for selected urban areas (1975-2014)
-# areas: for,bsb,bhz,ctb,poa,rio,sp,nat,man
-#
-# 2. tests different criteria for defining built-up area polygon (urban extent)
-# ..to be compared between cities.
-# 2.1 test 1km pixel. different cutoffs (>0%, 25%, 50%)
+# this script tests criteria for defining built-up area polygon (urban extent)
+#..to be compared between Urban Concentration Areas (uca)
+# built-up area raster (GSHL) used is 1km x 1km pixel
+# testing is done in two steps
+
+# 1. preliminary test for selected group of ucas:
+## define different cutoffs (>0%, 10%, 25%, 50%) that constitute built-up
+##..area polygon for a group of ucas
+## generate maps (1975 & 2014) to be analysed by AOP team
+# ucas: for,bsb,bhz,ctb,poa,rio,sp,nat,man,vit
+
+# 2. compare cutoffs with "ground truth" (IBGE urban footprint)
+## based on preview analysis, compare 10% & 25% cutoffs with IBGE urban..
+##..footprint.
+## check which cutoff provides the least amount of difference when compared to
+##.. IBGE's area
 
 # setup -------------------------------------------------------------------
 
@@ -17,22 +26,27 @@ source("R/setup.R")
 ghsl_built_dir <- "//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/BUILT/UCA/"
 
 
-# read data ---------------------------------------------------------------
+# 1 preliminary function: inspect 9 cities  -------------------------------
 
-# vector with ucas and time period
-# ucas: for,bsb,bhz,ctb,poa,rio,sp,nat,man
-files_cities <- dir(
+### PROJECTION: O QUE FAZER? fazer projecao antes ou depois de extrair o valor?
+
+### CLASSIFICACAO: QUAL CRITERIO? qual criterio (em termos quant.) de area
+# construida para classifica-la como "centro urbano" (e com isso obter..
+# ..o poligono de area construida de cada ano)
+
+
+# * 1.1 define files ------------------------------------------------------
+
+files_preliminary <- dir(
   "//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/BUILT/UCA/",
-  pattern = "(1975|2014).*(sao_paulo|fortaleza|brasilia|curitiba|belo_horizonte|rio_de_janeiro|bage|porto_alegre|vitoria_es)"
+  pattern = "(1975|2014).*(sao_paulo|fortaleza|brasilia|curitiba|belo_horizonte|rio_de_janeiro|bage|porto_alegre|vitoria_es).*\\.tif$"
 )
 
-input <- files_cities
+#input <- files_preliminary
 
+# * 1.2 define function ---------------------------------------------------
 
-
-# NAO RODAR -> CRIAR FUNCAO CORRETA
-
-funcao <- function(input) {
+f_preliminary <- function(input) {
 
   # read all raster files from one year in a list
   bua_uca <- purrr::map(input, ~ raster::raster(paste0(ghsl_built_dir, .)))
@@ -49,7 +63,7 @@ funcao <- function(input) {
   # rename each raster in the list
   names(bua_uca) <- uca_name
 
-  str(bua_uca,max.level = 1)
+  #str(bua_uca,max.level = 1)
 
 
   # * funcao raster polygons and classify -----------------------------------
@@ -203,27 +217,40 @@ funcao <- function(input) {
       )
     )
 
-  ### PROJECTION: O QUE FAZER? fazer projecao antes ou depois de extrair o valor?
 
-  ### CLASSIFICACAO: QUAL CRITERIO? qual criterio (em termos quant.) de area
-  # construida para classifica-la como "centro urbano" (e com isso obter..
-  # ..o poligono de area construida de cada ano)
+
+}
+
+
+# * 1.3 run preliminary function ------------------------------------------
+
+f_preliminary(input = files_preliminary)
+
+# 2 compare cutoffs vs. IBGE urban footprint ------------------------------
+
+
+# * 2.1 define files ------------------------------------------------------
+
+files_compare <- dir(
+  "//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/BUILT/UCA/",
+  pattern = "(1975|2014).*\\.tif$"
+)
+
+# APAGAR DEPOIS !!!!!!!!
+files_compare <- files_compare[c(1:4,186:189)]
+
+# * 2.2 define function ---------------------------------------------------
+
+
+
+f_compare <- function(){
 
 
 
 }
 
 
-# run function ------------------------------------------------------------
 
-# set up parallel
-future::plan(future::multicore)
+# * 2.3 run function ------------------------------------------------------
 
-# files vector
-years <- c("1975", "1990", "2000", "2014")
-files <- purrr::map(years, ~ dir(ghsl_built_dir, pattern = .))
 
-input <- files[[1]]
-
-# run for multiple years
-extrair <- furrr::future_map(files, ~ funcao(.))
