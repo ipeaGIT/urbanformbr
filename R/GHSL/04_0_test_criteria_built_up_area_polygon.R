@@ -409,8 +409,8 @@ f_compare <- function(){
   df_bua_areas[
     ,
     `:=`(
-      diff_area_10 = (abs(bua_area_ibge - bua_area_10)) / (bua_area_ibge),
-      diff_area_25 = (abs(bua_area_ibge - bua_area_25)) / (bua_area_ibge)
+      diff_area_10 = as.double((abs(bua_area_ibge - bua_area_10)) / (bua_area_ibge)),
+      diff_area_25 = as.double((abs(bua_area_ibge - bua_area_25)) / (bua_area_ibge))
     )
   ]
 
@@ -463,13 +463,25 @@ f_compare <- function(){
 
 
   # plot data
+
+  # load Helvetica font
+  windowsFonts('Helvetica' = windowsFont('Helvetica'))
+  #
   df_bua_areas %>%
     ggplot() +
     geom_point(
-      aes(x = diff_area_25, y = diff_area_10, colour = as.factor(name_region)),
-      size = 2
+      aes(
+        x = diff_area_25, y = diff_area_10,
+        colour = as.factor(name_region),
+        size = pop2015
+        ),
       ) +
     theme_minimal() +
+    labs(
+      x = 'diff 25', y = 'diff 10', colour = 'regiao', size = 'pop'
+    ) +
+    aop_style() +
+    theme(legend.position = 'right')
     scale_colour_viridis_d(option = 'B')
 
   # save df footprints areas
