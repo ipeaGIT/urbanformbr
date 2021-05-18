@@ -21,6 +21,7 @@
 
 source("R/setup.R")
 source('R/style.R')
+source('R/colours.R')
 
 # directory ---------------------------------------------------------------
 
@@ -468,21 +469,35 @@ f_compare <- function(){
   windowsFonts('Helvetica' = windowsFont('Helvetica'))
   #
   df_bua_areas %>%
+    dplyr::mutate(
+      pop2015 = pop2015 / 100000,
+    ) %>%
     ggplot() +
     geom_point(
       aes(
         x = diff_area_25, y = diff_area_10,
-        colour = as.factor(name_region),
-        size = pop2015
+        fill = as.factor(name_region),
+        size = pop2015,
+        #shape = min_diff
         ),
+      alpha = 0.75,
+      shape = 21
       ) +
-    theme_minimal() +
-    labs(
-      x = 'diff 25', y = 'diff 10', colour = 'regiao', size = 'pop'
+    geom_abline(intercept = 0, size = 0.75, colour = 'black', alpha = 0.5) +
+    scale_size(range = c(1.5, 30)) +
+    #viridis::scale_fill_viridis(discrete = T, option = 'magma') +
+        labs(
+      x = 'Difference area 25%', y = 'Difference area 10%', fill = 'Region',
+      size = 'Population (100.000)'
     ) +
     aop_style() +
-    theme(legend.position = 'right')
-    scale_colour_viridis_d(option = 'B')
+    scale_fill_aop(palette = 'blue_red') +
+    theme(legend.position = 'right') +
+    guides(
+      fill = guide_legend(override.aes = list(size = 5))#,
+      #size = guide_legend(,override.aes = list(size = 10))
+      )
+
 
   # save df footprints areas
   saveRDS(
