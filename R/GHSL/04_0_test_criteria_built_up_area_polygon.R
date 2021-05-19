@@ -351,6 +351,8 @@ f_compare <- function(){
 
   # * create df with footprint areas ----------------------------------------
 
+    # * * create df bua areas ghsl --------------------------------------------
+
   # footprint areas: bua_area_10, bua_area_25, ibge_area
   # drop geometry
   df_bua_areas <- purrr::modify_depth(
@@ -384,6 +386,9 @@ f_compare <- function(){
   df_bua_areas <- df_bua_areas %>%
     dplyr::relocate(code_urban_concentration, .after = name_muni)
 
+
+    # * * read ibge footprint -------------------------------------------------
+
   # read ibge area
   ibge <- read_urban_area(year=2015, simplified = F)
   # create column built-up (urban footprint) area ibge
@@ -405,7 +410,7 @@ f_compare <- function(){
   ]
 
 
-  # * estimate difference bua_areas -----------------------------------------
+    # * * estimate difference bua_areas -----------------------------------------
   # create columns with difference
   df_bua_areas[
     ,
@@ -431,7 +436,7 @@ f_compare <- function(){
   prop.table(table(df_bua_areas$min_diff))
 
 
-  # * uca characteristics and cutoff ----------------------------------------
+    # * * uca characteristics and cutoff ----------------------------------------
   # include additional information about uca to explore data
 
   # classify by region
@@ -484,7 +489,7 @@ f_compare <- function(){
       shape = 21
       ) +
     geom_abline(intercept = 0, size = 0.75, colour = 'black', alpha = 0.5) +
-    scale_size(range = c(1.5, 30)) +
+    scale_size(range = c(1, 20)) +
     #viridis::scale_fill_viridis(discrete = T, option = 'magma') +
         labs(
       x = 'Difference area 25%', y = 'Difference area 10%', fill = 'Region',
@@ -498,6 +503,11 @@ f_compare <- function(){
       #size = guide_legend(,override.aes = list(size = 10))
       )
 
+  # save plot
+  ggplot2::ggsave(
+    filename = paste0('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/figures/', 'difference_cutoff_10_25_ibge', '.png'),
+    dpi = 300, device = 'png'
+  )
 
   # save df footprints areas
   saveRDS(
@@ -506,6 +516,42 @@ f_compare <- function(){
     )
 
 
+  # * check spatial interception different cutoffs-ibge ---------------------
+
+  # drop unnecessary column
+  bua_areas <- purrr::modify_depth(
+    .x = bua_convert, .depth = 2,
+    ~dplyr::select(., !dplyr::starts_with('cutoff'))
+  )
+
+  # transpose list
+  bua_areas <- purrr::transpose(bua_areas)
+  # bind dfs
+  bua_areas <- purrr::map(bua_areas, dplyr::bind_rows)
+  # add code_muni to dfs
+  bua_areas <- purrr::map(
+    bua_areas,
+    ~dplyr::left_join(
+      .,
+      urban_shapes %>% dplyr::select(code_urban_concentration, name_uca_case),
+      by = c("name_muni" = "name_uca_case")
+      )
+  )
+
+
+
+  ibge_pol <- ibge %>%
+    dplyr::filter(code_muni %in% bua_areas$cutoff_10$code_urban_concentration)
+  ibge_pol <- sf::st_as_sf(ibge_pol)
+  ##### COMBINE DISSOLVE OU OUTRA OPERACAO ESPACIAL PARA JUNTAR OS POLYGONS
+  # DOS MESMOS UCAS
+
+
+  teste <- ibge_pol %>%
+    rmapshaper::ms_dissolve(sum_fields = 'bua_area_ibge')
+
+  ibge_pol <- sf::st_as_sf(ibge)
+  ibge_pol <-
 
 }
 
