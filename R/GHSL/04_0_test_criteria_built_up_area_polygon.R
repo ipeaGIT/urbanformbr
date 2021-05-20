@@ -247,13 +247,13 @@ f_compare <- function(){
   bua_uca <- purrr::map(input, ~ raster::raster(paste0(ghsl_built_dir, .)))
 
   # extract the year
-  anos <- purrr::map_chr(input, ~ stringr::str_extract(., "(?<=LDS)[0-9]{4}"))
+  #anos <- purrr::map_chr(input, ~ stringr::str_extract(., "(?<=LDS)[0-9]{4}"))
 
   # extract uca name
   uca_name <- purrr::map_chr(input, ~ stringr::str_extract(., "(?<=LDS[\\d]{4}_).+(?=_R2)"))
 
   # add years to name
-  uca_name <- paste0(uca_name,'_',anos)
+  #uca_name <- paste0(uca_name,'_',anos)
 
   # rename each raster in the list
   names(bua_uca) <- uca_name
@@ -326,10 +326,12 @@ f_compare <- function(){
                            ~dplyr::filter(., .[[1]] == 'Construída')
                            )
 
-  nomes <- stringr::str_extract(
-    string = names(bua_convert),
-    pattern = ".*(?=_\\d{4})"
-    )
+  nomes <- names(bua_convert)
+  #nomes <- stringr::str_extract(
+  #  string = names(bua_convert),
+  #  pattern = ".*(?=_\\d{4})"
+  #  )
+
   # add uca name to df
   bua_convert <- purrr::map2(
     .x = bua_convert, .y = nomes, function(x,y)
@@ -409,6 +411,11 @@ f_compare <- function(){
     on = c(code_urban_concentration = 'code_muni')
   ]
 
+  # check if any ibge areas aren't present at uca database
+  #urban_shapes %>% dplyr::filter(!code_urban_concentration %in% ibge$code_muni)
+  # urban concentration areas not present at ibge footprint database:
+  # 4313409 (novo_hamburgo_sao_leopoldo_rs)
+  # 3554102 (taubate_pindamonhangaba_sp)
 
     # * * estimate difference bua_areas -----------------------------------------
   # create columns with difference
@@ -505,9 +512,51 @@ f_compare <- function(){
 
   # save plot
   ggplot2::ggsave(
-    filename = paste0('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/figures/', 'difference_cutoff_10_25_ibge', '.png'),
+    filename = paste0('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/figures/', 'difference_cutoff_10_25_ibge_region', '.png'),
     dpi = 300, device = 'png'
   )
+
+  df_bua_areas %>%
+    dplyr::mutate(
+      pop2015 = pop2015 / 100000,
+    ) %>%
+    ggplot() +
+    geom_point(
+      aes(
+        x = diff_area_25, y = diff_area_10,
+        fill = as.factor(min_diff),
+        size = pop2015,
+        #shape = min_diff
+      ),
+      alpha = 0.75,
+      shape = 21
+    ) +
+    geom_abline(intercept = 0, size = 0.75, colour = 'black', alpha = 0.5) +
+    scale_size(range = c(1, 20)) +
+    #viridis::scale_fill_viridis(discrete = T, option = 'magma') +
+    labs(
+      x = 'Difference area 25%', y = 'Difference area 10%',
+      fill = 'Threshold minimizing <br> difference',
+      size = 'Population (100.000)'
+    ) +
+    aop_style() +
+    scale_fill_aop(palette = 'blue_red') +
+    theme(legend.position = 'right') +
+    guides(
+      fill = guide_legend(override.aes = list(size = 5))#,
+      #size = guide_legend(,override.aes = list(size = 10))
+    )
+
+  # save plot
+  ggplot2::ggsave(
+    filename = paste0('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/figures/', 'difference_cutoff_10_25_ibge_threshold', '.png'),
+    dpi = 300, device = 'png'
+  )
+
+  weighted.mean(df_bua_areas$diff_area_10, w = df_bua_areas$pop2015, na.rm = T)
+  weighted.mean(df_bua_areas$diff_area_25, w = df_bua_areas$pop2015, na.rm = T)
+
+
 
   # save df footprints areas
   saveRDS(
@@ -524,6 +573,10 @@ f_compare <- function(){
     ~dplyr::select(., !dplyr::starts_with('cutoff'))
   )
 
+
+
+
+
   # transpose list
   bua_areas <- purrr::transpose(bua_areas)
   # bind dfs
@@ -539,12 +592,34 @@ f_compare <- function(){
   )
 
 
+  # ibge pol
+  # make into sf object
+  ibge_pol <- sf::st_as_sf(ibge)
+  # filter uca presents in the study
+  ibge_pol <- ibge_pol %>%
+    dplyr::filter(code_muni %in% df_bua_areas$code_urban_concentration)
+  # geometry union
+  ibge_pol <- ibge_pol %>%
+    dplyr::group_by(code_muni) %>%
+    dplyr::summarise(bua_area_ibge = sum(bua_area_ibge, na.rm = T))
+  # include name_muni to match with bua_areas
+  ibge_pol <- dplyr::left_join(
+    ibge_pol,
+    urban_shapes %>% dplyr::select(code_urban_concentration, name_uca_case),
+    by = c("code_muni" = 'code_urban_concentration')
+  )
+  # rename name_muni column
+  ibge_pol <- data.table::setnames(ibge_pol,  "name_uca_case", "name_muni")
+  # order by name_muni
+  ibge_pol <- ibge_pol %>% dplyr::arrange(name_muni)
 
-  ibge_pol <- ibge %>%
-    dplyr::filter(code_muni %in% bua_areas$cutoff_10$code_urban_concentration)
-  ibge_pol <- sf::st_as_sf(ibge_pol)
-  ##### COMBINE DISSOLVE OU OUTRA OPERACAO ESPACIAL PARA JUNTAR OS POLYGONS
-  # DOS MESMOS UCAS
+  # filter bua_areas by object name (to exclude areas not included in ibge_pol)
+  a <- bua_areas[str_detect(names(bua_areas), ibge_pol$name_muni)]
+  a <- bua_areas %>% purrr::keep(ibge_pol$name_muni)
+
+
+
+
 
 
   teste <- ibge_pol %>%
