@@ -228,16 +228,10 @@ f_preliminary(input = files_preliminary)
 
 # * 2.1 define files ------------------------------------------------------
 
-files_compare <- dir(
+input <- dir(
   "//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/BUILT/UCA/",
   pattern = "(2014).*\\.tif$"
 )
-
-# APAGAR DEPOIS !!!!!!!!
-#input <- files_preliminary[c(10:17)]
-#files_compare <- files_compare[c(1:8)]
-#input <- files_compare
-#input <- files_compare[[1]]
 
 # * 2.2 define function ---------------------------------------------------
 
@@ -341,12 +335,24 @@ f_compare <- function(){
   # estimate built-up area
   bua_convert <- purrr::map(
     .x = bua_convert,
-    ~purrr::modify_in(., 1, ~dplyr::mutate(., bua_area_10 = units::set_units(sf::st_area(.), value = km^2)))
+    ~purrr::modify_in(
+      .x = ., .where =  1,
+      ~dplyr::mutate(
+        .data = .,
+        bua_area_10 = units::set_units(sf::st_area(.), value = km^2)
+        )
+      )
   )
 
   bua_convert <- purrr::map(
     .x = bua_convert,
-    ~purrr::modify_in(., 2, ~dplyr::mutate(., bua_area_25 = units::set_units(sf::st_area(.), value = km^2)))
+    ~purrr::modify_in(
+      .x = ., .where = 2,
+      ~dplyr::mutate(
+        .data = .,
+        bua_area_25 = units::set_units(sf::st_area(.), value = km^2)
+        )
+      )
   )
 
 
@@ -465,7 +471,7 @@ f_compare <- function(){
   uca_pop <- readr::read_rds("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/results/uca_pop_100000_built_up_area_population_results.rds") %>%
     data.table::setDT()
 
-
+  # include population data to df_bua_areas
   df_bua_areas[
     uca_pop,
     `:=`(
@@ -573,28 +579,11 @@ f_compare <- function(){
     ~dplyr::select(., !dplyr::starts_with('cutoff'))
   )
 
-
-
-
-
-  # transpose list
-  bua_areas <- purrr::transpose(bua_areas)
-  # bind dfs
-  bua_areas <- purrr::map(bua_areas, dplyr::bind_rows)
-  # add code_muni to dfs
-  bua_areas <- purrr::map(
-    bua_areas,
-    ~dplyr::left_join(
-      .,
-      urban_shapes %>% dplyr::select(code_urban_concentration, name_uca_case),
-      by = c("name_muni" = "name_uca_case")
-      )
-  )
-
-
   # ibge pol
   # make into sf object
   ibge_pol <- sf::st_as_sf(ibge)
+  # reproject ibge data
+  ibge_pol <- sf::st_transform(ibge_pol, sf::st_crs(bua_areas$abaetetuba$cutoff_10))
   # filter uca presents in the study
   ibge_pol <- ibge_pol %>%
     dplyr::filter(code_muni %in% df_bua_areas$code_urban_concentration)
@@ -610,23 +599,121 @@ f_compare <- function(){
   )
   # rename name_muni column
   ibge_pol <- data.table::setnames(ibge_pol,  "name_uca_case", "name_muni")
-  # order by name_muni
+  # arrange by name_muni
   ibge_pol <- ibge_pol %>% dplyr::arrange(name_muni)
 
-  # filter bua_areas by object name (to exclude areas not included in ibge_pol)
-  a <- bua_areas[str_detect(names(bua_areas), ibge_pol$name_muni)]
-  a <- bua_areas %>% purrr::keep(ibge_pol$name_muni)
+  # filter bua_areas to same elements as ibge_pol
+  # given that 4313409 3554102 aren't present in ibge_pol
+  bua_areas <- bua_areas[c(ibge_pol$name_muni)]
+
+  # split ibge_pol by muni name
+  ibge_pol <- split(x = ibge_pol, f = ibge_pol$name_muni)
+
+
+  # transpose bua_areas list
+  bua_areas <- purrr::transpose(bua_areas)
+
+
+  # * * spatial intersection ------------------------------------------------
+  intersecao <- purrr::map(
+    .x = bua_areas,
+    ~purrr::map2(
+      .x = ., .y = ibge_pol, function(x, y)
+        sf::st_intersection(x, y)
+    )
+  )
+  # select columns
+  intersecao <- purrr::map(
+    .x = intersecao,
+    ~purrr::map(.x = ., ~dplyr::select(., c('name_muni','code_muni','geometry')))
+  )
+  # calculate area intersection
+  intersecao <- purrr::map(
+    .x = intersecao,
+    ~purrr::map(
+      .x = .,
+      ~dplyr::mutate(
+        .data = .,
+        area_intersection = units::set_units(sf::st_area(.), value = km^2)
+        )
+      )
+  )
+
+  intersecao <- purrr::modify_in(
+    .x = intersecao, .where = 1,
+    ~purrr::map(.x = ., ~dplyr::rename(., area_intersection_10 = area_intersection))
+    )
+  intersecao <- purrr::modify_in(
+    .x = intersecao, .where = 2,
+    ~purrr::map(.x = ., ~dplyr::rename(., area_intersection_25 = area_intersection))
+  )
+
+  intersecao <- purrr::modify_depth(.x = intersecao, .depth = 2,sf::st_drop_geometry)
+
+  intersecao <- purrr::map(intersecao, ~purrr::reduce(., dplyr::bind_rows))
+
+  intersecao <- purrr::map(intersecao, ~data.table::setDT(.))
+
+  intersecao <- intersecao$cutoff_10[
+    intersecao$cutoff_25,
+    `:=`(
+      area_intersection_25 = area_intersection_25
+    ),
+    on = c('code_muni' = 'code_muni')
+  ]
+
+  # * * spatial difference --------------------------------------------------
+  6666666666666
+  sym_difference <- purrr::map(
+    .x = bua_areas,
+    ~purrr::map2(
+      .x = ., .y = ibge_pol, function(x, y)
+        sf::st_sym_difference(x, y)
+    )
+  )
+  # select columns
+  intersecao <- purrr::map(
+    .x = intersecao,
+    ~purrr::map(.x = ., ~dplyr::select(., c('name_muni','code_muni','geometry')))
+  )
+  # calculate area intersection
+  intersecao <- purrr::map(
+    .x = intersecao,
+    ~purrr::map(
+      .x = .,
+      ~dplyr::mutate(
+        .data = .,
+        area_intersection = units::set_units(sf::st_area(.), value = km^2)
+      )
+    )
+  )
+
+  intersecao <- purrr::modify_in(
+    .x = intersecao, .where = 1,
+    ~purrr::map(.x = ., ~dplyr::rename(., area_intersection_10 = area_intersection))
+  )
+  intersecao <- purrr::modify_in(
+    .x = intersecao, .where = 2,
+    ~purrr::map(.x = ., ~dplyr::rename(., area_intersection_25 = area_intersection))
+  )
+
+  intersecao <- purrr::modify_depth(.x = intersecao, .depth = 2,sf::st_drop_geometry)
+
+  intersecao <- purrr::map(intersecao, ~purrr::reduce(., dplyr::bind_rows))
+
+  intersecao <- purrr::map(intersecao, ~data.table::setDT(.))
+
+  intersecao <- intersecao$cutoff_10[
+    intersecao$cutoff_25,
+    `:=`(
+      area_intersection_25 = area_intersection_25
+    ),
+    on = c('code_muni' = 'code_muni')
+  ]
 
 
 
 
-
-
-  teste <- ibge_pol %>%
-    rmapshaper::ms_dissolve(sum_fields = 'bua_area_ibge')
-
-  ibge_pol <- sf::st_as_sf(ibge)
-  ibge_pol <-
 
 }
 
