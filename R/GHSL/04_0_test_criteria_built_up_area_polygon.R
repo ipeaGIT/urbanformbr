@@ -609,7 +609,6 @@ f_compare <- function(){
   # split ibge_pol by muni name
   ibge_pol <- split(x = ibge_pol, f = ibge_pol$name_muni)
 
-
   # transpose bua_areas list
   bua_areas <- purrr::transpose(bua_areas)
 
@@ -663,7 +662,7 @@ f_compare <- function(){
   ]
 
   # * * spatial difference --------------------------------------------------
-  6666666666666
+
   sym_difference <- purrr::map(
     .x = bua_areas,
     ~purrr::map2(
@@ -672,47 +671,164 @@ f_compare <- function(){
     )
   )
   # select columns
-  intersecao <- purrr::map(
-    .x = intersecao,
+  sym_difference <- purrr::map(
+    .x = sym_difference,
     ~purrr::map(.x = ., ~dplyr::select(., c('name_muni','code_muni','geometry')))
   )
   # calculate area intersection
-  intersecao <- purrr::map(
-    .x = intersecao,
+  sym_difference <- purrr::map(
+    .x = sym_difference,
     ~purrr::map(
       .x = .,
       ~dplyr::mutate(
         .data = .,
-        area_intersection = units::set_units(sf::st_area(.), value = km^2)
+        area_sym_difference = units::set_units(sf::st_area(.), value = km^2)
       )
     )
   )
 
-  intersecao <- purrr::modify_in(
-    .x = intersecao, .where = 1,
-    ~purrr::map(.x = ., ~dplyr::rename(., area_intersection_10 = area_intersection))
+  sym_difference <- purrr::modify_in(
+    .x = sym_difference, .where = 1,
+    ~purrr::map(.x = ., ~dplyr::rename(., area_sym_difference_10 = area_sym_difference))
   )
-  intersecao <- purrr::modify_in(
-    .x = intersecao, .where = 2,
-    ~purrr::map(.x = ., ~dplyr::rename(., area_intersection_25 = area_intersection))
+  sym_difference <- purrr::modify_in(
+    .x = sym_difference, .where = 2,
+    ~purrr::map(.x = ., ~dplyr::rename(., area_sym_difference_25 = area_sym_difference))
   )
 
-  intersecao <- purrr::modify_depth(.x = intersecao, .depth = 2,sf::st_drop_geometry)
+  sym_difference <- purrr::modify_depth(.x = sym_difference, .depth = 2,
+                                        sf::st_drop_geometry)
 
-  intersecao <- purrr::map(intersecao, ~purrr::reduce(., dplyr::bind_rows))
+  sym_difference <- purrr::map(sym_difference, ~purrr::reduce(., dplyr::bind_rows))
 
-  intersecao <- purrr::map(intersecao, ~data.table::setDT(.))
+  sym_difference <- purrr::map(sym_difference, ~data.table::setDT(.))
 
-  intersecao <- intersecao$cutoff_10[
-    intersecao$cutoff_25,
+  sym_difference <- sym_difference$cutoff_10[
+    sym_difference$cutoff_25,
     `:=`(
-      area_intersection_25 = area_intersection_25
+      area_sym_difference_25 = i.area_sym_difference_25
     ),
     on = c('code_muni' = 'code_muni')
   ]
 
 
+  # * * join intersection sym_difference ------------------------------------
+  df_inter_diff <- intersecao[
+    sym_difference,
+    `:=`(
+      area_sym_difference_10 = i.area_sym_difference_10,
+      area_sym_difference_25 = i.area_sym_difference_25
+    ),
+    on = c('code_muni' = 'code_muni')
+  ]
 
+  df_inter_diff <- df_inter_diff[
+    df_bua_areas,
+    `:=`(
+      name_region = i.name_region,
+      bua_area_ibge = i.bua_area_ibge,
+      pop2015 = i.pop2015
+    ),
+    on = c('code_muni' = 'code_urban_concentration')
+  ]
+
+
+  # create columns with relative difference
+  df_inter_diff[
+    ,
+    `:=`(
+      r_diff_int_10 = as.double((abs(bua_area_ibge - area_intersection_10)) / (bua_area_ibge)),
+      r_diff_int_25 = as.double((abs(bua_area_ibge - area_intersection_25)) / (bua_area_ibge)),
+      r_diff_diff_10 = as.double((abs(bua_area_ibge - area_sym_difference_10)) / (bua_area_ibge)),
+      r_diff_diff_25 = as.double((abs(bua_area_ibge - area_sym_difference_25)) / (bua_area_ibge))
+    )
+  ]
+
+  # column checking which cutoff minimizes the difference
+  df_inter_diff[
+    ,
+    `:=`(
+      min_diff_int = dplyr::case_when(
+        r_diff_int_10 < r_diff_int_25 ~ "cutoff_10",
+        T ~ 'cutoff_25'
+      ),
+      min_diff_diff = dplyr::case_when(
+        r_diff_diff_10 < r_diff_diff_25 ~ "cutoff_10",
+        T ~ "cutoff_25"
+      )
+    )
+  ]
+
+  # check frequency (absolute and proportion)
+  table(df_inter_diff$min_diff_int)
+  prop.table(table(df_inter_diff$min_diff_int))
+
+  table(df_inter_diff$min_diff_diff)
+  prop.table(table(df_inter_diff$min_diff_diff))
+
+
+  df_inter_diff[
+    ,
+    `:=`(
+      ind_10 = r_diff_int_10 / r_diff_diff_10,
+      ind_25 = r_diff_int_25 / r_diff_diff_25
+    )
+  ]
+
+  df_inter_diff[
+    ,
+    `:=`(
+      min_ind = dplyr::case_when(
+        ind_10 < ind_25 ~ "cutoff_10",
+        T ~ 'cutoff_25'
+      )
+    )
+  ]
+
+  # check frequency (absolute and proportion)
+  table(df_inter_diff$min_ind)
+  prop.table(table(df_inter_diff$min_ind))
+
+
+  weighted.mean(df_inter_diff$ind_10, w = df_inter_diff$pop2015, na.rm = T)
+  weighted.mean(df_inter_diff$ind_25, w = df_inter_diff$pop2015, na.rm = T)
+
+  df_inter_diff %>%
+    dplyr::mutate(
+      pop2015 = pop2015 / 100000,
+    ) %>%
+    ggplot() +
+    geom_point(
+      aes(
+        x = ind_25, y = ind_10,
+        fill = as.factor(min_ind),
+        size = pop2015,
+        #shape = min_diff
+      ),
+      alpha = 0.75,
+      shape = 21
+    ) +
+    geom_abline(intercept = 0, size = 0.75, colour = 'black', alpha = 0.5) +
+    scale_size(range = c(1, 20)) +
+    #viridis::scale_fill_viridis(discrete = T, option = 'magma') +
+    labs(
+      x = 'Ind. 25% <br> (Diff. Inter / Diff. Sym Diff.)', y = 'Ind. 10% <br> (Diff. Inter / Diff. Sym Diff.)',
+      fill = 'Threshold minimizing <br> difference',
+      size = 'Population (100.000)'
+    ) +
+    aop_style() +
+    scale_fill_aop(palette = 'blue_red') +
+    theme(legend.position = 'right') +
+    guides(
+      fill = guide_legend(override.aes = list(size = 5))#,
+      #size = guide_legend(,override.aes = list(size = 10))
+    )
+
+  # save plot
+  ggplot2::ggsave(
+    filename = paste0('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/figures/', 'spatial_intersection_and_difference_cutoffs_ibge_threshold', '.png'),
+    dpi = 300, device = 'png'
+  )
 
 
 }
