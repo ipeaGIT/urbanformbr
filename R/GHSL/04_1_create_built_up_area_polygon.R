@@ -1,10 +1,9 @@
 # description -------------------------------------------------------------
 
-# this script
-# 1. reads data from built up area cropped for each urban concentration area...
-#...for 1975 and 2014
-# 2. converts area covered with built up area (value>0) as polygon
-# 3. saves the resulting sf as rds for use at urbanformbr
+# this script saves polygons for each urban concentration areas based on built-up
+#..area percentage defined at script 04-0 (i.e. above 25% built-up area)
+# these polygons for built-up area are defined as "urban extent" and will be used
+#..to compare urban expansion in terms of increase in density and urban footprint
 
 # setup -------------------------------------------------------------------
 
@@ -14,133 +13,104 @@ source('R/setup.R')
 
 ghsl_built_dir <- "//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/BUILT/UCA/"
 
+# files vector
+years <-c('1975','1990','2000','2014')
+files <- purrr::map(years, ~dir(ghsl_built_dir, pattern = .))
 
-# read data ---------------------------------------------------------------
+input <- files[[1]]
 
-# NAO RODAR -> CRIAR FUNCAO CORRETA
-
-funcao <- function(input){
+# define function ---------------------------------------------------------------
+f_create_polygon <- function(){
 
   # read all raster files from one year in a list
-  bua_uca <- purrr::map(input, ~raster::raster(paste0(ghsl_built_dir, .)))
+  bua_uca <- purrr::map(input, ~ raster::raster(paste0(ghsl_built_dir, .)))
 
   # extract the year
-  anos <- purrr::map_chr(input, ~stringr::str_extract(., "(?<=LDS)[0-9]{4}"))
+  #anos <- purrr::map_chr(input, ~ stringr::str_extract(., "(?<=LDS)[0-9]{4}"))
 
   # extract uca name
-  uca_name <- purrr::map_chr(input, ~stringr::str_extract(., "(?<=LDS[\\d]{4}_).+(?=_R2)"))
+  uca_name <- purrr::map_chr(input, ~ stringr::str_extract(., "(?<=LDS[\\d]{4}_).+(?=_R2)"))
+
+  # add years to name
+  #uca_name <- paste0(uca_name,'_',anos)
 
   # rename each raster in the list
   names(bua_uca) <- uca_name
 
+  # * function raster polygons and classify -----------------------------------
 
-  ### PROJECTION: O QUE FAZER? fazer projecao antes ou depois de extrair o valor?
+  f_raster_pol_class <- function(bua_raster){
 
-  ### CLASSIFICACAO: QUAL CRITERIO? qual criterio (em termos quant.) de area
-  # construida para classifica-la como "centro urbano" (e com isso obter..
-  #..o poligono de area construida de cada ano)
-
-  bua_bhz1975 <- raster::raster('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/BUILT/UCA/GHS_BUILT_LDS1975_belo_horizonte_mg_R2018A_54009_1K_V2_0_raster.tif')
-
-  bua_bhz2014 <- raster::raster('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/BUILT/UCA/GHS_BUILT_LDS2014_belo_horizonte_mg_R2018A_54009_1K_V2_0_raster.tif')
-
-  bh1975 <- raster::rasterToPolygons(bua_bhz1975) %>%
-    sf::st_as_sf() %>%
-    dplyr::rename(bua_value = 1) %>%
-    dplyr::mutate(
-      grupo = dplyr::case_when(
-        bua_value > 0 ~ 'construida',
-        T ~ 'nao consturida'
-      ),
-      segmented = dplyr::case_when(
-        bua_value >= 25 ~ 'urban',
-        T ~ 'rural'
+    bua_pol <- bua_raster %>%
+      # convert raster to polygon (sp)
+      raster::rasterToPolygons() %>%
+      # transform to sf
+      sf::st_as_sf() %>%
+      # rename first column
+      dplyr::rename(bua_value = 1) %>%
+      # create columns classifying area based on cutoff values (10,25%)
+      dplyr::mutate(
+          cutoff_25 = data.table::fcase(
+          bua_value >= 25, 'Construída',
+          bua_value < 25, 'Não construída'
+        )
       )
-    )
 
-  bh_grupo1975 <- bh1975 %>%
-    sf::st_transform(4326) %>%
-    dplyr::group_by(grupo) %>%
-    dplyr::summarise() %>%
-    ggplot() +
-    geom_sf(aes(fill = grupo)) +
-    viridis::scale_fill_viridis(discrete = T, option = 'D')
+  }
 
-  bh_segmented1975 <- bh1975 %>%
-    sf::st_transform(4326) %>%
-    dplyr::group_by(segmented) %>%
-    dplyr::summarise() %>%
-    ggplot() +
-    geom_sf(aes(fill = segmented)) +
-    viridis::scale_fill_viridis(discrete = T, option = 'D', direction = -1)
+  # run for every uca
+  bua_pol <- purrr::map(bua_uca, f_raster_pol_class)
 
+  # * convert crs polygon and summarise -------------------------------------
+  f_group_summarise <- function(base, variavel){
 
-  bh2014 <- raster::rasterToPolygons(bua_bhz2014) %>%
-    sf::st_as_sf() %>%
-    dplyr::rename(bua_value = 1) %>%
+    # rlang::ensym?
+    variavel <- rlang::sym(variavel)
+
+    base %>%
+      dplyr::group_by(!!variavel) %>%
+      dplyr::summarise()
+
+  }
+
+  # create column name vector
+  vetor <- paste0('cutoff_',c(25))
+  # generate converted list of sf df
+
+  bua_convert <- purrr::map(bua_pol, ~f_group_summarise(base = ., variavel = vetor))
+
+  # * reproject crs ---------------------------------------------------------
+  # reproject crs
+  bua_convert <- purrr::map(bua_convert, ~sf::st_transform(., crs = 4326))
+
+  # filter built-up area
+  bua_convert <- purrr::map(bua_convert,
+                            ~dplyr::filter(., .$cutoff_25 == 'Construída'))
+
+  # add uca name to df
+  nomes <- names(bua_convert)
+  bua_convert <- purrr::map2(
+    bua_convert, nomes, function(x,y)
     dplyr::mutate(
-      grupo = dplyr::case_when(
-        bua_value > 0 ~ 'construida',
-        T ~ 'nao consturida'
-      ),
-      segmented = dplyr::case_when(
-        bua_value >= 25 ~ 'urban',
-        T ~ 'rural'
-      )
+      .data = x,
+      name_muni = y
     )
-
-  bh_grupo2014 <- bh2014 %>%
-    sf::st_transform(4326) %>%
-    dplyr::group_by(grupo) %>%
-    dplyr::summarise() %>%
-    ggplot() +
-    geom_sf(aes(fill = grupo)) +
-    viridis::scale_fill_viridis(discrete = T, option = 'D')
-
-  bh_segmented2014 <- bh2014 %>%
-    sf::st_transform(4326) %>%
-    dplyr::group_by(segmented) %>%
-    dplyr::summarise() %>%
-    ggplot() +
-    geom_sf(aes(fill = segmented)) +
-    viridis::scale_fill_viridis(discrete = T, option = 'D', direction = -1)
-
-  bh_grupo1975 + bh_grupo2014
-  bh_segmented1975 + bh_segmented2014
-
-
-
-
-  # read uca shapefiles in one dataset
-  uca_all <- readr::read_rds('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/urban_area_shapes/urban_area_pop_100000_dissolved.rds')
-
-  # change shape crs
-  uca_all <- sf::st_transform(uca_all, raster::projection(purrr::pluck(bua_uca, 1)))
-
-  # split shape dataset into list with each uca as an individual element
-  uca_split <- base::split(uca_all, uca_all$name_uca_case)
-
-  # reorder shape list according to raster list (must do to ensure match)
-  uca_split <- uca_split[order(names(bua_uca))]
-
-  # extract raster information (average built up area within shape)
-  extrair <- purrr::map2(.x = bua_uca, .y = uca_split, function(x,y) f_extrair_mean(x,y))
-
-  # change built up area column name
-  extrair <- purrr::map2(extrair, anos, function(x,y)
-    data.table::setnames(x, old = 'bua_mean', new = paste0('bua_mean', y))
   )
 
-  # bind all datasets together
-  extrair <- data.table::rbindlist(extrair)
+  bua_convert <- purrr::map2(
+    .x = bua_convert, .y = nomes, function(x,y)
+      purrr::map(.x = x, ~dplyr::mutate(., name_muni = y))
+  )
 
-  # left join built up area extracted to uca shape
-  uca_all <- dplyr::left_join(uca_all, extrair, by = c('name_uca_case' = 'name_uca_case'))
+  # reduce list into df
+  bua_reduce <- purrr::reduce(bua_convert, dplyr::bind_rows)
 
-  return(uca_all)
+  666666666666
+  # add code_muni
+
+
 
 }
-
 
 # run function ------------------------------------------------------------
 

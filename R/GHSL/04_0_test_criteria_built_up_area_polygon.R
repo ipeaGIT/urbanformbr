@@ -32,11 +32,6 @@ ghsl_built_dir <- "//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/BU
 
 ### PROJECTION: O QUE FAZER? fazer projecao antes ou depois de extrair o valor?
 
-### CLASSIFICACAO: QUAL CRITERIO? qual criterio (em termos quant.) de area
-# construida para classifica-la como "centro urbano" (e com isso obter..
-# ..o poligono de area construida de cada ano)
-
-
 # * 1.1 define files ------------------------------------------------------
 
 files_preliminary <- dir(
@@ -228,10 +223,12 @@ f_preliminary(input = files_preliminary)
 
 # * 2.1 define files ------------------------------------------------------
 
-input <- dir(
+files_compare <- dir(
   "//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/BUILT/UCA/",
   pattern = "(2014).*\\.tif$"
 )
+
+#input <- files_compare
 
 # * 2.2 define function ---------------------------------------------------
 
@@ -263,7 +260,7 @@ f_compare <- function(){
       sf::st_as_sf() %>%
       # rename first column
       dplyr::rename(bua_value = 1) %>%
-      # create columns classifying area based on cutoff values (0,25,50%)
+      # create columns classifying area based on cutoff values (10,25%)
       dplyr::mutate(
         cutoff_10 = data.table::fcase(
           bua_value >= 10, 'Construída',
@@ -749,11 +746,13 @@ f_compare <- function(){
     ,
     `:=`(
       min_diff_int = dplyr::case_when(
+        # the smaller r_diff_int the better
         r_diff_int_10 < r_diff_int_25 ~ "cutoff_10",
         T ~ 'cutoff_25'
       ),
-      min_diff_diff = dplyr::case_when(
-        r_diff_diff_10 < r_diff_diff_25 ~ "cutoff_10",
+      max_diff_diff = dplyr::case_when(
+        # the bigger r_diff_diff the better
+        r_diff_diff_10 > r_diff_diff_25 ~ "cutoff_10",
         T ~ "cutoff_25"
       )
     )
@@ -763,21 +762,23 @@ f_compare <- function(){
   table(df_inter_diff$min_diff_int)
   prop.table(table(df_inter_diff$min_diff_int))
 
-  table(df_inter_diff$min_diff_diff)
-  prop.table(table(df_inter_diff$min_diff_diff))
+  table(df_inter_diff$max_diff_diff)
+  prop.table(table(df_inter_diff$max_diff_diff))
 
 
+  # indices
+
+  # indices same cutoff
   df_inter_diff[
     ,
     `:=`(
       ind_10 = r_diff_int_10 / r_diff_diff_10,
       ind_25 = r_diff_int_25 / r_diff_diff_25
     )
-  ]
-
-  df_inter_diff[
+  ][
     ,
     `:=`(
+      # the smaller ind the better
       min_ind = dplyr::case_when(
         ind_10 < ind_25 ~ "cutoff_10",
         T ~ 'cutoff_25'
@@ -789,9 +790,17 @@ f_compare <- function(){
   table(df_inter_diff$min_ind)
   prop.table(table(df_inter_diff$min_ind))
 
-
+  # weighted means
   weighted.mean(df_inter_diff$ind_10, w = df_inter_diff$pop2015, na.rm = T)
   weighted.mean(df_inter_diff$ind_25, w = df_inter_diff$pop2015, na.rm = T)
+
+  weighted.mean(df_inter_diff$r_diff_int_10, w = df_inter_diff$pop2015, na.rm = T)
+  weighted.mean(df_inter_diff$r_diff_int_25, w = df_inter_diff$pop2015, na.rm = T)
+
+  weighted.mean(df_inter_diff$r_diff_diff_10, w = df_inter_diff$pop2015, na.rm = T)
+  weighted.mean(df_inter_diff$r_diff_diff_25, w = df_inter_diff$pop2015, na.rm = T)
+
+
 
   df_inter_diff %>%
     dplyr::mutate(
@@ -813,7 +822,7 @@ f_compare <- function(){
     #viridis::scale_fill_viridis(discrete = T, option = 'magma') +
     labs(
       x = 'Ind. 25% <br> (Diff. Inter / Diff. Sym Diff.)', y = 'Ind. 10% <br> (Diff. Inter / Diff. Sym Diff.)',
-      fill = 'Threshold minimizing <br> difference',
+      fill = 'Better cutoff',
       size = 'Population (100.000)'
     ) +
     aop_style() +
@@ -835,15 +844,6 @@ f_compare <- function(){
 
 
 
-
-# ibge footprint ----------------------------------------------------------
-
-# read urban footprint ibge
-ibge <- read_urban_area(year=2015, simplified = F)
-ibge$area <- as.numeric(st_area(ibge))/1000000
-
-area_urb_ibge <- setDT(ibge)[, .(area_km2 = sum(area)), by=code_muni]
-
 # * 2.3 run function ------------------------------------------------------
-
+f_compare(input = files_compare)
 
