@@ -1,7 +1,7 @@
 # description -------------------------------------------------------------
 
 # this script saves polygons for each urban concentration areas based on built-up
-#..area percentage defined at script 04-0 (i.e. above 25% built-up area)
+#..area percentage defined at script 04-0 (i.e. built-up area >= 25%)
 # these polygons for built-up area are defined as "urban extent" and will be used
 #..to compare urban expansion in terms of increase in density and urban footprint
 
@@ -17,6 +17,7 @@ ghsl_built_dir <- "//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/BU
 years <-c('1975','1990','2000','2014')
 files <- purrr::map(years, ~dir(ghsl_built_dir, pattern = .))
 
+# APAGAR DEPOIS
 input <- files[[1]]
 
 # define function ---------------------------------------------------------------
@@ -26,7 +27,7 @@ f_create_polygon <- function(){
   bua_uca <- purrr::map(input, ~ raster::raster(paste0(ghsl_built_dir, .)))
 
   # extract the year
-  #anos <- purrr::map_chr(input, ~ stringr::str_extract(., "(?<=LDS)[0-9]{4}"))
+  anos <- purrr::map_chr(input, ~ stringr::str_extract(., "(?<=LDS)[0-9]{4}"))
 
   # extract uca name
   uca_name <- purrr::map_chr(input, ~ stringr::str_extract(., "(?<=LDS[\\d]{4}_).+(?=_R2)"))
@@ -38,6 +39,14 @@ f_create_polygon <- function(){
   names(bua_uca) <- uca_name
 
   # * function raster polygons and classify -----------------------------------
+
+
+  ### ucas que nao tem pelo menos 25% de area construida
+  # porto_seguro           : max(bua_value) = 24.1514
+  # "santa_cruz_do_sul_rs" : max(bua_value) = 13.5358
+  # "sao_mateus"           : max(bua_value) = 21.9886
+
+
 
   f_raster_pol_class <- function(bua_raster){
 
@@ -83,7 +92,7 @@ f_create_polygon <- function(){
   # reproject crs
   bua_convert <- purrr::map(bua_convert, ~sf::st_transform(., crs = 4326))
 
-  # filter built-up area
+  # filter built-up area (this polygon is the `urban extent`)
   bua_convert <- purrr::map(bua_convert,
                             ~dplyr::filter(., .$cutoff_25 == 'Construída'))
 
@@ -97,16 +106,57 @@ f_create_polygon <- function(){
     )
   )
 
-  bua_convert <- purrr::map2(
-    .x = bua_convert, .y = nomes, function(x,y)
-      purrr::map(.x = x, ~dplyr::mutate(., name_muni = y))
+
+  # read urban shapes saved at `urban_shapes.R` to get code_muni
+  urban_shapes <- readr::read_rds('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/urban_area_shapes/urban_area_pop_100000_dissolved.rds') %>%
+    sf::st_drop_geometry() %>%
+    data.table::setDT()
+
+  teste <- urban_shapes %>%
+    dplyr::select(code_urban_concentration, name_uca_case) %>%
+    split(., .$name_uca_case)
+
+
+  teste <- purrr::map2(
+    bua_convert,
+    teste,
+    function(x,y)
+      dplyr::left_join(
+        x, y,
+        by = c('name_muni' = 'name_uca_case')
+      )
   )
 
-  # reduce list into df
-  bua_reduce <- purrr::reduce(bua_convert, dplyr::bind_rows)
 
-  666666666666
-  # add code_muni
+  6666666666
+  # entender os class de geometry nos polygons e como juntar as listas
+
+  teste2 <- purrr::map(teste, ~sf::st_cast(., 'MULTIPOLYGON'))
+
+
+  teste3 <- data.table::rbindlist(teste2)
+
+  teste <- purrr::map(teste, ~sf::as_Spatial(., cast = T))
+
+
+  teste2 <- purrr::map(teste, sf::st_drop_geometry)
+
+  teste2 <- data.table::rbindlist(teste)
+
+    purrr::reduce(., data.table::rbindlist)
+  teste2 <- purrr::reduce(teste, data.table::rbindlist)
+
+  # reduce list into df
+  bua_reduce_bindrows <- bind_rows(bua_convert)
+  bua_reduce_bindrows <- purrr::reduce(bua_convert, dplyr::bind_rows)
+  bua_reduce <- purrr::reduce(bua_convert, rbind)
+
+  # add code_muni to urban extent
+  bua_reduce <- dplyr::left_join(
+    bua_reduce,
+    urban_shapes %>% select(code_urban_concentration, name_uca_case),
+    by = c('name_muni' = 'name_uca_case')
+    )
 
 
 
