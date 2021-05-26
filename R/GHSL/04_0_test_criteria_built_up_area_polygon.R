@@ -568,6 +568,102 @@ f_compare <- function(){
     )
 
 
+
+  # * check number of pixels meeting cutoff criteria ------------------------
+
+
+  ### ucas que nao tem pelo menos 25% de area construida
+  # porto_seguro           : max(bua_value) = 24.1514
+  # "santa_cruz_do_sul_rs" : max(bua_value) = 13.5358
+  # "sao_mateus"           : max(bua_value) = 21.9886\
+
+  # check how many pixels in each city have at least 20% built up area
+  f_check <- function(bua_raster){
+
+    bua_check <- bua_raster %>%
+      # convert raster to polygon (sp)
+      raster::rasterToPolygons() %>%
+      # transform to sf
+      sf::st_as_sf() %>%
+      # rename first column
+      dplyr::rename(bua_value = 1)
+  }
+
+  bua_check <- purrr::map(bua_uca, f_check)
+
+  # count how many pixels have at least 20% built-up area (all cities)
+  check10 <- purrr::map(
+    bua_check,
+    ~length(which(.$bua_value >= 10))
+  )
+  check10 <- data.table::data.table(
+    name_muni = names(check10),
+    check10 = as.integer(check10)
+  )
+  check15 <- purrr::map(
+    bua_check,
+    ~length(which(.$bua_value >= 15))
+  )
+  check15 <- data.table::data.table(
+    name_muni = names(check15),
+    check15 = as.integer(check15)
+  )
+  check20 <- purrr::map(
+    bua_check,
+    ~length(which(.$bua_value >= 20))
+  )
+  check20 <- data.table::data.table(
+    name_muni = names(check20),
+    check20 = as.integer(check20)
+  )
+  check25 <- purrr::map(
+    bua_check,
+    ~length(which(.$bua_value >= 25))
+  )
+  check25 <- data.table::data.table(
+    name_muni = names(check25),
+    check25 = as.integer(check25)
+  )
+  check <- dplyr::left_join(
+    check10, check15
+  ) %>%
+    dplyr::left_join(check20) %>%
+    dplyr::left_join(check25)
+
+  check <- check %>%
+    dplyr::mutate(
+      classific_20 = dplyr::case_when(
+        check20 == 0 ~ "0 pixels",
+        check20 >= 1 & check20 < 5 ~ "1 a 4 pixels",
+        check20 >= 5 & check20 < 10 ~ "5 a 9 pixels",
+        check20 >= 10 & check20 < 20 ~ "10 a 19 pixels",
+        T ~ "20+ pixels"
+      ),
+      classific_25 = dplyr::case_when(
+        check25 == 0 ~ "0 pixels",
+        check25 >= 1 & check25 < 5 ~ "1 a 4 pixels",
+        check25 >= 5 & check25 < 10 ~ "5 a 9 pixels",
+        check25 >= 10 & check25 < 20 ~ "10 a 19 pixels",
+        T ~ "20+ pixels"
+      )
+    ) %>%
+    dplyr::mutate(
+      classific_20 = factor(
+        classific_20,
+        levels = c("0 pixels","1 a 4 pixels","5 a 9 pixels","10 a 19 pixels","20+ pixels")
+      ),
+      classific_25 = factor(
+        classific_25,
+        levels = c("0 pixels","1 a 4 pixels","5 a 9 pixels","10 a 19 pixels","20+ pixels")
+      )
+    )
+  table(check$classific_20)
+  prop.table(table(check$classific_20)) * 100
+
+  table(check$classific_25)
+  prop.table(table(check$classific_25)) * 100
+
+
   # * check spatial interception different cutoffs-ibge ---------------------
 
   # drop unnecessary column
