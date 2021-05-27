@@ -249,7 +249,10 @@ f_compare <- function(){
   # rename each raster in the list
   names(bua_uca) <- uca_name
 
-  # * function raster polygons and classify -----------------------------------
+
+  # * compare relative difference between cutoff and ibge areas -------------
+
+    # * * function raster polygons and classify -----------------------------------
 
   f_raster_pol_class <- function(bua_raster){
 
@@ -260,11 +263,11 @@ f_compare <- function(){
       sf::st_as_sf() %>%
       # rename first column
       dplyr::rename(bua_value = 1) %>%
-      # create columns classifying area based on cutoff values (10,25%)
+      # create columns classifying area based on cutoff values (20,25%)
       dplyr::mutate(
-        cutoff_10 = data.table::fcase(
-          bua_value >= 10, 'Construída',
-          bua_value < 10, 'Não construída'
+        cutoff_20 = data.table::fcase(
+          bua_value >= 20, 'Construída',
+          bua_value < 20, 'Não construída'
         ),
         cutoff_25 = data.table::fcase(
           bua_value >= 25, 'Construída',
@@ -277,7 +280,7 @@ f_compare <- function(){
   # run for every uca
   bua_pol <- purrr::map(bua_uca, f_raster_pol_class)
 
-  # * convert crs polygon and summarise -------------------------------------
+  # * * convert crs polygon and summarise -------------------------------------
   f_group_summarise <- function(base, variavel){
 
     variavel <- rlang::ensym(variavel)
@@ -289,7 +292,7 @@ f_compare <- function(){
   }
 
   # create column name vector
-  vetor <- paste0('cutoff_',c(10,25))
+  vetor <- paste0('cutoff_',c(20,25))
   # generate converted list of sf df
 
   bua_convert <- map(bua_pol,
@@ -298,14 +301,14 @@ f_compare <- function(){
 
   f_names <- function(base){
 
-    rlang::set_names(base, paste0('cutoff_',c(10,25)))
+    rlang::set_names(base, paste0('cutoff_',c(20,25)))
 
   }
 
   # rename list elements
   bua_convert <- purrr::map(bua_convert, ~f_names(.))
 
-  # * reproject crs ---------------------------------------------------------
+  # * * reproject crs ---------------------------------------------------------
   # reproject crs
   bua_convert <- purrr::modify_depth(
     .x = bua_convert, .depth = 2, ~ sf::st_transform(., crs = 4326)
@@ -336,7 +339,7 @@ f_compare <- function(){
       .x = ., .where =  1,
       ~dplyr::mutate(
         .data = .,
-        bua_area_10 = units::set_units(sf::st_area(.), value = km^2)
+        bua_area_20 = units::set_units(sf::st_area(.), value = km^2)
         )
       )
   )
@@ -353,12 +356,9 @@ f_compare <- function(){
   )
 
 
-
-  # * create df with footprint areas ----------------------------------------
-
     # * * create df bua areas ghsl --------------------------------------------
 
-  # footprint areas: bua_area_10, bua_area_25, ibge_area
+  # footprint areas: bua_area_20, bua_area_25, ibge_area
   # drop geometry
   df_bua_areas <- purrr::modify_depth(
     .x = bua_convert, .depth = 2, ~sf::st_drop_geometry(.)
@@ -425,7 +425,7 @@ f_compare <- function(){
   df_bua_areas[
     ,
     `:=`(
-      diff_area_10 = as.double((abs(bua_area_ibge - bua_area_10)) / (bua_area_ibge)),
+      diff_area_20 = as.double((abs(bua_area_ibge - bua_area_20)) / (bua_area_ibge)),
       diff_area_25 = as.double((abs(bua_area_ibge - bua_area_25)) / (bua_area_ibge))
     )
   ]
@@ -435,7 +435,7 @@ f_compare <- function(){
     ,
     `:=`(
       min_diff = dplyr::case_when(
-        diff_area_10 < diff_area_25 ~ "cutoff_10",
+        diff_area_20 < diff_area_25 ~ "cutoff_20",
         T ~ 'cutoff_25'
         )
       )
@@ -490,7 +490,7 @@ f_compare <- function(){
     ggplot() +
     geom_point(
       aes(
-        x = diff_area_25, y = diff_area_10,
+        x = diff_area_25, y = diff_area_20,
         fill = as.factor(name_region),
         size = pop2015,
         #shape = min_diff
@@ -502,7 +502,7 @@ f_compare <- function(){
     scale_size(range = c(1, 20)) +
     #viridis::scale_fill_viridis(discrete = T, option = 'magma') +
         labs(
-      x = 'Difference area 25%', y = 'Difference area 10%', fill = 'Region',
+      x = 'Difference area 25%', y = 'Difference area 20%', fill = 'Region',
       size = 'Population (100.000)'
     ) +
     aop_style() +
@@ -515,7 +515,7 @@ f_compare <- function(){
 
   # save plot
   ggplot2::ggsave(
-    filename = paste0('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/figures/', 'difference_cutoff_10_25_ibge_region', '.png'),
+    filename = paste0('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/figures/', 'difference_cutoff_20_25_ibge_region', '.png'),
     dpi = 300, device = 'png'
   )
 
@@ -526,7 +526,7 @@ f_compare <- function(){
     ggplot() +
     geom_point(
       aes(
-        x = diff_area_25, y = diff_area_10,
+        x = diff_area_25, y = diff_area_20,
         fill = as.factor(min_diff),
         size = pop2015,
         #shape = min_diff
@@ -538,7 +538,7 @@ f_compare <- function(){
     scale_size(range = c(1, 20)) +
     #viridis::scale_fill_viridis(discrete = T, option = 'magma') +
     labs(
-      x = 'Difference area 25%', y = 'Difference area 10%',
+      x = 'Difference area 25%', y = 'Difference area 20%',
       fill = 'Threshold minimizing <br> difference',
       size = 'Population (100.000)'
     ) +
@@ -552,13 +552,16 @@ f_compare <- function(){
 
   # save plot
   ggplot2::ggsave(
-    filename = paste0('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/figures/', 'difference_cutoff_10_25_ibge_threshold', '.png'),
+    filename = paste0('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/figures/', 'difference_cutoff_20_25_ibge_threshold', '.png'),
     dpi = 300, device = 'png'
   )
 
-  weighted.mean(df_bua_areas$diff_area_10, w = df_bua_areas$pop2015, na.rm = T)
+  weighted.mean(df_bua_areas$diff_area_20, w = df_bua_areas$pop2015, na.rm = T)
   weighted.mean(df_bua_areas$diff_area_25, w = df_bua_areas$pop2015, na.rm = T)
 
+  # check frequency (absolute and proportion)
+  table(df_bua_areas$min_diff)
+  prop.table(table(df_bua_areas$min_diff))
 
 
   # save df footprints areas
@@ -657,6 +660,10 @@ f_compare <- function(){
         levels = c("0 pixels","1 a 4 pixels","5 a 9 pixels","10 a 19 pixels","20+ pixels")
       )
     )
+
+  check <- check %>%
+    dplyr::arrange(check25, check20, check15, check10)
+
   table(check$classific_20)
   prop.table(table(check$classific_20)) * 100
 
