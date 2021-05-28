@@ -87,8 +87,10 @@ f_create_polygon_cutoff <- function(input){
 
   # * reproject crs ---------------------------------------------------------
   # reproject crs
-  bua_convert <- purrr::map(bua_convert, ~sf::st_transform(., crs = 4326))
+  #bua_convert <- purrr::map(bua_convert, ~sf::st_transform(., crs = 4326))
 
+
+  # * filter built-up area --------------------------------------------------
   # filter built-up area (this polygon is the `urban extent`)
   bua_convert <- purrr::map(bua_convert,
                             ~dplyr::filter(., .$cutoff_20 == 'Construída'))
