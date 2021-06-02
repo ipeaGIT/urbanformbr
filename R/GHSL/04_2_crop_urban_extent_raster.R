@@ -1,10 +1,9 @@
 # description -------------------------------------------------------------
 
 # this script crops and saves raster for each urban extent (saved at 04_1)
-#..containing
+#..containing, for every year:
 # i) built-up area data
 # ii) population
-#..for every year
 
 # setup -------------------------------------------------------------------
 
