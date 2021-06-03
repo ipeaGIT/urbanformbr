@@ -7,9 +7,12 @@
 # code_urban_concentration: code of the main municipality within each uca
 # name_urban_concentration: correct name of the main municipality within each uca
 # name_uca_case: name of main muni without special characters or space
+
 # the code for each municipality within each uca is also added (code_munis_uca)
 
-# run script `urban_shapes` before running this script
+# OBS:
+# run script `urban_shapes` before running this script for creating urban shapes df
+
 # this script excludes santa_cruz_do_sul_rs (4316808) excluded at GHSL/04_1 for not
 #..having 20%+ built area in 1975 (i.e. not meeting urban extent cutoff criteria)
 
@@ -18,7 +21,7 @@
 source('R/setup.R')
 
 # define function ---------------------------------------------------------
-funcao <- function(){
+f_prepare_df <- function(){
 
   # * read urban shapes -----------------------------------------------------
   urban_shapes <- readr::read_rds('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/urban_area_shapes/urban_area_pop_100000_dissolved.rds')
@@ -39,12 +42,19 @@ funcao <- function(){
 
   uca <- uca %>%
     dplyr::group_by(code_urban_concentration) %>%
-    dplyr::summarise(code_muni_uca = paste(code_muni, collapse = ","))
+    dplyr::summarise(code_muni_uca = list(code_muni))
+
+  #uca <- uca[
+  #  ,
+  #  lapply(.SD, list),
+  #  by = .(code_urban_concentration),
+  #  .SDcols = c("code_muni")
+  #]
 
 
   # * join data from uca to urban shapes ------------------------------------
   urban_shapes[
-    setDT(uca),
+    data.table::setDT(uca),
     `:=`(
       code_muni_uca = i.code_muni_uca
     ),
@@ -64,5 +74,5 @@ funcao <- function(){
 }
 
 # run function ------------------------------------------------------------
-
+f_prepare_df()
 
