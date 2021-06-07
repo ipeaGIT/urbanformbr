@@ -38,5 +38,5 @@ den2 <- den2[,.(UF,  ANO, TOTAL_AUTOS, TOTAL_MOTOS,
                 POP, AUTOS_PER_POP, MOTOS_PER_POP,
                 MOTO_RATE, code_urban_concentration)]
 ## save
-readr::write_rds(den2,"../../data/urbanformbr/pca_regression_df/fleet.rds",
+readr::write_rds(den2,"../../data/urbanformbr/pca_regression_df/fleet_and_pop.rds",
                  compress = "gz")
