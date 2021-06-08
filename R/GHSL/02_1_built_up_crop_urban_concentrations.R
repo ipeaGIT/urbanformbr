@@ -1,8 +1,9 @@
 # description -------------------------------------------------------------
 
 # this script
-# i. reads data from GHS-BUILT-BRASIL (1km resolution) saved previously
-# ii. filter data from urban concentration areas by IBGE (uca)
+# i. reads buil-up area raster data from GHS-BUILT-BRASIL (1km resolution)
+#..saved previously
+# ii. crops spatially using shapes from urban concentration areas by IBGE (uca)
 ## devtools::install_github("ipeaGIT/geobr", subdir = "r-package")
 # iii. saves raster for each uca and each year
 
