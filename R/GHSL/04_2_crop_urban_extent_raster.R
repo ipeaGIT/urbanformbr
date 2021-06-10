@@ -34,7 +34,7 @@ files_pop <- purrr::map(years, ~dir(ghsl_pop_dir, pattern = ., full.names = T))
 future::plan(future::multicore)
 
 
-# * built -----------------------------------------------------------------
+# * function built -----------------------------------------------------------------
 
 f_crop_raster_cutoff_built <- function(input){
 
@@ -105,7 +105,7 @@ f_crop_raster_cutoff_built <- function(input){
 }
 
 
-# * pop -------------------------------------------------------------------
+# * function pop -------------------------------------------------------------------
 
 f_crop_raster_cutoff_pop <- function(input){
 
