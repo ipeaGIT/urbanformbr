@@ -42,7 +42,7 @@ f_create_polygon_cutoff <- function(input){
 
   # obs: uca that do not meet 20% cutoff criteria in 1975
   # santa_cruz_do_sul_rs : max(bua_value) = 13.5358
-  # remove santa_cruz_do_sul_rs
+  # remove / exclude santa_cruz_do_sul_rs
   bua_uca$santa_cruz_do_sul_rs <- NULL
 
   f_raster_pol_class <- function(bua_raster){
