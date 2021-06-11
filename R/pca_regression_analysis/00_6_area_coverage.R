@@ -3,10 +3,13 @@
 # this script estimates urban extent area considering vectors files generated
 # at R/GHSL/04_1 and R/GHSL/04_2.
 
+# CORRIGIR DESCRICAO -> EXPLICAR MEDIDAS E CONCEITOS
+
 # measures estimated:
 # area urban extent 1975
 # area urban extent 2014
 # area urban expansion (difference between urban extent 2014 and 1975)
+# expansion area: sym_difference urban extent 1975-2014 (intersection inverse)
 
 # these measures are then added to pca_regression_df:
 # data/urbanformbr/pca_regression_df.rds
@@ -44,116 +47,64 @@ files_uca_complete_raster[[2]] <- files_uca_complete_raster[[2]][!str_detect(fil
 
 ### APAGAR
 input_polygon <- files_built_polygon
-input_raster <- files_urban_extent_raster
+input_urban_extent_raster <- files_urban_extent_raster
+input_uca_complete_raster <- files_uca_complete_raster
 
 # define function ---------------------------------------------------------
 
-####### MUDAR INPUTS DAS FUNCOES. ADICIONAR INPUT RASTER COMPLETE?
+funcao <- function(input_polygon, input_urban_extent_raster, input_uca_complete_raster){
 
-funcao <- function(input_polygon, input_raster){
+  # read & clean data -------------------------------------------------------------
 
+  # * read polygon --------------------------------------------------------
 
-  # * read urban extent polygons --------------------------------------------
+  # urban extent polygon
+  polygon_built_area <- purrr::map(input_polygon, ~readr::read_rds(.))
+  names(polygon_built_area) <- paste0('urban_extent_', years)
 
-  bua_pol <- purrr::map(input_polygon, ~readr::read_rds(.))
-  names(bua_pol) <- paste0('urban_extent_', years)
+  polygon_built_area <- purrr::map(polygon_built_area, ~split(., .$name_uca_case))
+  # * * clip expansion polygon ------------------------------------------------
 
-  bua_pol <- purrr::map(bua_pol, ~split(., .$name_uca_case))
-
-  # * estimate area value (km2) ----------------------------------
-  bua_pol$urban_extent_1975 <- purrr::map(
-    bua_pol$urban_extent_1975,
-    ~dplyr::mutate(., area_urban_extent_1975 = units::set_units(sf::st_area(.), value = km^2))
-  )
-
-  bua_pol$urban_extent_2014 <- purrr::map(
-    bua_pol$urban_extent_2014,
-    ~dplyr::mutate(., area_urban_extent_2014 = units::set_units(sf::st_area(.), value = km^2))
-  )
-
-
-  # * expansion area --------------------------------------------------------
-
-  # * * polygon ----------------------------------------------
-
-  expansion_area_polygon <- purrr::modify_in(
-    .x = bua_pol, .where = 1,
+  polygon_expansion_area <- purrr::modify_in(
+    .x = polygon_built_area, .where = 1,
     ~purrr::map(
       .x = ., ~dplyr::select(., code_muni,name_uca_case,geometry)
-      )
     )
-  expansion_area_polygon <- purrr::modify_in(
-    .x = expansion_area_polygon, .where = 2,
+  )
+  polygon_expansion_area <- purrr::modify_in(
+    .x = polygon_expansion_area, .where = 2,
     ~purrr::map(
       .x = ., ~dplyr::select(., geometry)
-      )
     )
+  )
 
-  expansion_area_polygon <- purrr::map2(
-    .x = expansion_area_polygon$urban_extent_1975,
-    .y = expansion_area_polygon$urban_extent_2014,
+  polygon_expansion_area <- purrr::map2(
+    .x = polygon_expansion_area$urban_extent_1975,
+    .y = polygon_expansion_area$urban_extent_2014,
     function(x,y)
       sf::st_sym_difference(x = x, y =  y)
   )
 
+  # * read raster ---------------------------------------------------------
 
-  # * * value ------------------------------------------------
-  # expansion area via subtraction (area_urban_extent_2014 - area_urban_extent_1975)
+  # * * urban extent raster -----------------------------------------------
 
-  horizontal_expansion_area_df <- purrr::map(
-    bua_pol,
-    ~purrr::map(., ~sf::st_drop_geometry(.))
-  )
-
-  horizontal_expansion_area_df <- purrr::map(horizontal_expansion_area_df, ~purrr::reduce(., dplyr::bind_rows))
-  horizontal_expansion_area_df <- dplyr::left_join(
-    horizontal_expansion_area_df$urban_extent_1975,
-    horizontal_expansion_area_df$urban_extent_2014 %>% dplyr::select(-name_uca_case),
-    by = 'code_muni'
-  )
-
-  data.table::setDT(horizontal_expansion_area_df)[
-    ,
-    `:=`(
-      # expansion area size in km2
-      area_expansion = area_urban_extent_2014 - area_urban_extent_1975,
-      # ratio between urban extent 2014 and urban extent 1975
-      urban_extent_ratio = as.double(area_urban_extent_2014 / area_urban_extent_1975),
-      # horizontal expansion rate of growth 1975-2014
-      horizontal_expansion = as.double( (area_urban_extent_2014 - area_urban_extent_1975) / area_urban_extent_1975 )
-    )
-  ]
-
-  # check any null expansion area (uca that did not expand 1975-2014)
-  # itapipoca expansion area equals to zero
-  horizontal_expansion_area_df[area_expansion == 0]
-  # 2306405 (itapipoca) did not expand horizontally 1975-2014
-  ##### DECIDE WHAT TO DO
-
-
-
-
-
-
-  # * read raster -----------------------------------------------------------
-  # read all raster files from one year in a list
-  #bua_raster <- purrr::map(input_raster, ~ raster::raster(paste0(.)))
-  bua_raster <- purrr::map(
-    input_raster,
+  raster_urban_extent <- purrr::map(
+    input_urban_extent_raster,
     ~purrr::map(., ~raster::raster(.))
-    )
+  )
 
-  names(bua_raster) <- paste0('urban_extent_', c(1975,2014))
+  names(raster_urban_extent) <- paste0('urban_extent_', c(1975,2014))
 
   # extract year
   anos <- purrr::map(
-    input_raster,
+    input_urban_extent_raster,
     ~purrr::map_chr(., ~stringr::str_extract(., "(?<=LDS)[0-9]{4}"))
   )
 
   # extract uca name
   uca_name <- purrr::map(
-    input_raster,
+    input_urban_extent_raster,
     ~purrr::map_chr(., ~ stringr::str_extract(., "(?<=cutoff_20_).+(?=_1K_raster)"))
   )
 
@@ -161,12 +112,128 @@ funcao <- function(input_polygon, input_raster){
   #uca_name <- paste0(uca_name,'_',anos)
 
   # rename each raster in the list
-  names(bua_raster$urban_extent_1975) <- uca_name[[1]]
-  names(bua_raster$urban_extent_2014) <- uca_name[[2]]
+  names(raster_urban_extent$urban_extent_1975) <- uca_name[[1]]
+  names(raster_urban_extent$urban_extent_2014) <- uca_name[[2]]
 
 
-  # * saturation difference -------------------------------------------------
-  # saturation = built up area / urban extent
+  # * * complete uca raster -----------------------------------------------
+  # to estimate saturation in expansion area in 1975 & 2014, must use complete..
+  #..uca raster 1975, since masked raster1975 will not contain all pixels from..
+  #..the 2014 polygon.
+  raster_complete <- purrr::map(
+    files_uca_complete_raster,
+    ~purrr::map(., ~raster::raster(.))
+  )
+
+  names(raster_complete) <- paste0('uca_complete_raster_', c(1975,2014))
+
+  # extract uca name
+  uca_name <- purrr::map(
+    files_uca_complete_raster,
+    ~purrr::map_chr(., ~ stringr::str_extract(., "(?<=LDS[\\d]{4}_).+(?=_R2018A)"))
+  )
+
+  # rename each raster in the list
+  names(raster_complete$uca_complete_raster_1975) <- uca_name[[1]]
+  names(raster_complete$uca_complete_raster_2014) <- uca_name[[2]]
+
+  # * * expansion raster ----------------------------------------------------
+
+    # REMOVE itapipoca which expansion area equals to zero
+  raster_expansion <- raster_complete
+  raster_expansion$uca_complete_raster_1975$itapipoca <- NULL
+  raster_expansion$uca_complete_raster_2014$itapipoca <- NULL
+  polygon_expansion_area$itapipoca <- NULL
+
+  # reorder list to match
+  raster_expansion$uca_complete_raster_1975 <-
+    raster_expansion$uca_complete_raster_1975[
+      names(polygon_expansion_area)
+    ]
+  raster_expansion$uca_complete_raster_2014 <-
+    raster_expansion$uca_complete_raster_2014[
+      names(polygon_expansion_area)
+    ]
+
+  raster_expansion$uca_complete_raster_1975 <- purrr::map2(
+    .x = raster_expansion$uca_complete_raster_1975, .y = polygon_expansion_area,
+    ~raster::crop(.x, .y)
+  )
+  raster_expansion$uca_complete_raster_2014 <- purrr::map2(
+    .x = raster_expansion$uca_complete_raster_2014, .y = polygon_expansion_area,
+    ~raster::crop(.x, .y)
+  )
+
+  #erro <- purrr::map2(
+  #  .x = raster_expansion$uca_complete_raster_1975, .y = polygon_expansion_area,
+  #  purrr::possibly(~raster::crop(.x, .y), 'erro')
+  #)
+  #filter errors
+  #map_chr(erro, class) %>% unique()
+  #teste <- purrr::keep(erro, inherits, 'character')
+
+  raster_expansion$uca_complete_raster_1975 <- purrr::map2(
+    .x = raster_expansion$uca_complete_raster_1975, .y = polygon_expansion_area,
+    ~raster::mask(x = .x, mask =  .y)
+  )
+  raster_expansion$uca_complete_raster_2014 <- purrr::map2(
+    .x = raster_expansion$uca_complete_raster_2014, .y = polygon_expansion_area,
+    ~raster::mask(x = .x, mask =  .y)
+  )
+
+
+  # estimate metrics -------------------------------------------------------
+
+  # * land size area ------------------------------------------------------
+
+  polygon_built_area$urban_extent_1975 <- purrr::map(
+    polygon_built_area$urban_extent_1975,
+    ~dplyr::mutate(., urban_extent_size_1975 = units::set_units(sf::st_area(.), value = km^2))
+  )
+
+  polygon_built_area$urban_extent_2014 <- purrr::map(
+    polygon_built_area$urban_extent_2014,
+    ~dplyr::mutate(., urban_extent_size_2014 = units::set_units(sf::st_area(.), value = km^2))
+  )
+
+  # expansion area via subtraction (urban_extent_size_2014 - urban_extent_size_1975)
+
+  df_horizontal_expansion_area <- purrr::map(
+    polygon_built_area,
+    ~purrr::map(., ~sf::st_drop_geometry(.))
+  )
+
+  df_horizontal_expansion_area <- purrr::map(
+    df_horizontal_expansion_area,
+    ~purrr::reduce(., dplyr::bind_rows)
+    )
+
+  df_horizontal_expansion_area <- dplyr::left_join(
+    df_horizontal_expansion_area$urban_extent_1975,
+    df_horizontal_expansion_area$urban_extent_2014 %>% dplyr::select(-name_uca_case),
+    by = 'code_muni'
+  )
+
+  data.table::setDT(df_horizontal_expansion_area)[
+    ,
+    `:=`(
+      # expansion area size in km2
+      expansion_area_size = urban_extent_size_2014 - urban_extent_size_1975,
+      # ratio between urban extent 2014 and urban extent 1975
+      urban_extent_size_ratio = as.double(urban_extent_size_2014 / urban_extent_size_1975),
+      # horizontal expansion rate of growth 1975-2014
+      urban_extent_horizontal_growth = as.double( (urban_extent_size_2014 - urban_extent_size_1975) / urban_extent_size_1975 )
+    )
+  ]
+
+  # check any null expansion area (uca that did not expand 1975-2014)
+  # itapipoca expansion area equals to zero
+  df_horizontal_expansion_area[expansion_area_size == 0]
+  # 2306405 (itapipoca) did not expand horizontally 1975-2014
+  ##### DECIDE WHAT TO DO
+
+  # * land coverage: saturation --------------------------------------------
+  #  land coverage = saturation = (built up area / urban extent)
   # difference between average saturation 1975-2014 in the desired areas:
   # consolidated area; expansion area; total area
 
@@ -184,7 +251,8 @@ funcao <- function(input_polygon, input_raster){
 
   }
 
-  # * * consolidated area ---------------------------------------------------
+  # * * consolidated area -------------------------------------------------
+
   # consolidated area = urban extent 1975
   # two options:
 
@@ -199,141 +267,80 @@ funcao <- function(input_polygon, input_raster){
 
   # ARE THESE TWO OPERATIONS THE SAME?
 
-  consolidated <- bua_raster
+  consolidated <- raster_urban_extent
+
   consolidated$urban_extent_2014 <- purrr::map2(
-    .x = consolidated$urban_extent_2014, .y = bua_pol$urban_extent_1975,
+    .x = consolidated$urban_extent_2014, .y = polygon_built_area$urban_extent_1975,
     function(x,y)
       raster::crop(x = x, y = y)
   )
 
   consolidated$urban_extent_2014 <- purrr::map2(
-    .x = consolidated$urban_extent_2014, .y = bua_pol$urban_extent_1975,
+    .x = consolidated$urban_extent_2014, .y = polygon_built_area$urban_extent_1975,
     function(x,y)
       raster::mask(x = x, mask = y)
   )
 
-  consolidated_area_df <- purrr::map(
+  df_consolidated_area <- purrr::map(
     consolidated,
     ~purrr::map(., ~raster::cellStats(., mean))
   )
 
-  consolidated_area_df <- data.table::data.table(
-    name_uca_case = names(consolidated_area_df$urban_extent_1975),
-    saturation_consolidated_area_1975 = as.double(consolidated_area_df$urban_extent_1975),
-    saturation_consolidated_area_2014 = as.double(consolidated_area_df$urban_extent_2014)
+  df_consolidated_area <- data.table::data.table(
+    name_uca_case = names(df_consolidated_area$urban_extent_1975),
+    saturation_consolidated_area_1975 = as.double(df_consolidated_area$urban_extent_1975),
+    saturation_consolidated_area_2014 = as.double(df_consolidated_area$urban_extent_2014)
   )
-  consolidated_area_df[
+
+  df_consolidated_area[
     ,
     `:=`(
       saturation_consolidated_diff = saturation_consolidated_area_2014 - saturation_consolidated_area_1975
     )
   ]
 
-
-  # * * expansion area ------------------------------------------------------
-  # expansion area: sym_difference urban extent 1975-2014 (intersection inverse)
-
-  # to estimate saturation in expansion area in 1975 & 2014, must use complete..
-  #..uca raster 1975, since masked raster1975 will not contain all pixels from..
-  #..the 2014 polygon.
-  complete_raster <- purrr::map(
-    files_uca_complete_raster,
-    ~purrr::map(., ~raster::raster(.))
-  )
-
-  names(complete_raster) <- paste0('uca_complete_raster_', c(1975,2014))
-
-  # extract uca name
-  uca_name <- purrr::map(
-    files_uca_complete_raster,
-    ~purrr::map_chr(., ~ stringr::str_extract(., "(?<=LDS[\\d]{4}_).+(?=_R2018A)"))
-  )
-
-  # rename each raster in the list
-  names(complete_raster$uca_complete_raster_1975) <- uca_name[[1]]
-  names(complete_raster$uca_complete_raster_2014) <- uca_name[[2]]
-
-  # REMOVE itapipoca which expansion area equals to zero
-  expansion_raster <- complete_raster
-  expansion_raster$uca_complete_raster_1975$itapipoca <- NULL
-  expansion_raster$uca_complete_raster_2014$itapipoca <- NULL
-  expansion_area_polygon$itapipoca <- NULL
-
-  # reorder list to match
-  expansion_raster$uca_complete_raster_1975 <-
-    expansion_raster$uca_complete_raster_1975[
-      names(expansion_area_polygon)
-      ]
-  expansion_raster$uca_complete_raster_2014 <-
-    expansion_raster$uca_complete_raster_2014[
-      names(expansion_area_polygon)
-    ]
-
-  expansion_raster$uca_complete_raster_1975 <- purrr::map2(
-    .x = expansion_raster$uca_complete_raster_1975, .y = expansion_area_polygon,
-    ~raster::crop(.x, .y)
-  )
-  expansion_raster$uca_complete_raster_2014 <- purrr::map2(
-    .x = expansion_raster$uca_complete_raster_2014, .y = expansion_area_polygon,
-    ~raster::crop(.x, .y)
-  )
-
-  #erro <- purrr::map2(
-  #  .x = expansion_raster$uca_complete_raster_1975, .y = expansion_area_polygon,
-  #  purrr::possibly(~raster::crop(.x, .y), 'erro')
-  #)
-  #filter errors
-  #map_chr(erro, class) %>% unique()
-  #teste <- purrr::keep(erro, inherits, 'character')
-
-  expansion_raster$uca_complete_raster_1975 <- purrr::map2(
-    .x = expansion_raster$uca_complete_raster_1975, .y = expansion_area_polygon,
-    ~raster::mask(x = .x, mask =  .y)
-  )
-  expansion_raster$uca_complete_raster_2014 <- purrr::map2(
-    .x = expansion_raster$uca_complete_raster_2014, .y = expansion_area_polygon,
-    ~raster::mask(x = .x, mask =  .y)
-  )
-
+  # * * expansion area ----------------------------------------------------
   # extract mean value
-  expansion_area_df <- purrr::map(
-    expansion_raster,
+  df_expansion_area <- purrr::map(
+    raster_expansion,
     ~purrr::map(., ~raster::cellStats(., mean))
   )
 
-  expansion_area_df <- data.table::data.table(
-    name_uca_case = names(expansion_area_df$uca_complete_raster_1975),
-    saturation_expansion_area_1975 = as.double(expansion_area_df$uca_complete_raster_1975),
-    saturation_expansion_area_2014 = as.double(expansion_area_df$uca_complete_raster_2014)
+  df_expansion_area <- data.table::data.table(
+    name_uca_case = names(df_expansion_area$uca_complete_raster_1975),
+    saturation_expansion_area_1975 = as.double(df_expansion_area$uca_complete_raster_1975),
+    saturation_expansion_area_2014 = as.double(df_expansion_area$uca_complete_raster_2014)
   )
-  expansion_area_df[
+  df_expansion_area[
     ,
     `:=`(
       saturation_expansion_diff = saturation_expansion_area_2014 - saturation_expansion_area_1975
     )
   ]
 
-
-  # * * total area ----------------------------------------------------------
-
+  # * * total area --------------------------------------------------------
   # UTILIZAR
   # AREA TOTAL CONSIDERANDO POLIGONO EM CADA ANO (i.e. poligonos totais variam)
   # area poligono 1975 e valores raster 1975 e area poligono 2014 e raster 2014
   # OU
   # AREA TOTAL CONSIDERANDO O MESMO POLIGONO (ex.: poligono total 1975)
 
+
+  #### CALCULAR OS DOIS
+
   # saturation total area for each year (considering total urban extent in each year)
-  total_area <- purrr::map(
-    bua_raster,
+  df_total_area <- purrr::map(
+    raster_urban_extent,
     ~purrr::map(., ~raster::cellStats(., mean))
   )
 
-  total_area <- data.table::data.table(
-    name_uca_case = names(total_area$urban_extent_1975),
-    saturation_total_area_1975 = as.double(total_area$urban_extent_1975),
-    saturation_total_area_2014 = as.double(total_area$urban_extent_2014)
+  df_total_area <- data.table::data.table(
+    name_uca_case = names(df_total_area$urban_extent_1975),
+    saturation_total_area_1975 = as.double(df_total_area$urban_extent_1975),
+    saturation_total_area_2014 = as.double(df_total_area$urban_extent_2014)
   )
-  total_area[
+
+  df_total_area[
     ,
     `:=`(
       saturation_total_area_diff = saturation_total_area_2014 - saturation_total_area_1975
@@ -341,26 +348,44 @@ funcao <- function(input_polygon, input_raster){
   ]
 
 
+66666666666666666 COMPLETAR CALCULO
+  ## TOTAL AREA CONSIDERING FIXED TOTAL AREA (= urban extent 2014)
+  # raster 1975 & raster 2014
+  # total area polygon 2014
 
-  # * merge dfs -------------------------------------------------------------
-  merged_df <- dplyr::left_join(
-    horizontal_expansion_area_df,
-    total_area,
+
+  consolidated$urban_extent_2014 <- purrr::map2(
+    .x = consolidated$urban_extent_2014, .y = polygon_built_area$urban_extent_1975,
+    function(x,y)
+      raster::crop(x = x, y = y)
+  )
+
+  consolidated$urban_extent_2014 <- purrr::map2(
+    .x = consolidated$urban_extent_2014, .y = polygon_built_area$urban_extent_1975,
+    function(x,y)
+      raster::mask(x = x, mask = y)
+  )
+
+
+  # merge dfs -------------------------------------------------------------
+  df_merged <- dplyr::left_join(
+    df_horizontal_expansion_area,
+    df_total_area,
     by = 'name_uca_case'
   ) %>%
     dplyr::left_join(
-      consolidated_area_df,
+      df_consolidated_area,
       by = 'name_uca_case'
     ) %>%
     dplyr::left_join(
-      expansion_area_df,
+      df_expansion_area,
       by = 'name_uca_case'
     )
 
 
-  # * save area rds ---------------------------------------------------------
+  # save area rds ---------------------------------------------------------
   saveRDS(
-    object = merged_df,
+    object = df_merged,
     file = '//storage6/usuarios/Proj_acess_oport/data/urbanformbr/pca_regression_df/area.rds',
     compress = 'xz'
   )
