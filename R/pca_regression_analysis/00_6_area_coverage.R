@@ -145,7 +145,7 @@ funcao <- function(input_polygon, input_urban_extent_raster, input_uca_complete_
   raster_expansion$uca_complete_raster_2014$itapipoca <- NULL
   polygon_expansion_area$itapipoca <- NULL
 
-  # reorder list to match
+  # reorder list to match order
   raster_expansion$uca_complete_raster_1975 <-
     raster_expansion$uca_complete_raster_1975[
       names(polygon_expansion_area)
@@ -328,7 +328,10 @@ funcao <- function(input_polygon, input_urban_extent_raster, input_uca_complete_
 
   #### CALCULAR OS DOIS
 
-  # saturation total area for each year (considering total urban extent in each year)
+  # saturation total area for each year, considering total urban extent in each year
+  # i.e. polygons vary between years
+  # polygon area 1975 and raster value 1975; and
+  # polygon area 2014 and raster value 2014
   df_total_area <- purrr::map(
     raster_urban_extent,
     ~purrr::map(., ~raster::cellStats(., mean))
@@ -347,25 +350,64 @@ funcao <- function(input_polygon, input_urban_extent_raster, input_uca_complete_
     )
   ]
 
-
-66666666666666666 COMPLETAR CALCULO
   ## TOTAL AREA CONSIDERING FIXED TOTAL AREA (= urban extent 2014)
-  # raster 1975 & raster 2014
-  # total area polygon 2014
+  # 1975: polygon area 2014 and raster value 1975; and
+  # 2014: polygon area 2014 and raster value 2014
 
 
-  consolidated$urban_extent_2014 <- purrr::map2(
-    .x = consolidated$urban_extent_2014, .y = polygon_built_area$urban_extent_1975,
+  total_fixed <- raster_complete
+
+  # reorder list to match order
+  total_fixed$uca_complete_raster_1975 <-
+    total_fixed$uca_complete_raster_1975[
+      names(polygon_built_area$urban_extent_2014)
+    ]
+  total_fixed$uca_complete_raster_2014 <-
+    total_fixed$uca_complete_raster_2014[
+      names(polygon_built_area$urban_extent_2014)
+    ]
+
+  total_fixed$uca_complete_raster_1975 <- purrr::map2(
+    .x = total_fixed$uca_complete_raster_1975, .y = polygon_built_area$urban_extent_2014,
     function(x,y)
       raster::crop(x = x, y = y)
   )
 
-  consolidated$urban_extent_2014 <- purrr::map2(
-    .x = consolidated$urban_extent_2014, .y = polygon_built_area$urban_extent_1975,
+  total_fixed$uca_complete_raster_1975 <- purrr::map2(
+    .x = total_fixed$uca_complete_raster_1975, .y = polygon_built_area$urban_extent_2014,
     function(x,y)
       raster::mask(x = x, mask = y)
   )
 
+  total_fixed$uca_complete_raster_2014 <- purrr::map2(
+    .x = total_fixed$uca_complete_raster_2014, .y = polygon_built_area$urban_extent_2014,
+    function(x,y)
+      raster::crop(x = x, y = y)
+  )
+
+  total_fixed$uca_complete_raster_2014 <- purrr::map2(
+    .x = total_fixed$uca_complete_raster_2014, .y = polygon_built_area$urban_extent_2014,
+    function(x,y)
+      raster::mask(x = x, mask = y)
+  )
+
+  df_total_area_fixed <- purrr::map(
+    total_fixed,
+    ~purrr::map(., ~raster::cellStats(., mean))
+  )
+
+  df_total_area_fixed <- data.table::data.table(
+    name_uca_case = names(df_total_area_fixed$uca_complete_raster_1975),
+    saturation_total_area_fixed_1975 = as.double(df_total_area_fixed$uca_complete_raster_1975),
+    saturation_total_area_fixed_2014 = as.double(df_total_area_fixed$uca_complete_raster_2014)
+  )
+
+  df_total_area_fixed[
+    ,
+    `:=`(
+      saturation_total_area_fixed_diff = saturation_total_area_fixed_2014 - saturation_total_area_fixed_1975
+    )
+  ]
 
   # merge dfs -------------------------------------------------------------
   df_merged <- dplyr::left_join(
@@ -373,6 +415,10 @@ funcao <- function(input_polygon, input_urban_extent_raster, input_uca_complete_
     df_total_area,
     by = 'name_uca_case'
   ) %>%
+    dplyr::left_join(
+      df_total_area_fixed,
+      by = 'name_uca_case'
+    ) %>%
     dplyr::left_join(
       df_consolidated_area,
       by = 'name_uca_case'
