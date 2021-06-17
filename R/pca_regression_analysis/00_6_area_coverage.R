@@ -319,40 +319,61 @@ funcao <- function(input_polygon, input_urban_extent_raster, input_uca_complete_
   ]
 
   # * * total area --------------------------------------------------------
-  # UTILIZAR
-  # AREA TOTAL CONSIDERANDO POLIGONO EM CADA ANO (i.e. poligonos totais variam)
-  # area poligono 1975 e valores raster 1975 e area poligono 2014 e raster 2014
-  # OU
-  # AREA TOTAL CONSIDERANDO O MESMO POLIGONO (ex.: poligono total 1975)
+  # saturation from total area depends on
+  # i) the raster data containing the saturation/coverage data
+  # ii) the polygon that defines the limits in which the average saturation data..
+  #..will be estimated.
+
+  # thus, total area saturation can be estimated in two ways, considering different
+  #..definitions of "total area" (i.e., which polygon constitutes the "total"
+  #..polygon of an urban concentration area):
+
+  ## 1: using the raster data from each year and the urban extent polygon from each
+  # year as the corresponding polygon for that year
+  # ex1.:
+  # uca raster from 1975 and polygon (total area = urban extent) from 1975 and
+  # uca raster from 2014 and polygon (total area = urban extent) from 2014
+  # OR
+  ## 2: using the raster data from each year, but the SAME urban extent polygon
+  #..for both years as the defining total area limits (in this case, the latter year
+  #..constitutes the only sensible urban extent polygon, i.e, 2014)
+  # ex.2:
+  # uca raster from 1975 and polygon (total area = urban extent) from 2014 and
+  # uca raster from 2014 and polygon (total area = urban extent) from 2014
+
+  # aftwer deliberation (17/06/21), the second option will be taken
 
 
-  #### CALCULAR OS DOIS
+  # * * * varying total area ------------------------------------------------
+  # uca raster from 1975 and polygon (total area = urban extent) from 1975 and
+  # uca raster from 2014 and polygon (total area = urban extent) from 2014
+  # OPTION NOT TAKEN, but estimation preserved
 
-  # saturation total area for each year, considering total urban extent in each year
-  # i.e. polygons vary between years
-  # polygon area 1975 and raster value 1975; and
-  # polygon area 2014 and raster value 2014
-  df_total_area <- purrr::map(
-    raster_urban_extent,
-    ~purrr::map(., ~raster::cellStats(., mean))
-  )
 
-  df_total_area <- data.table::data.table(
-    name_uca_case = names(df_total_area$urban_extent_1975),
-    saturation_total_area_1975 = as.double(df_total_area$urban_extent_1975),
-    saturation_total_area_2014 = as.double(df_total_area$urban_extent_2014)
-  )
+  #df_total_area <- purrr::map(
+  #  raster_urban_extent,
+  #  ~purrr::map(., ~raster::cellStats(., mean))
+  #)
 
-  df_total_area[
-    ,
-    `:=`(
-      saturation_total_area_diff = saturation_total_area_2014 - saturation_total_area_1975
-    )
-  ]
+  #df_total_area <- data.table::data.table(
+  #  name_uca_case = names(df_total_area$urban_extent_1975),
+  #  saturation_total_area_1975 = as.double(df_total_area$urban_extent_1975),
+  #  saturation_total_area_2014 = as.double(df_total_area$urban_extent_2014)
+  #)
 
-  ## TOTAL AREA CONSIDERING FIXED TOTAL AREA (= urban extent 2014)
-  # 1975: polygon area 2014 and raster value 1975; and
-  # 2014: polygon area 2014 and raster value 2014
+  #df_total_area[
+  #  ,
+  #  `:=`(
+  #    saturation_total_area_diff = saturation_total_area_2014 - saturation_total_area_1975
+  #  )
+  #]
+
+
+  # * * * fixed total area --------------------------------------------------
+  # fixed total area = urban extent 2014
+  # uca raster from 1975 and polygon (total area = urban extent) from 2014 and
+  # uca raster from 2014 and polygon (total area = urban extent) from 2014
+  # OPTION TAKEN
 
 
   total_fixed <- raster_complete
@@ -412,13 +433,9 @@ funcao <- function(input_polygon, input_urban_extent_raster, input_uca_complete_
   # merge dfs -------------------------------------------------------------
   df_merged <- dplyr::left_join(
     df_horizontal_expansion_area,
-    df_total_area,
+    df_total_area_fixed,
     by = 'name_uca_case'
   ) %>%
-    dplyr::left_join(
-      df_total_area_fixed,
-      by = 'name_uca_case'
-    ) %>%
     dplyr::left_join(
       df_consolidated_area,
       by = 'name_uca_case'
