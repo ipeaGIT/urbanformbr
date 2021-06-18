@@ -1,15 +1,34 @@
 # description -------------------------------------------------------------
 
-# this script estimates urban extent area considering vectors files generated
-# at R/GHSL/04_1 and R/GHSL/04_2.
+# this script estimates urban extent area and derived variables, considering
+#...raster and vectors files generated at R/GHSL.
 
-# CORRIGIR DESCRICAO -> EXPLICAR MEDIDAS E CONCEITOS
+## definitions:
 
-# measures estimated:
-# area urban extent 1975
-# area urban extent 2014
-# area urban expansion (difference between urban extent 2014 and 1975)
-# expansion area: sym_difference urban extent 1975-2014 (intersection inverse)
+# saturation = built up area density = ghsl raster pixel's value
+
+# urban extent = comparable spatially unit of analysis of each urban concentration..
+#..area. the urban extent in each year is defined by raster pixels whose value..
+#..(i.e, whose saturation or built up land coverage) equals or is greater than 20%.
+
+# consolidated area = urban extent from 1975.
+
+# expansion area = the spatial difference (intersection's inverse) between the..
+#..urban extent from 2014 and the urban extent from 1975.
+
+# total area = urban extent from 2014 = consolidated area + expansion area
+
+
+## measures estimated:
+
+# urban extent area size 1975
+# urban extent area size 2014
+# expansion area size
+# urban extent size ratio = (urban extent 2014 / urban extent 1975)
+# urban_extent_horizontal_growth ( (urban extent 2014 - urban extent 1975) / urban extent 1975 )
+# saturation *total/consolidated/expansion* *year* = mean value from desired polygon in each year
+# saturation diff = saturation *total/consolidated/expansion* 2014 - saturation *total/consolidated/expansion* 1975
+
 
 # these measures are then added to pca_regression_df:
 # data/urbanformbr/pca_regression_df.rds
@@ -52,7 +71,7 @@ input_uca_complete_raster <- files_uca_complete_raster
 
 # define function ---------------------------------------------------------
 
-funcao <- function(input_polygon, input_urban_extent_raster, input_uca_complete_raster){
+f_area_variables <- function(input_polygon, input_urban_extent_raster, input_uca_complete_raster){
 
   # read & clean data -------------------------------------------------------------
 
@@ -457,5 +476,9 @@ funcao <- function(input_polygon, input_urban_extent_raster, input_uca_complete_
 }
 
 # run function ------------------------------------------------------------
-
+f_area_variables(
+  input_polygon = files_built_polygon,
+  input_urban_extent_raster = files_urban_extent_raster,
+  input_uca_complete_raster = files_uca_complete_raster
+)
 
