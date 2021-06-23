@@ -3,7 +3,7 @@
 # this script extracts variables and estimates metrics from the demographic census
 #..2010 to be used at the pca and regression analysis.
 
-# variables description:
+# * variables description -------------------------------------------------
 
 #' DOM:
 #' V0001	UNIDADE DA FEDERAÇÃO
@@ -28,6 +28,9 @@
 #' V0011	ÁREA DE PONDERAÇÃO
 #' V0010	PESO AMOSTRAL
 #' V0300  CONTROLE
+#' V1006  "SITUAÇÃO DO DOMICÍLIO:
+#'        1- Urbana
+#'        2- Rural"
 #' V0601 "SEXO:
 #         1- Masculino
 #         2- Feminino"
@@ -129,13 +132,20 @@
 #Branco"
 
 
-
 # setup -------------------------------------------------------------------
 
 source('R/setup.R')
 
-
 # define function ----------------------------------------------------------------
+# create function case with factor
+fct_case_when <- function(...){
+  args <- as.list(match.call())
+  levels <- sapply(args[-1], function(f) f[[3]]) # extract RHS formula
+  levels <- levels[!is.na(levels)]
+  factor(dplyr::case_when(...), levels = levels)
+}
+
+
 f_censo <- function(){
 
   # read data ---------------------------------------------------------------
@@ -149,7 +159,11 @@ f_censo <- function(){
     #'V0010', # peso amostral
     "V0300", # controle
     'V0221', # existencia de motocicleta para uso particular
-    'V0222'  # existencia de automovel para uso particular
+    'V0222', # existencia de automovel para uso particular
+    "V0203", # numero de comodos -> criar numero medio de comodos por domicilio
+    "V6203", # densidade morador/cômodo
+    "V6204"  # densidade morador/dormitorio
+
     )
 
   df_censo_dom <- data.table::fread(
@@ -167,8 +181,9 @@ f_censo <- function(){
     'V0011', # area ponderacao
     'V0010', # peso amostral
     "V0300", # controle
+    "V1006", # situacao do domicilio (1 urbana ou 2 rural)
     "V0601", # sexo
-    "V0633", # curso mais elevado que frequentou
+    #"V0633", # curso mais elevado que frequentou
     "V6400", # nivel de instrucao
     "V6036", # idade calculada em anos
     "V6930", # posicao na ocupacao
@@ -242,10 +257,53 @@ f_censo <- function(){
   df_censo_pes <- df_censo_pes[.(unique(df_codes$code_urban_concentration))]
   #df_censo_pes <- df_censo_pes[!is.na(code_urban_concentration)]
 
+  # create var automobile &/or motorcycle in the household
+  df_censo_dom[
+    ,
+    `:=`(
+      car_motorcycle_sep = dplyr::case_when(
+        is.na(V0221) & is.na(V0222) ~ NA_character_,
+        V0221 == 2 & V0222 == 2 ~ "Nem carro nem motocicleta",
+        V0221 == 1 & V0222 == 1 ~ "Carro e motocicleta",
+        V0222 == 1 & V0221 == 2 | is.na(V0221) ~ "Apenas carro",
+        V0221 == 1 & V0222 == 2 | is.na(V0222) ~ "Apenas motocicleta",
+        T ~ 'Erro'
+      ),
+      car_motorcycle_join = dplyr::case_when(
+        V0221 == 2 & V0222 == 2 ~ "Nem carro nem motocicleta",
+        V0221 == 1 | V0222 == 1 ~ "Carro ou motocicleta",
+        T ~ NA_character_
+      )
+    )
+  ]
 
-  # filter workers with daily commute (V0661 == 1)
-  data.table::setkey(df_censo_pes, V0661)
+  # filter individuals living in an urban household
+  data.table::setkey(df_censo_pes, V1006)
   df_censo_pes <- df_censo_pes[.(1)]
+
+  # create varaibles df_censo_pes
+
+
+
+  df_censo_pes[
+    `:=`(
+      # categories for education level
+      # CHANGE CATEGORIES NAME?
+      education = fct_case_when(
+        # individuals with low education levels (from no instruction to ensino medio)
+        V6400 == 1 | V6400 == 2 ~ "Baixa escolaridade",
+        V6400 == 3 ~ "Média escolaridade"
+        # individuals with high education level (superior completo)
+        V6400 == 4 ~ "Alta escolaridade"
+        T ~ NA_character_
+      ),
+      # V6471 categories for activities (CNAE) : industry, services/comerce, agro
+      # V6920 employed workers (pelo 2 "nao ocupadas")
+      # V0660 em que municipio trabalha
+      # V0648 trabalhadores informais (4) -> criar outra variavel (dofile Censo) e ver
+      # V6036 idade trabalhadores -> criar categorias
+    )
+  ]
 
 
   # merge dom + pes data ----------------------------------------------------
@@ -258,12 +316,23 @@ f_censo <- function(){
   df_censo_pes[
     df_censo_dom,
     `:=`(
-      V0221 = i.V0221,
-      V0222 = i.V0222
+      #car_motorcycle_sep = i.car_motorcycle_sep,
+      car_motorcycle_join = i.car_motorcycle_join
     ),
     on = c("V0300" = "V0300")
   ]
 
+
+  # * estimar variavel: numero de pessoas por domicilio ---------------------
+  # obter a media (por uca)
+
+
+  # estimate average travel time --------------------------------------------
+
+  # FAZER FILTRO DE DAILY COMMUTE APENAS PARA O CALCULO DE TEMPO MEDIO DE VIAGEM
+  # filter workers with daily commute (V0661 == 1)
+  data.table::setkey(df_censo_pes, V0661)
+  df_censo_pes <- df_censo_pes[.(1)]
 
   # recode commute time
   df_censo_pes[
@@ -278,7 +347,6 @@ f_censo <- function(){
 
   summary(df_censo_pes$commute_time)
 
-  # estimate average travel time --------------------------------------------
 
 
   # save data ---------------------------------------------------------------
