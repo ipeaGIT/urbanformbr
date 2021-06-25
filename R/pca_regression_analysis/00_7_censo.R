@@ -158,6 +158,7 @@ f_censo <- function(){
     #'V0011', # area de ponderacao
     #'V0010', # peso amostral
     "V0300", # controle
+    "V1006", # situacao do domicilio (1 urbana 2 rural)
     'V0221', # existencia de motocicleta para uso particular
     'V0222', # existencia de automovel para uso particular
     "V0203", # numero de comodos -> criar numero medio de comodos por domicilio
@@ -190,8 +191,8 @@ f_censo <- function(){
     "V0648", # nesse trabalho era
     "V6471", # atividade CNAE
     "V6462", # ocupacao CBO
-    "V6910", # condicao na ocupacao
-    "V6920", # situacao na ocupacao
+    #"V6910", # condicao na ocupacao (2- desocupadas)
+    "V6920", # situacao na ocupacao (2- nao ocupadas) -> USAR ESSE
     "V0661", # retorna do trabalho para casa diariamente
     "V0662", # tempo deslocamento casa-trabalho
     # VARIAVEIS "POTENCIAIS"
@@ -207,7 +208,7 @@ f_censo <- function(){
   )
 
   # check total population
-  sum(df_censo_pes$V0010, na.rm=T)
+  #sum(df_censo_pes$V0010, na.rm=T)
 
   # * pca regression df -----------------------------------------------------
   # read df with code and names of urban concentration, and codes of each muni
@@ -223,6 +224,9 @@ f_censo <- function(){
 
   # clean data --------------------------------------------------------------
 
+
+  # * add urban concentration area code -------------------------------------
+
   # fix muni code
   df_censo_dom[, code_muni := (V0001*100000) + V0002]
 
@@ -233,7 +237,8 @@ f_censo <- function(){
   df_censo_dom[
     df_codes,
     `:=`(
-      code_urban_concentration = i.code_urban_concentration
+      code_urban_concentration = i.code_urban_concentration,
+      name_uca_case = i.name_uca_case
     ),
     on = c("code_muni" = "code_muni_uca")
   ]
@@ -247,6 +252,10 @@ f_censo <- function(){
     on = c("code_muni" = "code_muni_uca")
   ]
 
+  # * filter data -----------------------------------------------------------
+  # filter households/individuals from uca belonging to df_codes and from urban..
+  #..areas
+
   # filter only dom/pes from cities that belong to uca present at df_codes
   data.table::setkey(df_censo_dom, code_urban_concentration)
   df_censo_dom <- df_censo_dom[.(unique(df_codes$code_urban_concentration))]
@@ -255,7 +264,20 @@ f_censo <- function(){
 
   data.table::setkey(df_censo_pes, code_urban_concentration)
   df_censo_pes <- df_censo_pes[.(unique(df_codes$code_urban_concentration))]
-  #df_censo_pes <- df_censo_pes[!is.na(code_urban_concentration)]
+
+
+  # filter only dom/pes from urban areas (V1006 == 1)
+  data.table::setkey(df_censo_dom, V1006)
+  df_censo_dom <- df_censo_dom[.(1)]
+
+  data.table::setkey(df_censo_pes, V1006)
+  df_censo_pes <- df_censo_pes[.(1)]
+
+  data.table::setkey(df_censo_dom, NULL)
+  data.table::setkey(df_censo_pes, NULL)
+
+
+  # * create vars. dom ------------------------------------------------------
 
   # create var automobile &/or motorcycle in the household
   df_censo_dom[
@@ -277,13 +299,8 @@ f_censo <- function(){
     )
   ]
 
-  # filter individuals living in an urban household
-  data.table::setkey(df_censo_pes, V1006)
-  df_censo_pes <- df_censo_pes[.(1)]
 
-  # create varaibles df_censo_pes
-
-
+  # * create vars. pes ------------------------------------------------------
 
   df_censo_pes[
     `:=`(
@@ -291,17 +308,136 @@ f_censo <- function(){
       # CHANGE CATEGORIES NAME?
       education = fct_case_when(
         # individuals with low education levels (from no instruction to ensino medio)
-        V6400 == 1 | V6400 == 2 ~ "Baixa escolaridade",
+        V6400 <= 2 ~ "Baixa escolaridade",
         V6400 == 3 ~ "Média escolaridade"
         # individuals with high education level (superior completo)
         V6400 == 4 ~ "Alta escolaridade"
         T ~ NA_character_
       ),
       # V6471 categories for activities (CNAE) : industry, services/comerce, agro
-      # V6920 employed workers (pelo 2 "nao ocupadas")
-      # V0660 em que municipio trabalha
+
+      # V6920 employed workers
       # V0648 trabalhadores informais (4) -> criar outra variavel (dofile Censo) e ver
       # V6036 idade trabalhadores -> criar categorias
+      age = fct_case_when(
+        V6036 >= 18 & V6036 <= 39 ~ "18-39 anos",
+        V6036 >= 40 & V6036 <= 64 ~ "40-64 anos",
+        V6036 >= 65 ~ "65+ anos",
+      ),
+      # V0660 which municipality the worker works
+      work_muni = fct_case_when(
+        V0660 == 1 ~ "Próprio domicílio",
+        V0660 == 2 ~ "Mesmo município, mas não no domicílio",
+        V0660 >= 3 & V0660 <= 5 ~ "Outro ou mais municípios/país",
+        T ~ NA_character_
+      )
+    )
+  ]
+
+
+  df_censo_pes[
+    ,
+    `:=`(
+      # grupos ocupacionais CBO 2000
+      grupocup = data.table::fcase(
+        (V6462>=1111 & V6462<=1140) |
+          (V6462>=1210 & V6462<=1230) |
+          V6462==1310 |
+          V6462==1320,
+        1L, #Membros superiores do Poder Publico, dirigentes de organizacoes de interesse publico e de empresas, gerentes
+
+        (V6462>=2011 & V6462<=2021) |
+          (V6462>=2111 & V6462<=2153) |
+          (V6462>=2211 & V6462<=2237) |
+          (V6462>=2311 & V6462<=2394) |
+          (V6462>=2410 & V6462<=2423) |
+          (V6462>=2511 & V6462<=2531) |
+          (V6462>=2611 & V6462<=2631),
+        2L, #Profissionais das Ciencias e das Artes
+
+        (V6462>=3001 & V6462<=3012) |
+          (V6462>=3111 & V6462<=3192) |
+          (V6462>=3201 & V6462<=3281) |
+          (V6462>=3311 & V6462<=3341) |
+          (V6462>=3411 & V6462<=3426) |
+          (V6462>=3511 & V6462<=3548) |
+          (V6462>=3711 & V6462<=3773) |
+          V6462==3911 |
+          V6462==3912,
+        3L, #Tecnicos de nivel medio
+
+        (V6462>=4101 & V6462<=4152) |
+          (V6462>=4201 & V6462<=4241),
+        4L, #Trabalhadores de servicos administrativos
+
+        (V6462>=5101 & V6462<=5199) |
+          (V6462>=5201 & V6462<=5243),
+        5L, #Trabalhadores dos servicos, vendedores do comercio em lojas e mercados
+
+        (V6462>=6110 & V6462<=6139) |
+          (V6462>=6201 & V6462<=6239) |
+          (V6462>=6301 & V6462<=6329) |
+          (V6462>=6410 & V6462<=6430),
+        6L, #Trabalhadores agropecuarios, florestais, da caca e da pesca
+
+        (V6462>=7101 & V6462<=7170) |
+          (V6462>=7201 & V6462<=7257) |
+          (V6462>=7301 & V6462<=7321) |
+          (V6462>=7401 & V6462<=7421) |
+          (V6462>=7501 & V6462<=7524) |
+          (V6462>=7601 & V6462<=7687) |
+          (V6462>=7701 & V6462<=7772) |
+          (V6462>=7801 & V6462<=7842) |
+          (V6462>=8101 & V6462<=8181) |
+          (V6462>=8201 & V6462<=8281) |
+          (V6462>=8301 & V6462<=8339) |
+          (V6462>=8401 & V6462<=8493) |
+          (V6462>=8601 & V6462<=8625) |
+          V6462==8711,
+        7L, #Trabalhadores da producao de bens e servicos industriais
+
+        (V6462>=9101 & V6462<=9193) |
+          (V6462>=9501 & V6462<=9543) |
+          (V6462>=9911 & V6462<=9922),
+        8L, #Trabalhadores de reparacao e manutencao
+
+        V6462==0100 | V6462==0200 | V6462==0300 |
+          (V6462>=0401 & V6462<=0413) | (V6462>=0501 & V6462<=0513),
+        9L, #Membros das forcas armadas, policiais e bombeiros militares
+        default = NA_integer_
+      )
+    )
+  ]
+
+  # gerar conta-propria excluindo trab liberais (grupocup = 1 ou 2)
+  df_censo_pes[
+    ,
+    `:=`(
+      conta_propria = data.table::fcase(
+        V6930 == 4 & grupocup > 2, "Conta-própria", # conta-propria
+        V6930 < 4 | V6930 > 4, "Não conta-própria",     # NAO conta-propria
+        default = NA_character_
+      )
+    )
+  ]
+
+  # informalidade:
+  # informal = 1 (sem-carteira (domestico e nao-domestico) e conta-propria (exceto os liberais))
+  # informal = 0 (*formal* - com carteira (domestico e nao-domestico), func. publico, conta-propria libeiras e empregador)
+  df_censo_pes[
+    ,
+    `:=`(
+      informal = data.table::fcase(
+        conta_propria == "Conta-própria" | V6930 == 3L,
+        "Informal", # informal
+
+        conta_propria == "Não conta-própria" | V6930 == 1L | V6930 == 2L |
+          V6930 == 5L,
+        "Formal", # formal
+
+        #V6930 >= 6
+        default = NA_character_
+      )
     )
   ]
 
