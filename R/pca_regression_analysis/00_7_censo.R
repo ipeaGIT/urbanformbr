@@ -305,7 +305,6 @@ f_censo <- function(){
   df_censo_pes[
     `:=`(
       # categories for education level
-      # CHANGE CATEGORIES NAME?
       education = fct_case_when(
         # individuals with low education levels (from no instruction to ensino medio)
         V6400 <= 2 ~ "Baixa escolaridade",
@@ -315,9 +314,8 @@ f_censo <- function(){
         T ~ NA_character_
       ),
       # V6471 categories for activities (CNAE) : industry, services/comerce, agro
-
-      # V6920 employed workers
-      # V0648 trabalhadores informais (4) -> criar outra variavel (dofile Censo) e ver
+      # CREATE CATEGORIES
+      # V6920 = employed workers
       # V6036 idade trabalhadores -> criar categorias
       age = fct_case_when(
         V6036 >= 18 & V6036 <= 39 ~ "18-39 anos",
