@@ -1,9 +1,22 @@
 
+# description -------------------------------------------------------------
+# this script estimates experienced built-up area (bua) & population density for
+#..each uca's urban extent (urban concentraion area (at least 20% built-up: 184 ucas)
+
+# the script estimates densities (bua & pop) for 1975 & 2014:
+# 1. each 1km x 1km grid cell in each uca's urban extent (saved at R/GHSL/04_3_create_uca_grids)
+# 2. the densities weighted mean for each uca
+
+# experienced densities for 5 and 10 km are estimated for all the above
+
 # setup -------------------------------------------------------------------
 
 source('R/setup.R')
 
 # define function ---------------------------------------------------------
+
+# * function density matrix -----------------------------------------------
+# function to extract density matrix for each urban extent (5 & 10 km)
 
 f_get_density_matrix <- function(df_urban_areas){
 
@@ -68,6 +81,12 @@ f_get_density_matrix <- function(df_urban_areas){
   return(temp_output)
 }
 
+
+# * function experienced density ------------------------------------------
+# applies f_get_density_matrix to each urban extent & estimates experienced density
+# densities for each grid cell (1km x 1km) are then saved
+# map_df returns df with all weighted mean experienced densities
+
 #ano <- c(1975,2014)
 
 f_density_uca <- function(ano){
@@ -121,13 +140,11 @@ f_density_uca <- function(ano){
 
 # run function for each year ----------------------------------------------
 
-
 df_1975 <- f_density_uca(1975)
 df_2014 <- f_density_uca(2014)
 
 
 # save results ------------------------------------------------------------
-
 
 saveRDS(
   df_1975,

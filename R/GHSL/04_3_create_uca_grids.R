@@ -8,7 +8,10 @@
 source('R/setup.R')
 
 
+# define function ---------------------------------------------------------
+
 # year <- 2014
+
 create_uca_grids <- function(year) {
   urban_areas <- read_rds(sprintf("../../data/urbanformbr/ghsl/results/urban_extent_uca_%s_cutoff20.rds", year))
 
@@ -47,6 +50,10 @@ create_uca_grids <- function(year) {
   write_rds(urban_areas_cells, sprintf("../../data/urbanformbr/ghsl/results/grid_uca_%s_cutoff20.rds", year))
 
 }
+
+
+# run function ------------------------------------------------------------
+# run for each year present at GHSL
 
 create_uca_grids(1975)
 create_uca_grids(1990)
