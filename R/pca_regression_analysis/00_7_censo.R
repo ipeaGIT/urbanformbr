@@ -195,7 +195,6 @@ f_censo <- function(){
     "V6920", # situacao na ocupacao (2- nao ocupadas) -> USAR ESSE
     "V0661", # retorna do trabalho para casa diariamente
     "V0662", # tempo deslocamento casa-trabalho
-    # VARIAVEIS "POTENCIAIS"
     "V0606", # raca
     "V0660"  # em que municipio e UF trabalha
     )
@@ -283,18 +282,18 @@ f_censo <- function(){
   df_censo_dom[
     ,
     `:=`(
-      car_motorcycle_sep = dplyr::case_when(
-        is.na(V0221) & is.na(V0222) ~ NA_character_,
-        V0221 == 2 & V0222 == 2 ~ "Nem carro nem motocicleta",
-        V0221 == 1 & V0222 == 1 ~ "Carro e motocicleta",
-        V0222 == 1 & V0221 == 2 | is.na(V0221) ~ "Apenas carro",
-        V0221 == 1 & V0222 == 2 | is.na(V0222) ~ "Apenas motocicleta",
-        T ~ 'Erro'
+      car_motorcycle_sep = data.table::fcase(
+        is.na(V0221) & is.na(V0222), NA_character_,
+        V0221 == 2 & V0222 == 2, "Nem carro nem motocicleta",
+        V0221 == 1 & V0222 == 1, "Carro e motocicleta",
+        V0222 == 1 & V0221 == 2 | is.na(V0221), "Apenas carro",
+        V0221 == 1 & V0222 == 2 | is.na(V0222), "Apenas motocicleta",
+        default = 'Erro'
       ),
-      car_motorcycle_join = dplyr::case_when(
-        V0221 == 2 & V0222 == 2 ~ "Nem carro nem motocicleta",
-        V0221 == 1 | V0222 == 1 ~ "Carro ou motocicleta",
-        T ~ NA_character_
+      car_motorcycle_join = data.table::fcase(
+        V0221 == 2 & V0222 == 2, "Nem carro nem motocicleta",
+        V0221 == 1 | V0222 == 1, "Carro ou motocicleta",
+        default = NA_character_
       )
     )
   ]
@@ -303,24 +302,60 @@ f_censo <- function(){
   # * create vars. pes ------------------------------------------------------
 
   df_censo_pes[
+    ,
     `:=`(
-      # categories for education level
+      commute_time = data.table::fcase(
+        V0662 == 1, 5,
+        V0662 == 2, 15,
+        V0662 == 3, 45,
+        V0662 == 4, 90,
+        V0662 == 5, 120,
+        default = NA_real_
+        ),
+      raca = data.table::fcase(
+        V0606 == 1, "Branca",
+        V0606 == 2 | V0606 == 4, "Negra",
+        V0606 == 3, "Amarela",
+        V0606 == 5, "Indígena",
+        default = NA_character_
+      ),
+      # V6400 education
       education = fct_case_when(
         # individuals with low education levels (from no instruction to ensino medio)
         V6400 <= 2 ~ "Baixa escolaridade",
-        V6400 == 3 ~ "Média escolaridade"
+        V6400 == 3 ~ "Média escolaridade",
         # individuals with high education level (superior completo)
-        V6400 == 4 ~ "Alta escolaridade"
+        V6400 == 4 ~ "Alta escolaridade",
         T ~ NA_character_
       ),
       # V6471 categories for activities (CNAE) : industry, services/comerce, agro
-      # CREATE CATEGORIES
-      # V6920 = employed workers
+      sector = data.table::fcase(
+        V6471 > 0 & V6471 <= 03999 #| V6471 >= 10000 & v6471 <= 12999
+        , "Agricultura",
+
+        V6471 >= 05000 & V6471 <= 09999 |
+          V6471 >= 10000 & V6471 <= 33999 | # conferir industria da transformacao
+          V6471 >= 41000 & V6471 <= 43999
+        , "Indústria",
+
+        V6471 >= 35000 & V6471 <= 39999 |
+          V6471 >= 45000 & V6471 <= 48999 |
+          V6471 >= 49000 & V6471 <= 53999 |
+          V6471 >= 55000 & V6471 <= 56999 |
+          V6471 >= 58000 & V6471 <= 75999 |
+          V6471 >= 77000 & V6471 <= 88999 |
+          V6471 >= 90000 & V6471 <= 94999 |
+          V6471 >= 95000 & V6471 <= 99999
+        , "Serviços",
+        default = NA_character_
+      ),
       # V6036 idade trabalhadores -> criar categorias
       age = fct_case_when(
+        V6036 <= 17 ~ "Até 17 anos",
         V6036 >= 18 & V6036 <= 39 ~ "18-39 anos",
         V6036 >= 40 & V6036 <= 64 ~ "40-64 anos",
         V6036 >= 65 ~ "65+ anos",
+        T ~ NA_character_
       ),
       # V0660 which municipality the worker works
       work_muni = fct_case_when(
@@ -333,6 +368,7 @@ f_censo <- function(){
   ]
 
 
+  ## GERAR TRABALHO INFORMAL (CRIAR VARIAVEIS NECESSARIAS)
   df_censo_pes[
     ,
     `:=`(
@@ -413,7 +449,7 @@ f_censo <- function(){
     `:=`(
       conta_propria = data.table::fcase(
         V6930 == 4 & grupocup > 2, "Conta-própria", # conta-propria
-        V6930 < 4 | V6930 > 4, "Não conta-própria",     # NAO conta-propria
+        V6930 < 4 | V6930 > 4, "Não conta-própria", # NAO conta-propria
         default = NA_character_
       )
     )
@@ -457,6 +493,51 @@ f_censo <- function(){
   ]
 
 
+  # estimate variables ------------------------------------------------------
+  # variaveis estimadas (por uca)
+
+  # * vars domicilios (households) -----------------------------------------------
+  # car_motorcycle_join: % domicilios com car/bike
+    # var criada; estimar proporcao
+  # V0203: numero medio de comodos por domicilio
+    # estimar media via V0203
+  # V6203: media de densidade morador/comodo
+    # estimar media via V6203
+  # V6204: media de densidade morador/dormitorio
+    # estimar media via V6204
+
+
+  # * vars pessoas (individuals) --------------------------------------------
+  # V0601: % sexo masculino
+    # estimar proporcao 1 at V0601
+  # raca: % pessoas brancas (ou negras = pretas + pardas?)
+    # var criada; estimar prop
+  # education: % baixa escolaridade
+    # var criada; esitmar prop education->baixa
+  # education: % alta escolaridade
+    # var criada; esitmar prop education->alta
+  # age: % 18-39
+    # var criada; esitmar prop age
+  # age: % 40-64
+    # var criada; esitmar prop age
+  # age: % 65+
+    # var criada; esitmar prop age
+  # informal: % trabalhadores (in)formais
+    # var criada; esitmar prop formal
+  # work_muni: % trab. que trabalham em outro municipio
+    # var criada; esitmar prop "outro muni"
+  # commute_time (apenas V0661 == 1): tempo deslocamento casa-trabalho
+    # var criada: estimar tempo medio viagem (ver R/commute_time_censo2010)
+  # V6920: trabalhadores empregados
+    # estimar proporcao 1 at V6920
+  # sector: % trab. industria
+    # var criada; estimar prop industria (secundario)
+  # sector: % trab. servicos
+    # var criada: estimar prop servicos (terciario)
+
+
+
+
   # * estimar variavel: numero de pessoas por domicilio ---------------------
   # obter a media (por uca)
 
@@ -467,17 +548,6 @@ f_censo <- function(){
   # filter workers with daily commute (V0661 == 1)
   data.table::setkey(df_censo_pes, V0661)
   df_censo_pes <- df_censo_pes[.(1)]
-
-  # recode commute time
-  df_censo_pes[
-    ,
-    commute_time := data.table::fcase(
-      V0662 == 1, 5,
-      V0662 == 2, 15,
-      V0662 == 3, 45,
-      V0662 == 4, 90,
-      V0662 == 5, 120)
-  ]
 
   summary(df_censo_pes$commute_time)
 
