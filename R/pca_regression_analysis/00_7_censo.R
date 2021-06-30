@@ -156,7 +156,7 @@ f_censo <- function(){
     'V0001', # UF
     'V0002', # codigo municipio
     #'V0011', # area de ponderacao
-    #'V0010', # peso amostral
+    'V0010', # peso amostral
     "V0300", # controle
     "V1006", # situacao do domicilio (1 urbana 2 rural)
     'V0221', # existencia de motocicleta para uso particular
@@ -314,7 +314,7 @@ f_censo <- function(){
         ),
       raca = data.table::fcase(
         V0606 == 1, "Branca",
-        V0606 == 2 | V0606 == 4, "Negra",
+        V0606 == 2 | V0606 == 4, "Preta ou Parda",
         V0606 == 3, "Amarela",
         V0606 == 5, "Indígena",
         default = NA_character_
@@ -449,20 +449,26 @@ f_censo <- function(){
     `:=`(
       conta_propria = data.table::fcase(
         V6930 == 4 & grupocup > 2, "Conta-própria", # conta-propria
-        V6930 < 4 | V6930 > 4, "Não conta-própria", # NAO conta-propria
+        V6930 < 4 |
+          V6930 > 4 |
+          (V6930 == 4 & grupocup <=2)
+        , "Não conta-própria", # NAO conta-propria
         default = NA_character_
       )
     )
   ]
 
   # informalidade:
-  # informal = 1 (sem-carteira (domestico e nao-domestico) e conta-propria (exceto os liberais))
+  # informal = 1 (sem-carteira (domestico e nao-domestico); conta-propria (exceto os liberais); nao-remunerados; consumo próprio)
   # informal = 0 (*formal* - com carteira (domestico e nao-domestico), func. publico, conta-propria libeiras e empregador)
   df_censo_pes[
     ,
     `:=`(
       informal = data.table::fcase(
-        conta_propria == "Conta-própria" | V6930 == 3L,
+        conta_propria == "Conta-própria" |
+          V6930 == 3L |
+          V6930 == 6L |
+          V6930 == 7L,
         "Informal", # informal
 
         conta_propria == "Não conta-própria" | V6930 == 1L | V6930 == 2L |
@@ -506,11 +512,44 @@ f_censo <- function(){
   # V6204: media de densidade morador/dormitorio
     # estimar media via V6204
 
+  df_vars_dom <- df_censo_dom[
+    ,
+    lapply(.SD, weighted.mean, w = V0010, na.rm = T),
+    by = .(code_urban_concentration, name_uca_case),
+    .SDcols = c("V0203","V6203","V6204")
+  ]
+
+  data.table::setnames(
+    x = df_vars_dom,
+    old = c("V0203","V6203","V6204"),
+    new = c("wghtd_mean_rooms_household","wghtd_mean_dens_resident_rooms",
+            "wghtd_mean_dens_resident_bedroom")
+  )
+
+  df_prop_car_bike <- df_censo_dom[
+    !is.na(car_motorcycle_join),
+    .(n_car_motorcycle_join = .N),
+    by = .(code_urban_concentration, car_motorcycle_join)
+    ][
+    ,
+    prop_car_motorcycle_join := prop.table(n_car_motorcycle_join),
+    by = .(code_urban_concentration)
+    ]
+
+
+  df_vars_dom[
+    df_prop_car_bike,
+    `:=`(
+      n_car_motorcycle_join = i.n_car_motorcycle_join,
+      prop_car_motorcycle_join = i.prop_car_motorcycle_join
+    ),
+    on = c("code_urban_concentration" = "code_urban_concentration")
+  ]
 
   # * vars pessoas (individuals) --------------------------------------------
   # V0601: % sexo masculino
     # estimar proporcao 1 at V0601
-  # raca: % pessoas brancas (ou negras = pretas + pardas?)
+  # raca: % pessoas brancas (ou Preta ou Parda)
     # var criada; estimar prop
   # education: % baixa escolaridade
     # var criada; esitmar prop education->baixa
@@ -534,12 +573,20 @@ f_censo <- function(){
     # var criada; estimar prop industria (secundario)
   # sector: % trab. servicos
     # var criada: estimar prop servicos (terciario)
+  # car_motorcycle_join: % prop individuos moram dom. com car/bike
+    # var criada: estimar prop "Carro ou motocicleta"
+
+  #df_censo_pes[
+  #  V6036>=16 & V6920==1,
+  #  .N,
+  #  keyby = .(sector)][
+  #  sector %in% c("Agricultura","Indústria","Serviços"),
+  #  proporcao := prop.table(N)
+  #] %>%
+  #  print()
 
 
 
-
-  # * estimar variavel: numero de pessoas por domicilio ---------------------
-  # obter a media (por uca)
 
 
   # estimate average travel time --------------------------------------------
