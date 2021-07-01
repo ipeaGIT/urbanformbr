@@ -3,6 +3,11 @@
 # this script extracts variables and estimates metrics from the demographic census
 #..2010 to be used at the pca and regression analysis.
 
+# all work related variables contain individuals which
+## age >= 16 (V6036>=16)
+## live in urban areas (V1006 == 1)
+## ocupation situation == ocuppied (V6920==1) ->>>>> commute time necessary?
+
 # * variables description -------------------------------------------------
 
 #' DOM:
@@ -252,8 +257,7 @@ f_censo <- function(){
   ]
 
   # * filter data -----------------------------------------------------------
-  # filter households/individuals from uca belonging to df_codes and from urban..
-  #..areas
+  # filter households/individuals from uca belonging to df_codes
 
   # filter only dom/pes from cities that belong to uca present at df_codes
   data.table::setkey(df_censo_dom, code_urban_concentration)
@@ -266,14 +270,11 @@ f_censo <- function(){
 
 
   # filter only dom/pes from urban areas (V1006 == 1)
-  data.table::setkey(df_censo_dom, V1006)
-  df_censo_dom <- df_censo_dom[.(1)]
+  #df_censo_dom <- subset(df_censo_dom, V1006 == 1) OU
+  #data.table::setkey(df_censo_dom, V1006)
+  #df_censo_dom <- df_censo_dom[.(1)]
 
-  data.table::setkey(df_censo_pes, V1006)
-  df_censo_pes <- df_censo_pes[.(1)]
-
-  data.table::setkey(df_censo_dom, NULL)
-  data.table::setkey(df_censo_pes, NULL)
+  #df_censo_pes <- subset(df_censo_pes, V1006 == 1)
 
 
   # * create vars. dom ------------------------------------------------------
@@ -282,15 +283,15 @@ f_censo <- function(){
   df_censo_dom[
     ,
     `:=`(
-      car_motorcycle_sep = data.table::fcase(
-        is.na(V0221) & is.na(V0222), NA_character_,
-        V0221 == 2 & V0222 == 2, "Nem carro nem motocicleta",
-        V0221 == 1 & V0222 == 1, "Carro e motocicleta",
-        V0222 == 1 & V0221 == 2 | is.na(V0221), "Apenas carro",
-        V0221 == 1 & V0222 == 2 | is.na(V0222), "Apenas motocicleta",
-        default = 'Erro'
-      ),
-      car_motorcycle_join = data.table::fcase(
+      #car_motorcycle_sep = data.table::fcase(
+      #  is.na(V0221) & is.na(V0222), NA_character_,
+      #  V0221 == 2 & V0222 == 2, "Nem carro nem motocicleta",
+      #  V0221 == 1 & V0222 == 1, "Carro e motocicleta",
+      #  V0222 == 1 & V0221 == 2 | is.na(V0221), "Apenas carro",
+      #  V0221 == 1 & V0222 == 2 | is.na(V0222), "Apenas motocicleta",
+      #  default = 'Erro'
+      #),
+      car_motorcycle = data.table::fcase(
         V0221 == 2 & V0222 == 2, "Nem carro nem motocicleta",
         V0221 == 1 | V0222 == 1, "Carro ou motocicleta",
         default = NA_character_
@@ -351,8 +352,8 @@ f_censo <- function(){
       ),
       # V6036 idade trabalhadores -> criar categorias
       age = fct_case_when(
-        V6036 <= 17 ~ "Até 17 anos",
-        V6036 >= 18 & V6036 <= 39 ~ "18-39 anos",
+        V6036 <= 15 ~ "Até 15 anos",
+        V6036 >= 16 & V6036 <= 39 ~ "16-39 anos",
         V6036 >= 40 & V6036 <= 64 ~ "40-64 anos",
         V6036 >= 65 ~ "65+ anos",
         T ~ NA_character_
@@ -367,6 +368,18 @@ f_censo <- function(){
     )
   ]
 
+  ## check proportion economic activity -> fazer com code_urban_concentration sem filtro
+  ## check OK
+  ## https://www.ibge.gov.br/apps/snig/v1/index.html?loc=0,0U,0R&cat=-1,-2,-27,112,113,114,128&ind=4741
+  #df_censo_pes[
+  #  !is.na(sector),
+  #  .(
+  #    prop_industria = sum(V0010[which(sector == "Indústria" & V6920==1 & V6036>=16)], na.rm = T) / sum(V0010[which(V6920==1 & V6036>=16)], na.rm = T),
+  #    prop_serv = sum(V0010[which(sector == "Serviços" & V6920==1 & V6036>=16)], na.rm = T) / sum(V0010[which(V6920==1 & V6036>=16)], na.rm = T),
+  #    prop_agri = sum(V0010[which(sector == "Agricultura" & V6920==1 & V6036>=16)], na.rm = T) / sum(V0010[which(V6920==1 & V6036>=16)], na.rm = T)
+  #  )#,
+    #by = .(code_urban_concentration)
+  #]
 
   ## GERAR TRABALHO INFORMAL (CRIAR VARIAVEIS NECESSARIAS)
   df_censo_pes[
@@ -438,6 +451,7 @@ f_censo <- function(){
         V6462==0100 | V6462==0200 | V6462==0300 |
           (V6462>=0401 & V6462<=0413) | (V6462>=0501 & V6462<=0513),
         9L, #Membros das forcas armadas, policiais e bombeiros militares
+
         default = NA_integer_
       )
     )
@@ -448,11 +462,14 @@ f_censo <- function(){
     ,
     `:=`(
       conta_propria = data.table::fcase(
-        V6930 == 4 & grupocup > 2, "Conta-própria", # conta-propria
+        V6930 == 4 & grupocup > 2
+        , "Conta-própria", # conta-propria
+
         V6930 < 4 |
           V6930 > 4 |
           (V6930 == 4 & grupocup <=2)
         , "Não conta-própria", # NAO conta-propria
+
         default = NA_character_
       )
     )
@@ -466,14 +483,16 @@ f_censo <- function(){
     `:=`(
       informal = data.table::fcase(
         conta_propria == "Conta-própria" |
-          V6930 == 3L |
-          V6930 == 6L |
-          V6930 == 7L,
-        "Informal", # informal
+          V6930 == 3L | # empregados sem carteira
+          V6930 == 6L | # nao remunerados
+          V6930 == 7L,  # producao para consumo proprio
+        "Informal",
 
-        conta_propria == "Não conta-própria" | V6930 == 1L | V6930 == 2L |
-          V6930 == 5L,
-        "Formal", # formal
+        conta_propria == "Não conta-própria" |
+          V6930 == 1L | # carteira de trabalho assinada
+          V6930 == 2L | # militares e funcionarios publicos
+          V6930 == 5L,  # empregadores
+        "Formal",
 
         #V6930 >= 6
         default = NA_character_
@@ -484,16 +503,12 @@ f_censo <- function(){
 
   # merge dom + pes data ----------------------------------------------------
 
-  # ATENCAO: PESO AMOSTRAL E O MESMO PARA AS DUAS BASES?
-  # ALGUM PROBLEMA FAZER ESTE MERGE?
-
   # merge household and individual data
-  ######### CHECK MERGE
   df_censo_pes[
     df_censo_dom,
     `:=`(
       #car_motorcycle_sep = i.car_motorcycle_sep,
-      car_motorcycle_join = i.car_motorcycle_join
+      car_motorcycle = i.car_motorcycle
     ),
     on = c("V0300" = "V0300")
   ]
@@ -503,7 +518,11 @@ f_censo <- function(){
   # variaveis estimadas (por uca)
 
   # * vars domicilios (households) -----------------------------------------------
-  # car_motorcycle_join: % domicilios com car/bike
+  # V1006: % domicilios em situacao urbana
+    # estimar proporcao 1 at V1006
+
+  #### obs: a partir da var de cima, todas as estimacoes devem ter filtro V1006==1
+  # car_motorcycle: % domicilios com car/bike
     # var criada; estimar proporcao
   # V0203: numero medio de comodos por domicilio
     # estimar media via V0203
@@ -512,7 +531,7 @@ f_censo <- function(){
   # V6204: media de densidade morador/dormitorio
     # estimar media via V6204
 
-  df_vars_dom <- df_censo_dom[
+  df_wghtd_mean_dom <- df_censo_dom[
     ,
     lapply(.SD, weighted.mean, w = V0010, na.rm = T),
     by = .(code_urban_concentration, name_uca_case),
@@ -520,33 +539,43 @@ f_censo <- function(){
   ]
 
   data.table::setnames(
-    x = df_vars_dom,
+    x = df_wghtd_mean_dom,
     old = c("V0203","V6203","V6204"),
     new = c("wghtd_mean_rooms_household","wghtd_mean_dens_resident_rooms",
             "wghtd_mean_dens_resident_bedroom")
   )
 
-  df_prop_car_bike <- df_censo_dom[
-    !is.na(car_motorcycle_join),
-    .(n_car_motorcycle_join = .N),
-    by = .(code_urban_concentration, car_motorcycle_join)
-    ][
+  df_prop_dom <- df_censo_pes[
     ,
-    prop_car_motorcycle_join := prop.table(n_car_motorcycle_join),
+    .(
+      prop_dom_urb = sum(V0010[which(V1006 == 1)], na.rm = T) / sum(V0010, na.rm = T),
+      prop_car_motorcycle_dom = sum(V0010[which(car_motorcycle == "Carro ou motocicleta" & V1006 == 1)], na.rm = T) / sum(V0010[which(V1006 == 1)], na.rm = T)
+      ),
     by = .(code_urban_concentration)
-    ]
+  ]
+
+  #df_prop_car_bike <- df_censo_dom[
+  #  !is.na(car_motorcycle),
+  #  .(n_car_motorcycle_join = .N),
+  #  by = .(code_urban_concentration, car_motorcycle)
+  #  ][
+  #  ,
+  #  prop_car_motorcycle_dom := prop.table(n_car_motorcycle_join),
+  #  by = .(code_urban_concentration)
+  #  ]
 
 
-  df_vars_dom[
-    df_prop_car_bike,
+  df_vars_dom <- df_wghtd_mean_dom[
+    df_prop_dom,
     `:=`(
-      n_car_motorcycle_join = i.n_car_motorcycle_join,
-      prop_car_motorcycle_join = i.prop_car_motorcycle_join
+      prop_dom_urb = i.prop_dom_urb,
+      prop_car_motorcycle_dom = i.prop_car_motorcycle_dom
     ),
     on = c("code_urban_concentration" = "code_urban_concentration")
   ]
 
   # * vars pessoas (individuals) --------------------------------------------
+  ## prorportion
   # V0601: % sexo masculino
     # estimar proporcao 1 at V0601
   # raca: % pessoas brancas (ou Preta ou Parda)
@@ -555,6 +584,8 @@ f_censo <- function(){
     # var criada; esitmar prop education->baixa
   # education: % alta escolaridade
     # var criada; esitmar prop education->alta
+  # age: % 15<
+  # var criada; esitmar prop age
   # age: % 18-39
     # var criada; esitmar prop age
   # age: % 40-64
@@ -565,50 +596,81 @@ f_censo <- function(){
     # var criada; esitmar prop formal
   # work_muni: % trab. que trabalham em outro municipio
     # var criada; esitmar prop "outro muni"
-  # commute_time (apenas V0661 == 1): tempo deslocamento casa-trabalho
-    # var criada: estimar tempo medio viagem (ver R/commute_time_censo2010)
   # V6920: trabalhadores empregados
     # estimar proporcao 1 at V6920
   # sector: % trab. industria
     # var criada; estimar prop industria (secundario)
   # sector: % trab. servicos
     # var criada: estimar prop servicos (terciario)
-  # car_motorcycle_join: % prop individuos moram dom. com car/bike
+  # car_motorcycle: % prop individuos moram dom. com car/bike
     # var criada: estimar prop "Carro ou motocicleta"
 
-  #df_censo_pes[
-  #  V6036>=16 & V6920==1,
-  #  .N,
-  #  keyby = .(sector)][
-  #  sector %in% c("Agricultura","Indústria","Serviços"),
-  #  proporcao := prop.table(N)
-  #] %>%
-  #  print()
+  ## weighted mean
+  # commute_time (apenas V0661 == 1): tempo deslocamento casa-trabalho
+  # var criada: estimar tempo medio viagem (ver R/commute_time_censo2010)
+
+  df_wghtd_mean_pes <- df_censo_pes[
+    V0661 == 1 & age != "Até 15 anos" & V1006 == 1,
+    .(wghtd_mean_commute_time = weighted.mean(commute_time, w = V0010, na.rm = T)),
+    by = .(code_urban_concentration)
+  ]
+
+  df_prop_pes <- df_censo_pes[
+    V1006 == 1, # filter onlye individuals from urban areas
+    .(
+      prop_men = sum(V0010[which(V0601 == 1)], na.rm = T) / sum(V0010, na.rm = T),
+      prop_pretas_pardas = sum(V0010[which(raca == "Preta ou Parda")], na.rm = T) / sum(V0010,na.rm = T),
+      prop_low_educ = sum(V0010[which(education =="Baixa escolaridade")],na.rm = T) / sum(V0010, na.rm=T),
+      prop_high_educ = sum(V0010[which(education == "Alta escolaridade")],na.rm = T) / sum(V0010, na.rm=T),
+      prop_age_15_less = sum(V0010[which(age == "Até 15 anos")],na.rm = T) / sum(V0010, na.rm=T),
+      prop_age_16_39 = sum(V0010[which(age == "16-39 anos")],na.rm = T) / sum(V0010, na.rm=T),
+      prop_age_40_64 = sum(V0010[which(age == "40-64 anos")],na.rm = T) / sum(V0010, na.rm=T),
+      prop_age_65_more = sum(V0010[which(age == "65+ anos")],na.rm = T) / sum(V0010, na.rm=T),
+      # all work related variables filter age != "Até 15 anos" & V6920 == 1 (situacao ocupacao == ocupada)
+      prop_employed = sum(V0010[which(age != "Até 15 anos" & V6920 == 1)],na.rm = T) / sum(V0010[which(age != "Até 15 anos")], na.rm=T),
+      prop_formal = sum(V0010[which(informal == "Formal" & age != "Até 15 anos" & V6920 == 1)],na.rm = T) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1)], na.rm=T),
+      prop_work_other_muni = sum(V0010[which(work_muni == "Outro ou mais municípios/país" & age != "Até 15 anos" & V6920 == 1)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1)], na.rm = T),
+      prop_industry = sum(V0010[which(sector == "Indústria" & age != "Até 15 anos" & V6920 == 1)],na.rm = T) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1)], na.rm=T),
+      prop_services = sum(V0010[which(sector == "Serviços" & age != "Até 15 anos" & V6920 == 1)],na.rm = T) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1)], na.rm=T),
+      prop_car_motorcycle_pes = sum(V0010[which(car_motorcycle == "Carro ou motocicleta" & age != "Até 15 anos" & V6920 == 1)],na.rm = T) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1)], na.rm=T)
+
+    ),
+    by = .(code_urban_concentration)
+  ]
 
 
+  df_vars_pes <- dplyr::left_join(
+    df_wghtd_mean_pes, df_prop_pes,
+    by = c("code_urban_concentration" = "code_urban_concentration")
+  )
 
 
-
-  # estimate average travel time --------------------------------------------
-
-  # FAZER FILTRO DE DAILY COMMUTE APENAS PARA O CALCULO DE TEMPO MEDIO DE VIAGEM
-  # filter workers with daily commute (V0661 == 1)
-  data.table::setkey(df_censo_pes, V0661)
-  df_censo_pes <- df_censo_pes[.(1)]
-
-  summary(df_censo_pes$commute_time)
+  # * merge dom pes vars ----------------------------------------------------
+  df_vars_total <- dplyr::left_join(
+    df_vars_dom, df_vars_pes,
+    by = c("code_urban_concentration" = "code_urban_concentration")
+  )
 
 
 
   # save data ---------------------------------------------------------------
 
-
-
-
+  saveRDS(
+    object = df_vars_total,
+    file = '//storage6/usuarios/Proj_acess_oport/data/urbanformbr/pca_regression_df/censo.rds',
+    compress = 'xz'
+  )
 
 
 }
 
 # run function ------------------------------------------------------------
+
+
+# plot data ---------------------------------------------------------------
+#ggplot(df_vars_total) +
+#  geom_point(aes(wghtd_mean_commute_time,prop_work_other_muni)) +
+#  scale_x_log10() +
+#  scale_y_log10()
 
 
