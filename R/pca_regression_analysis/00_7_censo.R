@@ -3,138 +3,10 @@
 # this script extracts variables and estimates metrics from the demographic census
 #..2010 to be used at the pca and regression analysis.
 
-# all work related variables contain individuals which
+# all work related variables contain individuals which:
 ## age >= 16 (V6036>=16)
 ## live in urban areas (V1006 == 1)
-## ocupation situation == ocuppied (V6920==1) ->>>>> commute time necessary?
-
-# * variables description -------------------------------------------------
-
-#' DOM:
-#' V0001	UNIDADE DA FEDERAÇÃO
-#' V0002	CÓDIGO DO MUNICÍPIO
-#' V0011	ÁREA DE PONDERAÇÃO
-#' V0300  CONTROLE
-#' V0010	PESO AMOSTRAL
-#' V0221 "MOTOCICLETA PARA USO PARTICULAR, EXISTÊNCIA:
-#'        1- Sim
-#'        2- Não
-#'        Branco"
-#' V0222 "AUTOMÓVEL PARA USO PARTICULAR, EXISTÊNCIA:
-#         1- Sim
-#         2- Não
-#         Branco"
-
-
-
-# PES:
-#' V0001	UNIDADE DA FEDERAÇÃO
-#' V0002	CÓDIGO DO MUNICÍPIO
-#' V0011	ÁREA DE PONDERAÇÃO
-#' V0010	PESO AMOSTRAL
-#' V0300  CONTROLE
-#' V1006  "SITUAÇÃO DO DOMICÍLIO:
-#'        1- Urbana
-#'        2- Rural"
-#' V0601 "SEXO:
-#         1- Masculino
-#         2- Feminino"
-
-
-# ENSINO SUPERIOR: V0633 OU V6400
-
-#' V0633 "CURSO MAIS ELEVADO QUE FREQUENTOU:
-#         01- Creche, pré-escolar (maternal e jardim de infância), classe de alfabetização - CA
-#         02- Alfabetização de jovens e adultos
-#         03- Antigo primário (elementar)
-#         04- Antigo ginásio (médio 1º ciclo)
-#         05- Ensino fundamental ou 1º grau (da 1ª a 3ª série/ do 1º ao 4º ano)
-#         06- Ensino fundamental ou 1º grau (4ª série/ 5º ano)
-#         07- Ensino fundamental ou 1º grau (da 5ª a 8ª série/ 6º ao 9º ano)
-#         08- Supletivo do ensino fundamental ou do 1º grau
-#         09- Antigo científico, clássico, etc.....(médio 2º ciclo)
-#         10- Regular ou supletivo do ensino médio ou do 2º grau
-#         11- Superior de graduação
-#         12- Especialização de nível superior ( mínimo de 360 horas )
-#         13- Mestrado
-#         14- Doutorado
-#         ' Branco"
-
-#' V6400 "NÍVEL DE INSTRUÇÃO:
-#         1- Sem instrução e fundamental incompleto
-#         2- Fundamental completo e médio incompleto
-#         3- Médio completo e superior incompleto
-#         4- Superior completo
-#         5- Não determinado "
-#' V6036 "VARIÁVEL AUXILIAR DA IDADE CALCULADA EM ANOS:
-#         - 0 a 140"
-#' V6930 "POSIÇÃO NA OCUPAÇÃO E CATEGORIA DO EMPREGO NO TRABALHO PRINCIPAL
-#         1- Empregados com carteira de trabalho assinada
-#         2- Militares e funcionários públicos estatutários
-#         3- Empregados sem carteira de trabalho assinada
-#         4- Conta própria
-#         5- Empregadores
-#         6- Não remunerados
-#         7- Trabalhadores na produção para o próprio consumo
-#         Branco"
-#' V0648 "NESSE TRABALHO ERA:
-#         1- Empregado com carteira de trabalho assinada
-#         2- Militar do exército, marinha, aeronáutica, policia militar ou corpo de bombeiros
-#         3- Empregado pelo regime jurídico dos funcionários públicos
-#         4- Empregado sem carteira de trabalho assinada
-#         5- Conta própria
-#         6- Empregador
-#         7- Não remunerado
-#         Branco"
-
-
-# SETOR DE ATIVIDADE DO TRABALHO: V6471 (CNAE) OU V6462 (CBO)
-
-#' V6471 "ATIVIDADE – código
-#(pode ter valor branco)
-#- A relação de códigos encontra-se no arquivo: “CNAEDOM2.0_Estrutura 2010.xls”"
-
-#' v6462 Qual era a ocupação que exercia no trabalho que tinha? - código 2000  (branco; banco de códigos de 2000)
-
-# TRABALHADORES EMPREGADOS: V6910 ou V6920
-#' V6910 "CONDIÇÃO DE OCUPAÇÃO NA SEMANA DE REFERÊNCIA
-#1- Ocupadas
-#2- Desocupadas
-#Branco"
-#' V6920 "SITUAÇÃO DE OCUPAÇÃO NA SEMANA DE REFERÊNCIA
-#1- Ocupadas
-#2- Desocupadas
-#Branco"
-
-
-#' V0661	"RETORNA DO TRABALHO PARA CASA DIARIAMENTE:
-#'       1- Sim
-#'       2- Não
-#'       Branco"
-#' V0662	"QUAL É O TEMPO HABITUAL GASTO DE DESLOCAMENTO DE SUA CASA ATÉ O TRABALHO:
-#'       1- Até 05 minutos
-#'       2- De 06 minutos até meia hora
-#'       3- Mais de meia hora até uma hora
-#'       4- Mais de uma hora até duas horas
-#'       5- Mais de duas horas
-#'       Branco"
-
-
-# VARIAVEIS POTENCIAIS
-
-# DOM
-# V6203 DENSIDADE DE MORADOR/CÔMODO
-
-# PES:
-# RACA: V0606
-# EM QUE MUNICIPIO TRABALHA: V0660
-# V0660 "EM QUE MUNICÍPIO E UNIDADE DA FEDERAÇÃO OU PAÍS ESTRANGEIRO TRABALHA:
-#1- No próprio domicílio
-#2- Apenas neste município, mas não no próprio domicílio
-#3- Em outro município
-#4- Em país estrangeiro
-#5- Em mais de um município ou país
-#Branco"
+## ocupation situation == ocuppied (V6920==1), except commute time
 
 
 # setup -------------------------------------------------------------------
@@ -168,8 +40,8 @@ f_censo <- function(){
     'V0222', # existencia de automovel para uso particular
     "V0203", # numero de comodos -> criar numero medio de comodos por domicilio
     "V6203", # densidade morador/cômodo
-    "V6204"  # densidade morador/dormitorio
-
+    "V6204", # densidade morador/dormitorio
+    "V0401"  # quantas pessoas moravam no domicilio 31/07/10
     )
 
   df_censo_dom <- data.table::fread(
@@ -359,11 +231,11 @@ f_censo <- function(){
         T ~ NA_character_
       ),
       # V0660 which municipality the worker works
-      work_muni = fct_case_when(
-        V0660 == 1 ~ "Próprio domicílio",
-        V0660 == 2 ~ "Mesmo município, mas não no domicílio",
-        V0660 >= 3 & V0660 <= 5 ~ "Outro ou mais municípios/país",
-        T ~ NA_character_
+      work_muni = data.table::fcase(
+        V0660 == 1, "Próprio domicílio",
+        V0660 == 2, "Mesmo município, mas não no domicílio",
+        V0660 >= 3 & V0660 <= 5, "Outro ou mais municípios/país",
+        default = NA_character_
       )
     )
   ]
@@ -501,6 +373,23 @@ f_censo <- function(){
   ]
 
 
+  # household size: number of individuals per household -> UTILIZAR V0401 !!
+  #df_household_size <- df_censo_pes[
+  #  ,
+  #  .(household_size = .N),
+  #  by = .(V0300)
+  #]
+  #df_censo_pes[
+  #  df_household_size,
+  #  `:=`(household_size = i.household_size),
+  #  on = c("V0300" = "V0300")
+  #]
+  #df_household_size <- df_censo_pes[
+  #  V1006==1,
+  #  .(wghtd_mean_household_size = weighted.mean(household_size, w = V0010, na.rm = T)),
+  #  by = .(code_urban_concentration)
+  #]
+
   # merge dom + pes data ----------------------------------------------------
 
   # merge household and individual data
@@ -535,20 +424,20 @@ f_censo <- function(){
     ,
     lapply(.SD, weighted.mean, w = V0010, na.rm = T),
     by = .(code_urban_concentration, name_uca_case),
-    .SDcols = c("V0203","V6203","V6204")
+    .SDcols = c("V0203","V6203","V6204","V0401")
   ]
 
   data.table::setnames(
     x = df_wghtd_mean_dom,
-    old = c("V0203","V6203","V6204"),
+    old = c("V0203","V6203","V6204","V0401"),
     new = c("wghtd_mean_rooms_household","wghtd_mean_dens_resident_rooms",
-            "wghtd_mean_dens_resident_bedroom")
+            "wghtd_mean_dens_resident_bedroom","wghtd_mean_household_size")
   )
 
   df_prop_dom <- df_censo_pes[
     ,
     .(
-      prop_dom_urb = sum(V0010[which(V1006 == 1)], na.rm = T) / sum(V0010, na.rm = T),
+      prop_dom_urban = sum(V0010[which(V1006 == 1)], na.rm = T) / sum(V0010, na.rm = T),
       prop_car_motorcycle_dom = sum(V0010[which(car_motorcycle == "Carro ou motocicleta" & V1006 == 1)], na.rm = T) / sum(V0010[which(V1006 == 1)], na.rm = T)
       ),
     by = .(code_urban_concentration)
@@ -568,7 +457,7 @@ f_censo <- function(){
   df_vars_dom <- df_wghtd_mean_dom[
     df_prop_dom,
     `:=`(
-      prop_dom_urb = i.prop_dom_urb,
+      prop_dom_urban = i.prop_dom_urban,
       prop_car_motorcycle_dom = i.prop_car_motorcycle_dom
     ),
     on = c("code_urban_concentration" = "code_urban_concentration")
@@ -576,8 +465,12 @@ f_censo <- function(){
 
   # * vars pessoas (individuals) --------------------------------------------
   ## prorportion
+  # V1006: % pessoas em domicilios em situacao urbana
+    # estimar proporcao 1 at V1006
   # V0601: % sexo masculino
     # estimar proporcao 1 at V0601
+  # V0601: % sexo feminino
+    # estimar proporcao 2 at V0601
   # raca: % pessoas brancas (ou Preta ou Parda)
     # var criada; estimar prop
   # education: % baixa escolaridade
@@ -615,11 +508,19 @@ f_censo <- function(){
     by = .(code_urban_concentration)
   ]
 
+  df_prop_pes_urban <- df_censo_pes[
+    ,
+    .(prop_pes_urban = sum(V0010[which(V1006 == 1)], na.rm = T) / sum(V0010, na.rm = T)),
+    by = .(code_urban_concentration)
+  ]
+
   df_prop_pes <- df_censo_pes[
     V1006 == 1, # filter onlye individuals from urban areas
     .(
       prop_men = sum(V0010[which(V0601 == 1)], na.rm = T) / sum(V0010, na.rm = T),
+      prop_women = sum(V0010[which(V0601 == 2)], na.rm = T) / sum(V0010, na.rm = T),
       prop_pretas_pardas = sum(V0010[which(raca == "Preta ou Parda")], na.rm = T) / sum(V0010,na.rm = T),
+      prop_brancas = sum(V0010[which(raca == "Branca")], na.rm = T) / sum(V0010,na.rm = T),
       prop_low_educ = sum(V0010[which(education =="Baixa escolaridade")],na.rm = T) / sum(V0010, na.rm=T),
       prop_high_educ = sum(V0010[which(education == "Alta escolaridade")],na.rm = T) / sum(V0010, na.rm=T),
       prop_age_15_less = sum(V0010[which(age == "Até 15 anos")],na.rm = T) / sum(V0010, na.rm=T),
@@ -629,7 +530,10 @@ f_censo <- function(){
       # all work related variables filter age != "Até 15 anos" & V6920 == 1 (situacao ocupacao == ocupada)
       prop_employed = sum(V0010[which(age != "Até 15 anos" & V6920 == 1)],na.rm = T) / sum(V0010[which(age != "Até 15 anos")], na.rm=T),
       prop_formal = sum(V0010[which(informal == "Formal" & age != "Até 15 anos" & V6920 == 1)],na.rm = T) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1)], na.rm=T),
+      prop_informal = sum(V0010[which(informal == "Informal" & age != "Até 15 anos" & V6920 == 1)],na.rm = T) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1)], na.rm=T),
       prop_work_other_muni = sum(V0010[which(work_muni == "Outro ou mais municípios/país" & age != "Até 15 anos" & V6920 == 1)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1)], na.rm = T),
+      prop_work_home_office = sum(V0010[which(work_muni == "Próprio domicílio" & age != "Até 15 anos" & V6920 == 1)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1)], na.rm = T),
+      prop_work_same_muni_not_home_office = sum(V0010[which(work_muni == "Mesmo município, mas não no domicílio" & age != "Até 15 anos" & V6920 == 1)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1)], na.rm = T),
       prop_industry = sum(V0010[which(sector == "Indústria" & age != "Até 15 anos" & V6920 == 1)],na.rm = T) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1)], na.rm=T),
       prop_services = sum(V0010[which(sector == "Serviços" & age != "Até 15 anos" & V6920 == 1)],na.rm = T) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1)], na.rm=T),
       prop_car_motorcycle_pes = sum(V0010[which(car_motorcycle == "Carro ou motocicleta" & age != "Até 15 anos" & V6920 == 1)],na.rm = T) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1)], na.rm=T)
@@ -640,9 +544,13 @@ f_censo <- function(){
 
 
   df_vars_pes <- dplyr::left_join(
-    df_wghtd_mean_pes, df_prop_pes,
+    df_wghtd_mean_pes, df_prop_pes_urban,
     by = c("code_urban_concentration" = "code_urban_concentration")
-  )
+  ) %>%
+    dplyr::left_join(
+      df_prop_pes,
+      by = c("code_urban_concentration" = "code_urban_concentration")
+      )
 
 
   # * merge dom pes vars ----------------------------------------------------
@@ -665,12 +573,142 @@ f_censo <- function(){
 }
 
 # run function ------------------------------------------------------------
-
+f_censo()
 
 # plot data ---------------------------------------------------------------
 #ggplot(df_vars_total) +
 #  geom_point(aes(wghtd_mean_commute_time,prop_work_other_muni)) +
 #  scale_x_log10() +
 #  scale_y_log10()
+
+
+# variables description -------------------------------------------------
+
+#' DOM:
+#' V0001	UNIDADE DA FEDERAÇÃO
+#' V0002	CÓDIGO DO MUNICÍPIO
+#' V0011	ÁREA DE PONDERAÇÃO
+#' V0300  CONTROLE
+#' V0010	PESO AMOSTRAL
+#' V0221 "MOTOCICLETA PARA USO PARTICULAR, EXISTÊNCIA:
+#'        1- Sim
+#'        2- Não
+#'        Branco"
+#' V0222 "AUTOMÓVEL PARA USO PARTICULAR, EXISTÊNCIA:
+#         1- Sim
+#         2- Não
+#         Branco"
+
+
+
+# PES:
+#' V0001	UNIDADE DA FEDERAÇÃO
+#' V0002	CÓDIGO DO MUNICÍPIO
+#' V0011	ÁREA DE PONDERAÇÃO
+#' V0010	PESO AMOSTRAL
+#' V0300  CONTROLE
+#' V1006  "SITUAÇÃO DO DOMICÍLIO:
+#'        1- Urbana
+#'        2- Rural"
+#' V0601 "SEXO:
+#         1- Masculino
+#         2- Feminino"
+
+
+# ENSINO SUPERIOR: V0633 OU V6400
+
+#' V0633 "CURSO MAIS ELEVADO QUE FREQUENTOU:
+#         01- Creche, pré-escolar (maternal e jardim de infância), classe de alfabetização - CA
+#         02- Alfabetização de jovens e adultos
+#         03- Antigo primário (elementar)
+#         04- Antigo ginásio (médio 1º ciclo)
+#         05- Ensino fundamental ou 1º grau (da 1ª a 3ª série/ do 1º ao 4º ano)
+#         06- Ensino fundamental ou 1º grau (4ª série/ 5º ano)
+#         07- Ensino fundamental ou 1º grau (da 5ª a 8ª série/ 6º ao 9º ano)
+#         08- Supletivo do ensino fundamental ou do 1º grau
+#         09- Antigo científico, clássico, etc.....(médio 2º ciclo)
+#         10- Regular ou supletivo do ensino médio ou do 2º grau
+#         11- Superior de graduação
+#         12- Especialização de nível superior ( mínimo de 360 horas )
+#         13- Mestrado
+#         14- Doutorado
+#         ' Branco"
+
+#' V6400 "NÍVEL DE INSTRUÇÃO:
+#         1- Sem instrução e fundamental incompleto
+#         2- Fundamental completo e médio incompleto
+#         3- Médio completo e superior incompleto
+#         4- Superior completo
+#         5- Não determinado "
+#' V6036 "VARIÁVEL AUXILIAR DA IDADE CALCULADA EM ANOS:
+#         - 0 a 140"
+#' V6930 "POSIÇÃO NA OCUPAÇÃO E CATEGORIA DO EMPREGO NO TRABALHO PRINCIPAL
+#         1- Empregados com carteira de trabalho assinada
+#         2- Militares e funcionários públicos estatutários
+#         3- Empregados sem carteira de trabalho assinada
+#         4- Conta própria
+#         5- Empregadores
+#         6- Não remunerados
+#         7- Trabalhadores na produção para o próprio consumo
+#         Branco"
+#' V0648 "NESSE TRABALHO ERA:
+#         1- Empregado com carteira de trabalho assinada
+#         2- Militar do exército, marinha, aeronáutica, policia militar ou corpo de bombeiros
+#         3- Empregado pelo regime jurídico dos funcionários públicos
+#         4- Empregado sem carteira de trabalho assinada
+#         5- Conta própria
+#         6- Empregador
+#         7- Não remunerado
+#         Branco"
+
+
+# SETOR DE ATIVIDADE DO TRABALHO: V6471 (CNAE) OU V6462 (CBO)
+
+#' V6471 "ATIVIDADE – código
+#(pode ter valor branco)
+#- A relação de códigos encontra-se no arquivo: “CNAEDOM2.0_Estrutura 2010.xls”"
+
+#' v6462 Qual era a ocupação que exercia no trabalho que tinha? - código 2000  (branco; banco de códigos de 2000)
+
+# TRABALHADORES EMPREGADOS: V6910 ou V6920
+#' V6910 "CONDIÇÃO DE OCUPAÇÃO NA SEMANA DE REFERÊNCIA
+#1- Ocupadas
+#2- Desocupadas
+#Branco"
+#' V6920 "SITUAÇÃO DE OCUPAÇÃO NA SEMANA DE REFERÊNCIA
+#1- Ocupadas
+#2- Desocupadas
+#Branco"
+
+
+#' V0661	"RETORNA DO TRABALHO PARA CASA DIARIAMENTE:
+#'       1- Sim
+#'       2- Não
+#'       Branco"
+#' V0662	"QUAL É O TEMPO HABITUAL GASTO DE DESLOCAMENTO DE SUA CASA ATÉ O TRABALHO:
+#'       1- Até 05 minutos
+#'       2- De 06 minutos até meia hora
+#'       3- Mais de meia hora até uma hora
+#'       4- Mais de uma hora até duas horas
+#'       5- Mais de duas horas
+#'       Branco"
+
+
+# VARIAVEIS POTENCIAIS
+
+# DOM
+# V6203 DENSIDADE DE MORADOR/CÔMODO
+
+# PES:
+# RACA: V0606
+# EM QUE MUNICIPIO TRABALHA: V0660
+# V0660 "EM QUE MUNICÍPIO E UNIDADE DA FEDERAÇÃO OU PAÍS ESTRANGEIRO TRABALHA:
+#1- No próprio domicílio
+#2- Apenas neste município, mas não no próprio domicílio
+#3- Em outro município
+#4- Em país estrangeiro
+#5- Em mais de um município ou país
+#Branco"
+
 
 
