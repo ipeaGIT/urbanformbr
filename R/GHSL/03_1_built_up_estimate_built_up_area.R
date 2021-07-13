@@ -20,7 +20,7 @@ ghsl_built_dir <- "//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/BU
 
 # define function ---------------------------------------------------------
 
-# function to extract values from raster file
+# function to extract values from raster file defining polygon (sf) shape
 f_extrair_mean <- function(raster, shape){
 
   extrair <- exactextractr::exact_extract(raster, shape) %>%
