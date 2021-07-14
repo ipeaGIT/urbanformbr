@@ -166,13 +166,9 @@ f_area_variables <- function(input_polygon, input_urban_extent_raster, input_uca
 
   # reorder list to match order
   raster_expansion$uca_complete_raster_1975 <-
-    raster_expansion$uca_complete_raster_1975[
-      names(polygon_expansion_area)
-    ]
+    raster_expansion$uca_complete_raster_1975[names(polygon_expansion_area)]
   raster_expansion$uca_complete_raster_2014 <-
-    raster_expansion$uca_complete_raster_2014[
-      names(polygon_expansion_area)
-    ]
+    raster_expansion$uca_complete_raster_2014[names(polygon_expansion_area)]
 
   raster_expansion$uca_complete_raster_1975 <- purrr::map2(
     .x = raster_expansion$uca_complete_raster_1975, .y = polygon_expansion_area,
