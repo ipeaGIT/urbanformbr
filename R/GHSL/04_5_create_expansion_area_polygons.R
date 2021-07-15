@@ -15,9 +15,9 @@ f_create_expansion_polygon <- function(var) {
 
   # * read data -------------------------------------------------------------
 
-  polygon_built_area_1975 <- readr::read_rds("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/results/urban_extent_uca_1975_cutoff20.rds")
+  polygon_built_area_1975 <- readr::read_rds("../../data/urbanformbr/ghsl/results/urban_extent_uca_1975_cutoff20.rds")
 
-  polygon_built_area_2014 <- readr::read_rds("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/results/urban_extent_uca_2014_cutoff20.rds")
+  polygon_built_area_2014 <- readr::read_rds("../../data/urbanformbr/ghsl/results/urban_extent_uca_2014_cutoff20.rds")
 
 
 # * clean data ------------------------------------------------------------
@@ -53,7 +53,7 @@ f_create_expansion_polygon <- function(var) {
 
   saveRDS(
     object = df_polygon_expansion_area,
-    file = '//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/results/expansion_area_cutoff20.rds',
+    file = '../../data/urbanformbr/ghsl/results/expansion_area_cutoff20.rds',
     compress = 'xz'
   )
 

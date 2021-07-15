@@ -13,7 +13,7 @@ source('R/setup.R')
 
 # * built up area ---------------------------------------------------------
 
-ghsl_built_dir <- "//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/BUILT/UCA/"
+ghsl_built_dir <- "../../data/urbanformbr/ghsl/BUILT/UCA/"
 
 # files vector
 years <-c('1975','1990','2000','2014')
@@ -22,7 +22,7 @@ files_built <- purrr::map(years, ~dir(ghsl_built_dir, pattern = ., full.names = 
 
 # * population ------------------------------------------------------------
 
-ghsl_pop_dir <- "//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/POP/UCA/"
+ghsl_pop_dir <- "../../data/urbanformbr/ghsl/POP/UCA/"
 
 # files vector
 years <-c('1975','1990','2000','2015')
@@ -57,7 +57,7 @@ f_crop_raster_cutoff_built <- function(input){
 
   # read 20% polygon cutoff
   bua_polygon20 <- readr::read_rds(
-    paste0('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/results/urban_extent_uca_',unique(anos),'_cutoff20.rds')
+    paste0('../../data/urbanformbr/ghsl/results/urban_extent_uca_',unique(anos),'_cutoff20.rds')
     )
   bua_polygon20 <- bua_polygon20 %>%
     dplyr::arrange(name_uca_case)
@@ -83,8 +83,8 @@ f_crop_raster_cutoff_built <- function(input){
   )
 
   # create directory
-  if (!dir.exists("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/BUILT/urban_extent_cutoff_20")){
-    dir.create("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/BUILT/urban_extent_cutoff_20")
+  if (!dir.exists("../../data/urbanformbr/ghsl/BUILT/urban_extent_cutoff_20")){
+    dir.create("../../data/urbanformbr/ghsl/BUILT/urban_extent_cutoff_20")
   }
 
   files_output <- purrr::map_chr(
@@ -97,7 +97,7 @@ f_crop_raster_cutoff_built <- function(input){
     uca_mask, files_output, function(x,y)
       raster::writeRaster(
         x = x,
-        filename = paste0('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/BUILT/urban_extent_cutoff_20/', y),
+        filename = paste0('../../data/urbanformbr/ghsl/BUILT/urban_extent_cutoff_20/', y),
         overwrite = T
       )
   )
@@ -129,11 +129,11 @@ f_crop_raster_cutoff_pop <- function(input){
   # read 20% polygon cutoff
   if (unique(anos) == '2015') {
     bua_polygon20 <- readr::read_rds(
-      paste0('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/results/urban_extent_uca_','2014','_cutoff20.rds')
+      paste0('../../data/urbanformbr/ghsl/results/urban_extent_uca_','2014','_cutoff20.rds')
     )
   } else {
     bua_polygon20 <- readr::read_rds(
-      paste0('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/results/urban_extent_uca_',unique(anos),'_cutoff20.rds')
+      paste0('../../data/urbanformbr/ghsl/results/urban_extent_uca_',unique(anos),'_cutoff20.rds')
     )
   }
 
@@ -161,8 +161,8 @@ f_crop_raster_cutoff_pop <- function(input){
   )
 
   # create directory
-  if (!dir.exists("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/POP/urban_extent_cutoff_20")){
-    dir.create("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/POP/urban_extent_cutoff_20")
+  if (!dir.exists("../../data/urbanformbr/ghsl/POP/urban_extent_cutoff_20")){
+    dir.create("../../data/urbanformbr/ghsl/POP/urban_extent_cutoff_20")
   }
 
   files_output <- purrr::map_chr(
@@ -175,7 +175,7 @@ f_crop_raster_cutoff_pop <- function(input){
     uca_mask, files_output, function(x,y)
       raster::writeRaster(
         x = x,
-        filename = paste0('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/POP/urban_extent_cutoff_20/', y),
+        filename = paste0('../../data/urbanformbr/ghsl/POP/urban_extent_cutoff_20/', y),
         overwrite = T
       )
   )

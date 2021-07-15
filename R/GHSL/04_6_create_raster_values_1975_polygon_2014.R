@@ -74,7 +74,7 @@ f_raster_all <- function(){
     function(x,y)
       raster::writeRaster(
         x = x,
-        filename = paste0("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/BUILT/polygon_urban_extent_2014_cutoff_20_values_1975/GHS_BUILT_polygon_urban_extent_2014_cutoff_20_values_1975_", y, "_1K.tif"),
+        filename = paste0("../../data/urbanformbr/ghsl/BUILT/polygon_urban_extent_2014_cutoff_20_values_1975/GHS_BUILT_polygon_urban_extent_2014_cutoff_20_values_1975_", y, "_1K.tif"),
         overwrite = T
       )
   )
@@ -84,7 +84,7 @@ f_raster_all <- function(){
     function(x,y)
       raster::writeRaster(
         x = x,
-        filename = paste0("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/POP/polygon_urban_extent_2014_cutoff_20_values_1975/GHS_POP_polygon_urban_extent_2014_cutoff_20_values_1975_", y, "_1K.tif"),
+        filename = paste0("../../data/urbanformbr/ghsl/POP/polygon_urban_extent_2014_cutoff_20_values_1975/GHS_POP_polygon_urban_extent_2014_cutoff_20_values_1975_", y, "_1K.tif"),
         overwrite = T
       )
   )
@@ -139,13 +139,13 @@ f_raster_values_1975_pol_2014 <- function(codigo, nome) {
   # save data
   raster::writeRaster(
     x = raster_built_mask,
-    filename = paste0("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/BUILT/polygon_urban_extent_2014_cutoff_20_values_1975/GHS_BUILT_polygon_urban_extent_2014_cutoff_20_values_1975_",nome,"_1K.tif"),
+    filename = paste0("../../data/urbanformbr/ghsl/BUILT/polygon_urban_extent_2014_cutoff_20_values_1975/GHS_BUILT_polygon_urban_extent_2014_cutoff_20_values_1975_",nome,"_1K.tif"),
     overwrite = T
   )
 
   raster::writeRaster(
     x = raster_pop_mask,
-    filename = paste0("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/POP/polygon_urban_extent_2014_cutoff_20_values_1975/GHS_POP_polygon_urban_extent_2014_cutoff_20_values_1975_",nome,"_1K.tif"),
+    filename = paste0("../../data/urbanformbr/ghsl/POP/polygon_urban_extent_2014_cutoff_20_values_1975/GHS_POP_polygon_urban_extent_2014_cutoff_20_values_1975_",nome,"_1K.tif"),
     overwrite = T
   )
 

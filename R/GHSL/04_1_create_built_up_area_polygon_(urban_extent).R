@@ -11,7 +11,7 @@ source('R/setup.R')
 
 # directory ---------------------------------------------------------------
 
-ghsl_built_dir <- "//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/BUILT/UCA/"
+ghsl_built_dir <- "../../data/urbanformbr/ghsl/BUILT/UCA/"
 
 # files vector
 years <-c('1975','1990','2000','2014')
@@ -106,7 +106,7 @@ f_create_polygon_cutoff <- function(input){
   )
 
   # read urban shapes saved at `urban_shapes.R` to get code_muni
-  urban_shapes <- readr::read_rds('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/urban_area_shapes/urban_area_pop_100000_dissolved.rds') %>%
+  urban_shapes <- readr::read_rds('../../data/urbanformbr/urban_area_shapes/urban_area_pop_100000_dissolved.rds') %>%
     sf::st_drop_geometry() %>%
     data.table::setDT() %>%
     dplyr::rename(code_muni = code_urban_concentration)
@@ -133,7 +133,7 @@ f_create_polygon_cutoff <- function(input){
   # save as one df
   saveRDS(
     object = bua_reduce,
-    file = paste0('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/results/urban_extent_uca_',unique(anos),'_cutoff20.rds'),
+    file = paste0('../../data/urbanformbr/ghsl/results/urban_extent_uca_',unique(anos),'_cutoff20.rds'),
     compress = 'xz'
   )
 

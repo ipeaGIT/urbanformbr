@@ -10,12 +10,12 @@ source('R/setup.R')
 
 # directory ---------------------------------------------------------------
 
-ghsl_results_dir <- "//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/results/"
+ghsl_results_dir <- "../../data/urbanformbr/ghsl/results/"
 
 
 # read data ---------------------------------------------------------------
 # uca results based on ghsl
-uca_all_final <- readr::read_rds('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/results/uca_pop_100000_built_up_area_population_results.rds')
+uca_all_final <- readr::read_rds('../../data/urbanformbr/ghsl/results/uca_pop_100000_built_up_area_population_results.rds')
 # region dataset
 regiao <- geobr::read_region()
 

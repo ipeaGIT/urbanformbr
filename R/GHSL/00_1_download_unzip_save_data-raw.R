@@ -27,11 +27,11 @@ source('R/setup.R')
 
 # directory ---------------------------------------------------------------
 
-if (!dir.exists("//storage6/usuarios/Proj_acess_oport/data-raw/ghsl")){
-  dir.create("//storage6/usuarios/Proj_acess_oport/data-raw/ghsl")
+if (!dir.exists("../../data-raw/ghsl")){
+  dir.create("../../data-raw/ghsl")
 }
 
-ghsl_dir <- "//storage6/usuarios/Proj_acess_oport/data-raw/ghsl"
+ghsl_dir <- "../../data-raw/ghsl"
 
 
 # download, unzip and save data-raw ---------------------------------------

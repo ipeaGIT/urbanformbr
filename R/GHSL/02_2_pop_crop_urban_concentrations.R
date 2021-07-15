@@ -15,7 +15,7 @@ source('R/setup.R')
 # directory and files input -----------------------------------------------
 
 # directory
-ghsl_pop_dir <- "//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/POP/BRASIL/"
+ghsl_pop_dir <- "../../data/urbanformbr/ghsl/POP/BRASIL/"
 
 # files input
 files_input <- dir(ghsl_pop_dir, pattern = 'BRASIL.*raster.tif$')
@@ -38,7 +38,7 @@ f_crop_uca <- function(input){
   if (!exists(x = 'uca_all')) {
 
     # read uca sf saved at 01_01
-    uca_all <- readr::read_rds('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/urban_area_shapes/urban_area_pop_100000_dissolved.rds')
+    uca_all <- readr::read_rds('../../data/urbanformbr/urban_area_shapes/urban_area_pop_100000_dissolved.rds')
 
     # add column with clean uca
     uca_all <- uca_all %>%
@@ -81,8 +81,8 @@ f_crop_uca <- function(input){
 
 
   # create directory
-  if (!dir.exists("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/POP/UCA")){
-    dir.create("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/POP/UCA")
+  if (!dir.exists("../../data/urbanformbr/ghsl/POP/UCA")){
+    dir.create("../../data/urbanformbr/ghsl/POP/UCA")
   }
 
   # create output name with input
@@ -96,7 +96,7 @@ f_crop_uca <- function(input){
     uca_mask, files_output, function(x,y)
       raster::writeRaster(
         x = x,
-        filename = paste0('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/POP/UCA/', y),
+        filename = paste0('../../data/urbanformbr/ghsl/POP/UCA/', y),
         overwrite = T
       )
   )
@@ -105,7 +105,7 @@ f_crop_uca <- function(input){
   #  uca_mask, files_output, function(x,y)
   #    raster::writeRaster(
   #      x = x,
-  #      filename = paste0('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/POP/UCA/', y, '_raster.tif'),
+  #      filename = paste0('../../data/urbanformbr/ghsl/POP/UCA/', y, '_raster.tif'),
   #      overwrite = T
   #    )
   #)

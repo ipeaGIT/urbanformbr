@@ -16,7 +16,7 @@ source('R/setup.R')
 
 # directory ---------------------------------------------------------------
 
-ghsl_pop_dir <- "//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/POP/UCA/"
+ghsl_pop_dir <- "../../data/urbanformbr/ghsl/POP/UCA/"
 
 # define function ---------------------------------------------------------
 
@@ -50,7 +50,7 @@ funcao <- function(input){
   names(pop_uca) <- uca_name
 
   # read uca shape + results saved at 03_1
-  uca_all <- readr::read_rds('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/results/uca_pop_100000_built_up_area_results.rds')
+  uca_all <- readr::read_rds('../../data/urbanformbr/ghsl/results/uca_pop_100000_built_up_area_results.rds')
 
   # change shape crs (not necessary, but done to be sure)
   uca_all <- sf::st_transform(uca_all, raster::projection(purrr::pluck(pop_uca, 1)))
@@ -132,13 +132,13 @@ uca_all_final <- dplyr::left_join(
 # save dataset ------------------------------------------------------------
 
 # create directory
-if (!dir.exists("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/results")){
-  dir.create("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/results")
+if (!dir.exists("../../data/urbanformbr/ghsl/results")){
+  dir.create("../../data/urbanformbr/ghsl/results")
 }
 
 saveRDS(
   object = uca_all_final,
-  file = '//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/results/uca_pop_100000_built_up_area_population_results.rds',
+  file = '../../data/urbanformbr/ghsl/results/uca_pop_100000_built_up_area_population_results.rds',
   compress = 'xz'
 )
 

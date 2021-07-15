@@ -39,7 +39,7 @@ source('R/setup.R')
 
 # directory ---------------------------------------------------------------
 
-ghsl_dir <- "//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/"
+ghsl_dir <- "../../data/urbanformbr/ghsl/"
 
 years <-c('1975','2014')
 
@@ -464,7 +464,7 @@ f_area_variables <- function(input_polygon, input_urban_extent_raster, input_uca
   # save area rds ---------------------------------------------------------
   saveRDS(
     object = df_merged,
-    file = '//storage6/usuarios/Proj_acess_oport/data/urbanformbr/pca_regression_df/area.rds',
+    file = '../../data/urbanformbr/pca_regression_df/area.rds',
     compress = 'xz'
   )
 

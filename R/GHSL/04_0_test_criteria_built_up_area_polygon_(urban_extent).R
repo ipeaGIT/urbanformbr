@@ -25,7 +25,7 @@ source('R/colours.R')
 
 # directory ---------------------------------------------------------------
 
-ghsl_built_dir <- "//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/BUILT/UCA/"
+ghsl_built_dir <- "../../data/urbanformbr/ghsl/BUILT/UCA/"
 
 
 # 1 preliminary function: inspect 9 cities  -------------------------------
@@ -35,7 +35,7 @@ ghsl_built_dir <- "//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/BU
 # * 1.1 define files ------------------------------------------------------
 
 files_preliminary <- dir(
-  "//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/BUILT/UCA/",
+  "../../data/urbanformbr/ghsl/BUILT/UCA/",
   pattern = "(1975|2014).*(sao_paulo|fortaleza|brasilia|curitiba|belo_horizonte|rio_de_janeiro|bage|porto_alegre|vitoria_es).*\\.tif$"
 )
 
@@ -204,7 +204,7 @@ f_preliminary <- function(input) {
 
   purrr::walk2(bua_compare, names(bua_compare), function(x,y)
     ggplot2::ggsave(
-      filename = paste0('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/figures/', y, '.png'),
+      filename = paste0('../../data/urbanformbr/ghsl/figures/', y, '.png'),
       plot = x, dpi = 300, device = 'png'
       )
     )
@@ -224,7 +224,7 @@ f_preliminary(input = files_preliminary)
 # * 2.1 define files ------------------------------------------------------
 
 files_compare <- dir(
-  "//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/BUILT/UCA/",
+  "../../data/urbanformbr/ghsl/BUILT/UCA/",
   pattern = "(2014).*\\.tif$"
 )
 
@@ -376,7 +376,7 @@ f_compare <- function(){
   df_bua_areas <- data.table::rbindlist(df_bua_areas)
 
   # read urban shapes saved at `urban_shapes.R` to get code_muni
-  urban_shapes <- readr::read_rds('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/urban_area_shapes/urban_area_pop_100000_dissolved.rds') %>%
+  urban_shapes <- readr::read_rds('../../data/urbanformbr/urban_area_shapes/urban_area_pop_100000_dissolved.rds') %>%
     sf::st_drop_geometry() %>%
     data.table::setDT()
   # add code_muni columns to df
@@ -465,7 +465,7 @@ f_compare <- function(){
     dplyr::relocate(name_region, .after = code_urban_concentration)
 
   # read uca pop data saved at 03_2
-  uca_pop <- readr::read_rds("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/results/uca_pop_100000_built_up_area_population_results.rds") %>%
+  uca_pop <- readr::read_rds("../../data/urbanformbr/ghsl/results/uca_pop_100000_built_up_area_population_results.rds") %>%
     data.table::setDT()
 
   # include population data to df_bua_areas
@@ -515,7 +515,7 @@ f_compare <- function(){
 
   # save plot
   ggplot2::ggsave(
-    filename = paste0('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/figures/', 'difference_cutoff_20_25_ibge_region', '.png'),
+    filename = paste0('../../data/urbanformbr/ghsl/figures/', 'difference_cutoff_20_25_ibge_region', '.png'),
     dpi = 300, device = 'png'
   )
 
@@ -552,7 +552,7 @@ f_compare <- function(){
 
   # save plot
   ggplot2::ggsave(
-    filename = paste0('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/figures/', 'difference_cutoff_20_25_ibge_threshold', '.png'),
+    filename = paste0('../../data/urbanformbr/ghsl/figures/', 'difference_cutoff_20_25_ibge_threshold', '.png'),
     dpi = 300, device = 'png'
   )
 
@@ -567,7 +567,7 @@ f_compare <- function(){
   # save df footprints areas
   saveRDS(
     df_bua_areas,
-    "//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/results/cutoff_criteria_built_area.rds"
+    "../../data/urbanformbr/ghsl/results/cutoff_criteria_built_area.rds"
     )
 
 
@@ -938,7 +938,7 @@ f_compare <- function(){
 
   # save plot
   ggplot2::ggsave(
-    filename = paste0('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/figures/', 'spatial_intersection_and_difference_cutoffs_ibge_threshold', '.png'),
+    filename = paste0('../../data/urbanformbr/ghsl/figures/', 'spatial_intersection_and_difference_cutoffs_ibge_threshold', '.png'),
     dpi = 300, device = 'png'
   )
 

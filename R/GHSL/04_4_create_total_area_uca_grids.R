@@ -43,7 +43,7 @@ f_create_total_area_uca_grids <- function(year){
     function(code, name){
       if(year == 1975){
         raster_built <- paste0(
-          "//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/BUILT/polygon_urban_extent_2014_cutoff_20_values_1975/GHS_BUILT_polygon_urban_extent_2014_cutoff_20_values_1975_",
+          "../../data/urbanformbr/ghsl/BUILT/polygon_urban_extent_2014_cutoff_20_values_1975/GHS_BUILT_polygon_urban_extent_2014_cutoff_20_values_1975_",
           name,
           "_1K.tif"
         )
@@ -58,7 +58,7 @@ f_create_total_area_uca_grids <- function(year){
 
       if (year == 1975) {
         raster_pop <-paste0(
-          "//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/POP/polygon_urban_extent_2014_cutoff_20_values_1975/GHS_POP_polygon_urban_extent_2014_cutoff_20_values_1975_",
+          "../../data/urbanformbr/ghsl/POP/polygon_urban_extent_2014_cutoff_20_values_1975/GHS_POP_polygon_urban_extent_2014_cutoff_20_values_1975_",
           name,
           "_1K.tif"
         )
