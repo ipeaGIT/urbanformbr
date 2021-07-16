@@ -172,12 +172,12 @@ df_final <- data.table::rbindlist(list(df_1975,df_2014))
 df_final[
   ,
   `:=`(
-    pop_total_diff = (pop_total - c(pop_total[1], head(pop_total, -1)) ) / c(pop_total[1], head(pop_total, -1)),
-    built_total_diff = (built_total - c(built_total[1], head(built_total, -1)) ) / c(built_total[1], head(built_total, -1)),
-    density_pop_05km2_diff = (density_pop_05km2 - c(density_pop_05km2[1], head(density_pop_05km2, -1)) ) / c(density_pop_05km2[1], head(density_pop_05km2, -1)),
-    density_pop_10km2_diff = (density_pop_10km2 - c(density_pop_10km2[1], head(density_pop_10km2, -1)) ) / c(density_pop_10km2[1], head(density_pop_10km2, -1)),
-    density_built_05km2_diff = (density_built_05km2 - c(density_built_05km2[1], head(density_built_05km2, -1)) ) / c(density_built_05km2[1], head(density_built_05km2, -1)),
-    density_built_10km2_diff = (density_built_10km2 - c(density_built_10km2[1], head(density_built_10km2, -1)) ) / c(density_built_10km2[1], head(density_built_10km2, -1))
+    pop_total_rel_diff = (pop_total - c(pop_total[1], head(pop_total, -1)) ) / c(pop_total[1], head(pop_total, -1)),
+    built_total_rel_diff = (built_total - c(built_total[1], head(built_total, -1)) ) / c(built_total[1], head(built_total, -1)),
+    density_pop_05km2_rel_diff = (density_pop_05km2 - c(density_pop_05km2[1], head(density_pop_05km2, -1)) ) / c(density_pop_05km2[1], head(density_pop_05km2, -1)),
+    density_pop_10km2_rel_diff = (density_pop_10km2 - c(density_pop_10km2[1], head(density_pop_10km2, -1)) ) / c(density_pop_10km2[1], head(density_pop_10km2, -1)),
+    density_built_05km2_rel_diff = (density_built_05km2 - c(density_built_05km2[1], head(density_built_05km2, -1)) ) / c(density_built_05km2[1], head(density_built_05km2, -1)),
+    density_built_10km2_rel_diff = (density_built_10km2 - c(density_built_10km2[1], head(density_built_10km2, -1)) ) / c(density_built_10km2[1], head(density_built_10km2, -1))
   ),
   by = .(code_muni, name_uca_case, area_type)
 ]
@@ -186,19 +186,24 @@ df_final[
 df_final_wide <- tidyr::pivot_wider(
   df_final,
   names_from = c("area_type","ano"),
-  values_from = c("pop_total","built_total",
-                  "density_pop_05km2", "density_pop_10km2" ,"density_built_05km2","density_built_10km2",
-                  "pop_total_diff","built_total_diff", "density_pop_05km2_diff", "density_pop_10km2_diff",
-                  "density_built_05km2_diff","density_built_10km2_diff"
+  values_from = c(
+    "pop_total","built_total","density_pop_05km2", "density_pop_10km2",
+    "density_built_05km2","density_built_10km2","pop_total_rel_diff","built_total_rel_diff",
+    "density_pop_05km2_rel_diff", "density_pop_10km2_rel_diff","density_built_05km2_rel_diff",
+    "density_built_10km2_rel_diff"
   )
 ) %>%
-  # exclude vars relative to 1975 containing difference/change
-  dplyr::select(-c(dplyr::matches("diff.*1975$"))) %>%
-  # rename diff variables
-  rename_at(
-    dplyr::vars(pop_total_diff_Total_2014:density_built_10km2_diff_Expansão_2014),
-    dplyr::funs(sub("_2014$","",.))
-    )
+  # exclude vars relative to 1975 containing rel_difference/change
+  dplyr::select(-c(dplyr::matches("rel_diff.*1975$"))) %>%
+  # rename rel_diff variables
+  dplyr::rename_with(
+    .cols = c(pop_total_rel_diff_total_2014:density_built_10km2_rel_diff_expansao_2014),
+    .fn = ~sub("_2014$","",.)
+  )
+
+# replace na values (itapipoca: expansion area equals to zero)
+df_final_wide <- df_final_wide %>%
+  mutate(across(everything(), .fns = ~replace_na(.,0)))
 
 
 

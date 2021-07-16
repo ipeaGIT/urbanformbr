@@ -73,7 +73,8 @@ f_censo <- function(){
     "V0661", # retorna do trabalho para casa diariamente
     "V0662", # tempo deslocamento casa-trabalho
     "V0606", # raca
-    "V0660"  # em que municipio e UF trabalha
+    "V0660", # em que municipio e UF trabalha
+    "V6531"  # rendimento domiciliar (domicilio particular) per capita julho 2010
     )
 
   df_censo_pes <- data.table::fread(
@@ -335,12 +336,12 @@ f_censo <- function(){
     `:=`(
       conta_propria = data.table::fcase(
         V6930 == 4 & grupocup > 2
-        , "Conta-própria", # conta-propria
+        , "Conta-própria",
 
         V6930 < 4 |
           V6930 > 4 |
           (V6930 == 4 & grupocup <=2)
-        , "Não conta-própria", # NAO conta-propria
+        , "Não conta-própria",
 
         default = NA_character_
       )
@@ -430,8 +431,8 @@ f_censo <- function(){
   data.table::setnames(
     x = df_wghtd_mean_dom,
     old = c("V0203","V6203","V6204","V0401"),
-    new = c("wghtd_mean_rooms_household","wghtd_mean_dens_resident_rooms",
-            "wghtd_mean_dens_resident_bedroom","wghtd_mean_household_size")
+    new = c("wghtd_mean_rooms_household","wghtd_mean_density_resident_rooms",
+            "wghtd_mean_density_resident_bedroom","wghtd_mean_household_size")
   )
 
   df_prop_dom <- df_censo_pes[
@@ -502,11 +503,20 @@ f_censo <- function(){
   # commute_time (apenas V0661 == 1): tempo deslocamento casa-trabalho
   # var criada: estimar tempo medio viagem (ver R/commute_time_censo2010)
 
-  df_wghtd_mean_pes <- df_censo_pes[
-    V0661 == 1 & age != "Até 15 anos" & V1006 == 1,
-    .(wghtd_mean_commute_time = weighted.mean(commute_time, w = V0010, na.rm = T)),
-    by = .(code_urban_concentration)
-  ]
+  df_wghtd_mean_pes <- dplyr::left_join(
+    df_censo_pes[
+      # V0661==1 (commute daily), more than 16 years of age, V1006==1 (urban)
+      V0661 == 1 & age != "Até 15 anos" & V1006 == 1,
+      .(wghtd_mean_commute_time = weighted.mean(commute_time, w = V0010, na.rm = T)),
+      by = .(code_urban_concentration)
+    ],
+    df_censo_pes[
+      # V1006==1 (urban)
+      V1006 == 1,
+      .(wghtd_mean_household_income_per_capita = weighted.mean(V6531, w = V0010, na.rm = T)),
+      by = .(code_urban_concentration)
+    ]
+  )
 
   df_prop_pes_urban <- df_censo_pes[
     ,
@@ -515,7 +525,7 @@ f_censo <- function(){
   ]
 
   df_prop_pes <- df_censo_pes[
-    V1006 == 1, # filter onlye individuals from urban areas
+    V1006 == 1, # filter only individuals from urban areas
     .(
       prop_men = sum(V0010[which(V0601 == 1)], na.rm = T) / sum(V0010, na.rm = T),
       prop_women = sum(V0010[which(V0601 == 2)], na.rm = T) / sum(V0010, na.rm = T),
@@ -565,7 +575,7 @@ f_censo <- function(){
 
   saveRDS(
     object = df_vars_total,
-    file = '//storage6/usuarios/Proj_acess_oport/data/urbanformbr/pca_regression_df/censo.rds',
+    file = '../../data/urbanformbr/pca_regression_df/censo.rds',
     compress = 'xz'
   )
 

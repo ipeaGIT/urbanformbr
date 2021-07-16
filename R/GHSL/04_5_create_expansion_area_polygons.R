@@ -47,6 +47,8 @@ f_create_expansion_polygon <- function(var) {
   # add itapipoca row
   df_polygon_expansion_area[nrow(df_polygon_expansion_area) + 1, ] <- list(2306405,"itapipoca",NA)
 
+  df_polygon_expansion_area <- df_polygon_expansion_area %>%
+    dplyr::arrange(name_uca_case)
 
 
   # * save data -------------------------------------------------------------
