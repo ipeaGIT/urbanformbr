@@ -201,12 +201,23 @@ df_final_wide <- tidyr::pivot_wider(
     .fn = ~sub("_2014$","",.)
   )
 
+data.table::setDT(df_final_wide)[
+  ,
+  `:=`(
+    prop_pop_consolidated_area_2014 = pop_total_consolidada_2014 / pop_total_total_2014
+  ),
+  by = .(code_muni, name_uca_case)
+]
+
 # replace na values (itapipoca: expansion area equals to zero)
 df_final_wide <- df_final_wide %>%
   mutate(across(everything(), .fns = ~replace_na(.,0)))
 
 
-
+# remove pop_total variables:
+# already created by pca_regression/00_3_pop_df.R with Censo data
+df_final_wide <- df_final_wide %>%
+  select(-c(pop_total_total_1975:pop_total_expansao_2014))
 
 # save results ------------------------------------------------------------
 

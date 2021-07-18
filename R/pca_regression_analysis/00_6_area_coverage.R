@@ -480,6 +480,16 @@ f_area_variables <- function(input_polygon, input_urban_extent_raster, input_uca
       by = 'name_uca_case'
     )
 
+  df_merged <- df_merged %>%
+    dplyr::mutate(
+      dplyr::across(
+      c(saturation_total_area_fixed_1975,saturation_total_area_fixed_2014,
+        saturation_consolidated_area_1975,saturation_consolidated_area_2014,
+        saturation_expansion_area_1975, saturation_expansion_area_2014),
+      ~ . / 100
+    )
+  )
+
 
   # save area rds ---------------------------------------------------------
   saveRDS(
