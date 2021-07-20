@@ -68,7 +68,7 @@ source('R/setup.R')
     tidyr::pivot_wider(
     names_from = c("year"),
     values_from = c("fuel_consumption_per_capita"),
-    #, names_prefix = "fuel_consum_capita_"
+    , names_prefix = "fuel_consum_capita_"
   )
 
   # * pib -------------------------------------------------------------------
@@ -138,7 +138,7 @@ source('R/setup.R')
   # * reorder columns -------------------------------------------------------
   df_merge <- df_merge %>%
     dplyr::relocate(
-      c(fuel_consum_capita_2000:fuel_consum_capita_2018, wghtd_mean_commute_time),
+      c(fuel_consum_capita_2001:fuel_consum_capita_2018, wghtd_mean_commute_time),
       .after = name_uca_case
       )
 
@@ -151,7 +151,7 @@ source('R/setup.R')
     ) %>%
     # dependent variables (y)
     dplyr::rename_with(
-      .cols = fuel_consum_capita_2000:wghtd_mean_commute_time,
+      .cols = fuel_consum_capita_2001:wghtd_mean_commute_time,
       function(x){paste0("y_", x)}
     ) %>%
     # independent variables (x)
@@ -163,6 +163,10 @@ source('R/setup.R')
 
 
 # save data ---------------------------------------------------------------
+
+  # complete.cases to avoid missing values
+  df_merge <- df_merge[complete.cases(df_merge)]
+
 
   saveRDS(
     object = df_merge,
