@@ -4,7 +4,7 @@
 #..and regression analysis, created at R/pca_regression_analysis/00_x_...
 
 # setup -------------------------------------------------------------------
-
+rm(list=ls())
 source('R/setup.R')
 
 # read and clean data ---------------------------------------------------------------
@@ -19,15 +19,18 @@ source('R/setup.R')
   # * fleet -----------------------------------------------------------------
   # CONSERTAR: REMOVER VALORES REPETIDOS PARA UCA
 
-  #df_fleet <- readr::read_rds("../../data/urbanformbr/pca_regression_df/fleet.rds") %>%
-  #  janitor::clean_names() %>%
-  #  dplyr::select(-c(uf,total_autos,total_motos,pop))
+  df_fleet <- readr::read_rds("../../data/urbanformbr/pca_regression_df/fleet_and_pop.rds") %>%
+    janitor::clean_names() %>%
+    dplyr::select(-c(uf,total_autos,total_motos,pop))
 
-  #df_fleet <- df_fleet %>%
-  #  tidyr::pivot_wider(
-  #    names_from = c("ano"),
-  #   values_from = c('autos_per_pop','motos_per_pop')
-  #  )
+  # filter only 184 from our df
+  df_fleet <- subset(df_fleet, code_urban_concentration %in% df_prep$code_urban_concentration)
+
+  df_fleet <- df_fleet %>%
+   tidyr::pivot_wider(
+     names_from = c("ano"),
+    values_from = c('autos_per_pop','motos_per_pop','motorization_rate')
+   )
 
   # * pop -------------------------------------------------------------------
 
@@ -53,7 +56,7 @@ source('R/setup.R')
   # * fuel ------------------------------------------------------------------
 
   df_fuel <- readr::read_rds("../../data/urbanformbr/pca_regression_df/fuel.rds") %>%
-    dplyr::select(code_urban_concentration,year,pop_fuel)
+    dplyr::select(code_urban_concentration,year,fuel_consumption_per_capita)
 
   # filter only 184 from our df
   df_fuel <- subset(df_fuel, code_urban_concentration %in% df_prep$code_urban_concentration)
@@ -64,8 +67,8 @@ source('R/setup.R')
   df_fuel <- df_fuel %>%
     tidyr::pivot_wider(
     names_from = c("year"),
-    values_from = c("pop_fuel"),
-    names_prefix = "fuel_consum_capita_"
+    values_from = c("fuel_consumption_per_capita"),
+    #, names_prefix = "fuel_consum_capita_"
   )
 
   # * pib -------------------------------------------------------------------
