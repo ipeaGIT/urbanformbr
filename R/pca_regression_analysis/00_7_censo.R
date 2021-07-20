@@ -186,6 +186,17 @@ f_censo <- function(){
         V0662 == 5, 120,
         default = NA_real_
         ),
+      sexo_raca = data.table::fcase(
+        V0601 == 1 & V0606 == 1, "Homem branco",
+        V0601 == 1 & V0606 == 2 | V0606 == 4, "Homem preto ou pardo",
+        V0601 == 1 & V0606 == 3, "Homem amarelo",
+        V0601 == 1 & V0606 == 5, "Homem indígena",
+        V0601 == 2 & V0606 == 1, "Mulher branca",
+        V0601 == 2 & V0606 == 2 | V0606 == 4, "Mulher preta ou parda",
+        V0601 == 2 & V0606 == 3, "Mulher amarela",
+        V0601 == 2 & V0606 == 5, "Mulher indígena",
+        default = NA_character_
+      ),
       raca = data.table::fcase(
         V0606 == 1, "Branca",
         V0606 == 2 | V0606 == 4, "Preta ou Parda",
@@ -335,12 +346,12 @@ f_censo <- function(){
     ,
     `:=`(
       conta_propria = data.table::fcase(
-        V6930 == 4 & grupocup > 2
+        V6930 == 4L & grupocup > 2L
         , "Conta-própria",
 
-        V6930 < 4 |
-          V6930 > 4 |
-          (V6930 == 4 & grupocup <=2)
+        V6930 < 4L |
+          V6930 > 4L |
+          (V6930 == 4L & grupocup <=2L)
         , "Não conta-própria",
 
         default = NA_character_

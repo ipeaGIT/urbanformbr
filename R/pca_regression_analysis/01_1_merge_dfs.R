@@ -89,7 +89,7 @@ source('R/setup.R')
 
   # * area coverage ---------------------------------------------------------
   df_area <- readr::read_rds("../../data/urbanformbr/pca_regression_df/area.rds") %>%
-    dplyr::select(-name_uca_case) %>%
+    dplyr::select(code_muni,urban_extent_size_2014,urban_extent_horizontal_geometric_growth) %>%
     dplyr::rename(code_urban_concentration = code_muni)
 
   # * censo -----------------------------------------------------------------
@@ -98,7 +98,7 @@ source('R/setup.R')
 
   # * experienced density ---------------------------------------------------
   df_exp_density <- readr::read_rds("../../data/urbanformbr/pca_regression_df/exp_density_ghsl.rds") %>%
-    dplyr::select(-name_uca_case) %>%
+    dplyr::select(-c(name_uca_case), -ends_with("1975")) %>%
     dplyr::rename(code_urban_concentration = code_muni)
 
   # * landuse metrics -------------------------------------------------------

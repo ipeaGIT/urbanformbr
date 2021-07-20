@@ -248,7 +248,8 @@ f_area_variables <- function(input_polygon, input_urban_extent_raster, input_uca
       # ratio between urban extent 2014 and urban extent 1975
       #urban_extent_size_ratio = as.double(urban_extent_size_2014 / urban_extent_size_1975),
       # horizontal expansion rate of growth 1975-2014
-      urban_extent_horizontal_growth_rate = as.double( (urban_extent_size_2014 - urban_extent_size_1975) / urban_extent_size_1975 )
+      #urban_extent_horizontal_growth_rate = as.double( (urban_extent_size_2014 - urban_extent_size_1975) / urban_extent_size_1975 )
+      urban_extent_horizontal_geometric_growth = ( as.double(urban_extent_size_2014 / urban_extent_size_1975) ^ (1/39) ) - 1
     )
   ]
 
@@ -321,7 +322,7 @@ f_area_variables <- function(input_polygon, input_urban_extent_raster, input_uca
   df_consolidated_area[
     ,
     `:=`(
-      saturation_consolidated_rel_diff = ( (saturation_consolidated_area_2014 - saturation_consolidated_area_1975) / saturation_consolidated_area_1975 )
+      saturation_consolidated_geometric_growth = ( (saturation_consolidated_area_2014 / saturation_consolidated_area_1975) ^ (1/39) ) - 1
     )
   ]
 
@@ -340,7 +341,7 @@ f_area_variables <- function(input_polygon, input_urban_extent_raster, input_uca
   df_expansion_area[
     ,
     `:=`(
-      saturation_expansion_rel_diff = ( (saturation_expansion_area_2014 - saturation_expansion_area_1975) / saturation_expansion_area_1975)
+      saturation_expansion_geometric_growth = ( (saturation_expansion_area_2014 / saturation_expansion_area_1975) ^ (1/39) ) - 1
     )
   ]
 
@@ -461,7 +462,7 @@ f_area_variables <- function(input_polygon, input_urban_extent_raster, input_uca
   df_total_area_fixed[
     ,
     `:=`(
-      saturation_total_area_fixed_rel_diff = ( (saturation_total_area_fixed_2014 - saturation_total_area_fixed_1975) / saturation_total_area_fixed_1975 )
+      saturation_total_area_fixed_geometric_growth = ( (saturation_total_area_fixed_2014 / saturation_total_area_fixed_1975) ^ (1/39) ) - 1
     )
   ]
 
@@ -480,6 +481,7 @@ f_area_variables <- function(input_polygon, input_urban_extent_raster, input_uca
       by = 'name_uca_case'
     )
 
+  # transform saturation data to percentage (divide by 100)
   df_merged <- df_merged %>%
     dplyr::mutate(
       dplyr::across(
