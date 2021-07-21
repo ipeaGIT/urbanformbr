@@ -68,8 +68,11 @@ source('R/setup.R')
     tidyr::pivot_wider(
     names_from = c("year"),
     values_from = c("fuel_consumption_per_capita"),
-    , names_prefix = "fuel_consum_capita_"
+    names_prefix = "fuel_consumption_per_capita_"
   )
+
+  df_fuel <- df_fuel %>%
+    dplyr::select(code_urban_concentration, fuel_consumption_per_capita_2010)
 
   # * pib -------------------------------------------------------------------
   df_pib <- readr::read_rds("../../data/urbanformbr/pca_regression_df/pib.rds") %>%
@@ -86,6 +89,10 @@ source('R/setup.R')
       values_from = c("pib_capita"),
       names_prefix = "pib_capita_"
     )
+
+  df_pib <- df_pib %>%
+    dplyr::select(code_urban_concentration, pib_capita_2010)
+
 
   # * area coverage ---------------------------------------------------------
   df_area <- readr::read_rds("../../data/urbanformbr/pca_regression_df/area.rds") %>%
@@ -113,12 +120,14 @@ source('R/setup.R')
 
 # merge data --------------------------------------------------------------
 
-  # ADICIONAR df_fleet QUANDO RESOLVER QUESTAO DE QUANTIDADE OBSERVACOES
 
   df_merge <- dplyr::left_join(
     df_prep,
     df_pop
   ) %>%
+    dplyr::left_join(
+      df_pop
+      ) %>%
     dplyr::left_join(
       df_fuel
     ) %>%
@@ -142,7 +151,7 @@ source('R/setup.R')
   # * reorder columns -------------------------------------------------------
   df_merge <- df_merge %>%
     dplyr::relocate(
-      c(fuel_consum_capita_2001:fuel_consum_capita_2018, wghtd_mean_commute_time),
+      c(fuel_consumption_per_capita_2010, wghtd_mean_commute_time),
       .after = name_uca_case
       )
 
@@ -155,7 +164,7 @@ source('R/setup.R')
     ) %>%
     # dependent variables (y)
     dplyr::rename_with(
-      .cols = fuel_consum_capita_2001:wghtd_mean_commute_time,
+      .cols = fuel_consumption_per_capita_2010:wghtd_mean_commute_time,
       function(x){paste0("y_", x)}
     ) %>%
     # independent variables (x)
