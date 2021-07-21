@@ -98,7 +98,11 @@ source('R/setup.R')
 
   # * experienced density ---------------------------------------------------
   df_exp_density <- readr::read_rds("../../data/urbanformbr/pca_regression_df/exp_density_ghsl.rds") %>%
-    dplyr::select(-c(name_uca_case), -ends_with("1975")) %>%
+    dplyr::select(
+      -c(name_uca_case),
+      -ends_with("1975"),
+      -c(pop_total_total_1975:pop_total_expansao_2014)
+      ) %>%
     dplyr::rename(code_urban_concentration = code_muni)
 
   # * landuse metrics -------------------------------------------------------

@@ -191,10 +191,12 @@ f_censo <- function(){
         V0601 == 1 & V0606 == 2 | V0606 == 4, "Homem preto ou pardo",
         V0601 == 1 & V0606 == 3, "Homem amarelo",
         V0601 == 1 & V0606 == 5, "Homem indígena",
+        V0601 == 1 & V0606 == 9, "Homem não-especificado",
         V0601 == 2 & V0606 == 1, "Mulher branca",
         V0601 == 2 & V0606 == 2 | V0606 == 4, "Mulher preta ou parda",
         V0601 == 2 & V0606 == 3, "Mulher amarela",
         V0601 == 2 & V0606 == 5, "Mulher indígena",
+        V0601 == 2 & V0606 == 9, "Mulher não-especificada",
         default = NA_character_
       ),
       raca = data.table::fcase(
@@ -271,69 +273,73 @@ f_censo <- function(){
     `:=`(
       # grupos ocupacionais CBO 2000
       grupocup = data.table::fcase(
-        (V6462>=1111 & V6462<=1140) |
-          (V6462>=1210 & V6462<=1230) |
-          V6462==1310 |
-          V6462==1320,
+        (V6462>=1111L & V6462<=1140L) |
+          (V6462>=1210L & V6462<=1230L) |
+          V6462==1310L |
+          V6462==1320L,
         1L, #Membros superiores do Poder Publico, dirigentes de organizacoes de interesse publico e de empresas, gerentes
 
-        (V6462>=2011 & V6462<=2021) |
-          (V6462>=2111 & V6462<=2153) |
-          (V6462>=2211 & V6462<=2237) |
-          (V6462>=2311 & V6462<=2394) |
-          (V6462>=2410 & V6462<=2423) |
-          (V6462>=2511 & V6462<=2531) |
-          (V6462>=2611 & V6462<=2631),
+        (V6462>=2011L & V6462<=2021L) |
+          (V6462>=2111L & V6462<=2153L) |
+          (V6462>=2211L & V6462<=2237L) |
+          (V6462>=2311L & V6462<=2394L) |
+          (V6462>=2410L & V6462<=2423L) |
+          (V6462>=2511L & V6462<=2531L) |
+          (V6462>=2611L & V6462<=2631L),
         2L, #Profissionais das Ciencias e das Artes
 
-        (V6462>=3001 & V6462<=3012) |
-          (V6462>=3111 & V6462<=3192) |
-          (V6462>=3201 & V6462<=3281) |
-          (V6462>=3311 & V6462<=3341) |
-          (V6462>=3411 & V6462<=3426) |
-          (V6462>=3511 & V6462<=3548) |
-          (V6462>=3711 & V6462<=3773) |
-          V6462==3911 |
-          V6462==3912,
+        (V6462>=3001L & V6462<=3012L) |
+          (V6462>=3111L & V6462<=3192L) |
+          (V6462>=3201L & V6462<=3281L) |
+          (V6462>=3311L & V6462<=3341L) |
+          (V6462>=3411L & V6462<=3426L) |
+          (V6462>=3511L & V6462<=3548L) |
+          (V6462>=3711L & V6462<=3773L) |
+          V6462==3911L |
+          V6462==3912L,
         3L, #Tecnicos de nivel medio
 
-        (V6462>=4101 & V6462<=4152) |
-          (V6462>=4201 & V6462<=4241),
+        (V6462>=4101L & V6462<=4152L) |
+          (V6462>=4201L & V6462<=4241L),
         4L, #Trabalhadores de servicos administrativos
 
-        (V6462>=5101 & V6462<=5199) |
-          (V6462>=5201 & V6462<=5243),
+        (V6462>=5101L & V6462<=5199L) |
+          (V6462>=5201L & V6462<=5243L),
         5L, #Trabalhadores dos servicos, vendedores do comercio em lojas e mercados
 
-        (V6462>=6110 & V6462<=6139) |
-          (V6462>=6201 & V6462<=6239) |
-          (V6462>=6301 & V6462<=6329) |
-          (V6462>=6410 & V6462<=6430),
+        (V6462>=6110L & V6462<=6139L) |
+          (V6462>=6201L & V6462<=6239L) |
+          (V6462>=6301L & V6462<=6329L) |
+          (V6462>=6410L & V6462<=6430L),
         6L, #Trabalhadores agropecuarios, florestais, da caca e da pesca
 
-        (V6462>=7101 & V6462<=7170) |
-          (V6462>=7201 & V6462<=7257) |
-          (V6462>=7301 & V6462<=7321) |
-          (V6462>=7401 & V6462<=7421) |
-          (V6462>=7501 & V6462<=7524) |
-          (V6462>=7601 & V6462<=7687) |
-          (V6462>=7701 & V6462<=7772) |
-          (V6462>=7801 & V6462<=7842) |
-          (V6462>=8101 & V6462<=8181) |
-          (V6462>=8201 & V6462<=8281) |
-          (V6462>=8301 & V6462<=8339) |
-          (V6462>=8401 & V6462<=8493) |
-          (V6462>=8601 & V6462<=8625) |
-          V6462==8711,
+        (V6462>=7101L & V6462<=7170L) |
+          (V6462>=7201L & V6462<=7257L) |
+          (V6462>=7301L & V6462<=7321L) |
+          (V6462>=7401L & V6462<=7421L) |
+          (V6462>=7501L & V6462<=7524L) |
+          (V6462>=7601L & V6462<=7687L) |
+          (V6462>=7701L & V6462<=7772L) |
+          (V6462>=7801L & V6462<=7842L) |
+          (V6462>=8101L & V6462<=8181L) |
+          (V6462>=8201L & V6462<=8281L) |
+          (V6462>=8301L & V6462<=8339L) |
+          (V6462>=8401L & V6462<=8493L) |
+          (V6462>=8601L & V6462<=8625L) |
+          V6462==8711L,
         7L, #Trabalhadores da producao de bens e servicos industriais
 
-        (V6462>=9101 & V6462<=9193) |
-          (V6462>=9501 & V6462<=9543) |
-          (V6462>=9911 & V6462<=9922),
+        (V6462>=9101L & V6462<=9193L) |
+          (V6462>=9501L & V6462<=9543L) |
+          (V6462>=9911L & V6462<=9922L),
         8L, #Trabalhadores de reparacao e manutencao
 
-        V6462==0100 | V6462==0200 | V6462==0300 |
-          (V6462>=0401 & V6462<=0413) | (V6462>=0501 & V6462<=0513),
+        V6462==0L |
+          V6462==0100L |
+          V6462==0200L |
+          V6462==0300L |
+          (V6462>=0401L & V6462<=0413L) |
+          (V6462>=0501L & V6462<=0513L),
         9L, #Membros das forcas armadas, policiais e bombeiros militares
 
         default = NA_integer_
@@ -345,19 +351,20 @@ f_censo <- function(){
   df_censo_pes[
     ,
     `:=`(
-      conta_propria = data.table::fcase(
-        V6930 == 4L & grupocup > 2L
-        , "Conta-própria",
-
-        V6930 < 4L |
-          V6930 > 4L |
-          (V6930 == 4L & grupocup <=2L)
-        , "Não conta-própria",
-
+      V6930_conta_propria = data.table::fcase(
+        V6930 == 1L, "Empregados com carteira de trabalho assinada",
+        V6930 == 2L, "Militares e funcionários públicos estatutários",
+        V6930 == 3L, "Empregados sem carteira de trabalho assinada",
+        (V6930 == 4L & grupocup > 2L), "Conta própria sem profissão liberal - informal",
+        (V6930 == 4L & grupocup <= 2L), "Conta própria com profissão liberal - formal",
+        V6930 == 5L, "Empregadores",
+        V6930 == 6L, "Não remunerados",
+        V6930 == 7L, "Trabalhadores na produção para o próprio consumo",
         default = NA_character_
       )
     )
   ]
+
 
   # informalidade:
   # informal = 1 (sem-carteira (domestico e nao-domestico); conta-propria (exceto os liberais); nao-remunerados; consumo próprio)
@@ -366,19 +373,18 @@ f_censo <- function(){
     ,
     `:=`(
       informal = data.table::fcase(
-        conta_propria == "Conta-própria" |
-          V6930 == 3L | # empregados sem carteira
-          V6930 == 6L | # nao remunerados
-          V6930 == 7L,  # producao para consumo proprio
+        V6930_conta_propria == "Empregados sem carteira de trabalho assinada" |
+          V6930_conta_propria == "Não remunerados" |
+          V6930_conta_propria == "Trabalhadores na produção para o próprio consumo" |
+          V6930_conta_propria == "Conta própria sem profissão liberal - informal",
         "Informal",
 
-        conta_propria == "Não conta-própria" |
-          V6930 == 1L | # carteira de trabalho assinada
-          V6930 == 2L | # militares e funcionarios publicos
-          V6930 == 5L,  # empregadores
+        V6930_conta_propria == "Empregados com carteira de trabalho assinada" |
+          V6930_conta_propria == "Militares e funcionários públicos estatutários" |
+          V6930_conta_propria == "Empregadores" | # empregadores
+          V6930_conta_propria == "Conta própria com profissão liberal - formal",
         "Formal",
 
-        #V6930 >= 6
         default = NA_character_
       )
     )
@@ -537,10 +543,17 @@ f_censo <- function(){
   df_prop_pes <- df_censo_pes[
     V1006 == 1, # filter only individuals from urban areas
     .(
-      prop_men = sum(V0010[which(V0601 == 1)], na.rm = T) / sum(V0010, na.rm = T),
-      prop_women = sum(V0010[which(V0601 == 2)], na.rm = T) / sum(V0010, na.rm = T),
-      prop_pretas_pardas = sum(V0010[which(raca == "Preta ou Parda")], na.rm = T) / sum(V0010,na.rm = T),
-      prop_brancas = sum(V0010[which(raca == "Branca")], na.rm = T) / sum(V0010,na.rm = T),
+      #prop_men = sum(V0010[which(V0601 == 1)], na.rm = T) / sum(V0010, na.rm = T),
+      prop_white_men = sum(V0010[which(sexo_raca == "Homem branco")], na.rm = T) / sum(V0010, na.rm = T),
+      prop_black_men = sum(V0010[which(sexo_raca == "Homem preto ou pardo")], na.rm = T) / sum(V0010, na.rm = T),
+      prop_yellow_men = sum(V0010[which(sexo_raca == "Homem amarelo")], na.rm = T) / sum(V0010, na.rm = T),
+      prop_indigenous_men = sum(V0010[which(sexo_raca == "Homem indígena")], na.rm = T) / sum(V0010, na.rm = T),
+      prop_not_specified_men = sum(V0010[which(sexo_raca == "Homem não-especificado")], na.rm = T) / sum(V0010, na.rm = T),
+      prop_white_women = sum(V0010[which(sexo_raca == "Mulher branca")], na.rm = T) / sum(V0010, na.rm = T),
+      prop_black_women = sum(V0010[which(sexo_raca == "Mulher preta ou parda")], na.rm = T) / sum(V0010, na.rm = T),
+      prop_yellow_women = sum(V0010[which(sexo_raca == "Mulher amarela")], na.rm = T) / sum(V0010, na.rm = T),
+      prop_indigenous_women = sum(V0010[which(sexo_raca == "Mulher indígena")], na.rm = T) / sum(V0010, na.rm = T),
+      prop_not_specified_women = sum(V0010[which(sexo_raca == "Mulher não-especificada")], na.rm = T) / sum(V0010, na.rm = T),
       prop_low_educ = sum(V0010[which(education =="Baixa escolaridade")],na.rm = T) / sum(V0010, na.rm=T),
       prop_high_educ = sum(V0010[which(education == "Alta escolaridade")],na.rm = T) / sum(V0010, na.rm=T),
       prop_age_15_less = sum(V0010[which(age == "Até 15 anos")],na.rm = T) / sum(V0010, na.rm=T),

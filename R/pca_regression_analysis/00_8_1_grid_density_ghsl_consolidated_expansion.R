@@ -167,17 +167,20 @@ f_density_uca <- function(ano){
 df_1975 <- f_density_uca(1975)
 df_2014 <- f_density_uca(2014)
 
+# merge dfs and estimate vars. difference ---------------------------------
+
 df_final <- data.table::rbindlist(list(df_1975,df_2014))
 
 df_final[
   ,
   `:=`(
-    pop_total_rel_diff = (pop_total - c(pop_total[1], head(pop_total, -1)) ) / c(pop_total[1], head(pop_total, -1)),
-    built_total_rel_diff = (built_total - c(built_total[1], head(built_total, -1)) ) / c(built_total[1], head(built_total, -1)),
-    density_pop_05km2_rel_diff = (density_pop_05km2 - c(density_pop_05km2[1], head(density_pop_05km2, -1)) ) / c(density_pop_05km2[1], head(density_pop_05km2, -1)),
-    density_pop_10km2_rel_diff = (density_pop_10km2 - c(density_pop_10km2[1], head(density_pop_10km2, -1)) ) / c(density_pop_10km2[1], head(density_pop_10km2, -1)),
-    density_built_05km2_rel_diff = (density_built_05km2 - c(density_built_05km2[1], head(density_built_05km2, -1)) ) / c(density_built_05km2[1], head(density_built_05km2, -1)),
-    density_built_10km2_rel_diff = (density_built_10km2 - c(density_built_10km2[1], head(density_built_10km2, -1)) ) / c(density_built_10km2[1], head(density_built_10km2, -1))
+    #pop_total_rel_diff = (pop_total - c(pop_total[1], head(pop_total, -1)) ) / c(pop_total[1], head(pop_total, -1)),
+    pop_total_geom_growth_1975_2015 = ( ( pop_total / c(pop_total[1], head(pop_total, -1)) ) ^ (1/40) ) - 1 ,
+    built_total_geom_growth_1975_2014 = ( ( built_total / c(built_total[1], head(built_total, -1)) ) ^ (1/39) ) - 1 ,
+    density_pop_05km2_abs_diff = ( density_pop_05km2 - c(density_pop_05km2[1], head(density_pop_05km2, -1)) ),
+    density_pop_10km2_abs_diff = ( density_pop_10km2 - c(density_pop_10km2[1], head(density_pop_10km2, -1)) ),
+    density_built_05km2_abs_diff = ( density_built_05km2 - c(density_built_05km2[1], head(density_built_05km2, -1)) ),
+    density_built_10km2_abs_diff = ( density_built_10km2 - c(density_built_10km2[1], head(density_built_10km2, -1)) )
   ),
   by = .(code_muni, name_uca_case, area_type)
 ]
@@ -188,36 +191,44 @@ df_final_wide <- tidyr::pivot_wider(
   names_from = c("area_type","ano"),
   values_from = c(
     "pop_total","built_total","density_pop_05km2", "density_pop_10km2",
-    "density_built_05km2","density_built_10km2","pop_total_rel_diff","built_total_rel_diff",
-    "density_pop_05km2_rel_diff", "density_pop_10km2_rel_diff","density_built_05km2_rel_diff",
-    "density_built_10km2_rel_diff"
-  )
-) %>%
-  # exclude vars relative to 1975 containing rel_difference/change
-  dplyr::select(-c(dplyr::matches("rel_diff.*1975$"))) %>%
-  # rename rel_diff variables
+    "density_built_05km2","density_built_10km2","pop_total_geom_growth_1975_2015",
+    "built_total_geom_growth_1975_2014","density_pop_05km2_abs_diff",
+    "density_pop_10km2_abs_diff","density_built_05km2_abs_diff",
+    "density_built_10km2_abs_diff"
+    )
+  ) %>%
+  # exclude vars relative to 1975 containing abs_difference/change
+  dplyr::select(
+    -c(dplyr::matches("(abs_diff|geom_growth).*1975$")),
+    #-c(dplyr::ends_with("1975"))
+    ) %>%
+  # rename abs_diff variables
   dplyr::rename_with(
-    .cols = c(pop_total_rel_diff_total_2014:density_built_10km2_rel_diff_expansao_2014),
+    .cols = c(pop_total_geom_growth_1975_2015_total_2014:density_built_10km2_abs_diff_expansao_2014),
     .fn = ~sub("_2014$","",.)
   )
 
 data.table::setDT(df_final_wide)[
   ,
   `:=`(
-    prop_pop_consolidated_area_2014 = pop_total_consolidada_2014 / pop_total_total_2014
+    prop_pop_consolidated_area_2014 = pop_total_consolidada_2014 / pop_total_total_2014,
+    prop_built_consolidated_area_2014 = built_total_consolidada_2014 / built_total_total_2014
   ),
   by = .(code_muni, name_uca_case)
 ]
 
 # replace na values (itapipoca: expansion area equals to zero)
 df_final_wide <- df_final_wide %>%
-  mutate(across(everything(), .fns = ~replace_na(.,0)))
+  dplyr::mutate(dplyr::across(dplyr::everything(), .fns = ~tidyr::replace_na(.,0)))
 
+df_final_wide <- df_final_wide %>%
+  dplyr::relocate(prop_pop_consolidated_area_2014, .after = pop_total_expansao_2014) %>%
+  dplyr::relocate(prop_built_consolidated_area_2014, .after = built_total_expansao_2014)
 
 # remove pop_total variables:
 # already created by pca_regression/00_3_pop_df.R with Censo data
-df_final_wide <- df_final_wide %>%
-  select(-c(pop_total_total_1975:pop_total_expansao_2014))
+#df_final_wide <- df_final_wide %>%
+#  select(-c(pop_total_total_1975:pop_total_expansao_2014))
 
 # save results ------------------------------------------------------------
 
