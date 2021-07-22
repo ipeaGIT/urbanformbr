@@ -9,6 +9,8 @@ source('R/setup.R')
 
 # list of Brazilian municipalities
 munis_df <- geobr::lookup_muni("all")
+ucas_df <- geobr::read_urban_concentrations() %>% st_set_geometry(NULL)
+urban_areas <- read_rds("../../data/urbanformbr/ghsl/results/urban_extent_uca_2014_cutoff20.rds") %>% st_set_geometry(NULL)
 
 # muni <- 4301602 # Bagé
 # muni <- 4314407 # Pelotas
@@ -96,10 +98,49 @@ combine_results <- function(muni) {
 
 }
 
+# uca <- 4314902 # Porto Alegre
+# uca <- 2211001 # Teresina
+combine_by_uca <- function(uca) {
+
+  uca_name = unique(subset(urban_areas, code_muni == uca)$name_uca_case)
+
+  output_file <- paste0("../../data/urbanformbr/cnefe/uca/", uca, "_", uca_name, ".gpkg")
+
+  if (!file.exists(output_file)) {
+    message(sprintf("Processing urban concentration %s - %s", uca, uca_name))
+
+    output_dir <- paste0("../../data/urbanformbr/cnefe/uca/")
+    if (!dir.exists(output_dir)) {
+      dir.create(output_dir, recursive = TRUE)
+    }
+
+    uca_muni_codes <- subset(ucas_df, code_urban_concentration == uca)$code_muni
+    uca_muni_names <- subset(ucas_df, code_urban_concentration == uca)$name_muni
+    uca_muni_ufs <- subset(ucas_df, code_urban_concentration == uca)$abbrev_state
+
+    cnefe_files <- paste0("../../data/urbanformbr/cnefe/geo/", uca_muni_ufs, "/", uca_muni_codes, "_", uca_muni_names, "_", uca_muni_ufs, ".gpkg")
+
+    cnefe_sf <- map_df(cnefe_files, function(f) {
+      if (file.exists(f)) {
+        return(st_read(f))
+      } else {
+        return(NULL)
+      }
+    })
+
+    st_write(cnefe_sf, output_file)
+  }
+
+}
+
 # apply function ----------------------------------------------------------
 
 # process_urban_area(4301602)
 codes <- unique(munis_df$code_muni)
 geocoding_stats_df <- map(codes, combine_results)
+
+ucas <- unique(ucas_df$code_urban_concentration)
+walk(ucas, combine_by_uca)
+
 
 
