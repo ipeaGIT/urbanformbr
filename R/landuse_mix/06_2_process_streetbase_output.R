@@ -19,10 +19,12 @@ separate_output <- function(muni) {
   muni_uf <- unique(subset(munis_df, code_muni == muni)$abrev_state)
 
   rds_input_file <- paste0("../../data/urbanformbr/cnefe/geo/partial/", muni_uf, "/", muni, "_", muni_name, "_", muni_uf, "_missing_with_id.rds")
-  rds_output_file <- paste0("../../data/urbanformbr/cnefe/geo/partial/", muni_uf, "/", muni, "_", muni_name, "_", muni_uf, "_streetbase.rds")
+  rds_output_file <- paste0("../../data/urbanformbr/cnefe/geo/partial/", muni_uf, "/", muni, "_", muni_name, "_", muni_uf, "_streetbase_2.rds")
 
   if (file.exists(rds_input_file)) { # & !file.exists(rds_output_file)) {
-    # filter streetbase output by municipality
+    message(sprintf("Processing city %s - %s / %s", muni, muni_name, muni_uf))
+
+        # filter streetbase output by municipality
     streetbase_muni <- geocoding_results_df[muni_code == muni, ]
 
     # load original data sent to streetbase
@@ -30,7 +32,11 @@ separate_output <- function(muni) {
 
     # join with streetbase output
     missing_df[streetbase_muni, on=.(cnefe_id == USER_cnefe_id),
-               `:=`(latitude = i.Y, longitude = i.X, geocode_type = i.Addr_type)]
+               `:=`(latitude = i.Y, longitude = i.X,
+                    geocode_status = i.Status,
+                    geocode_score = i.Score,
+                    geocode_match = i.Match_type,
+                    geocode_type = i.Addr_type)]
 
     write_rds(missing_df, rds_output_file, compress = "gz")
   }
@@ -224,9 +230,10 @@ validate_streetbase_2 <- function(muni) {
   muni_name <- unique(subset(munis_df, code_muni == muni)$name_muni)
   muni_uf <- unique(subset(munis_df, code_muni == muni)$abrev_state)
 
-  rds_input_file <- paste0("../../data/urbanformbr/cnefe/geo/partial/", muni_uf, "/", muni, "_", muni_name, "_", muni_uf, "_streetbase.rds")
-  rds_output_file <- paste0("../../data/urbanformbr/cnefe/geo/partial/", muni_uf, "/", muni, "_", muni_name, "_", muni_uf, "_streetbase_validated2.rds")
-  rds_missing_file <- paste0("../../data/urbanformbr/cnefe/geo/partial/", muni_uf, "/", muni, "_", muni_name, "_", muni_uf, "_streetbase_missing2.rds")
+  rds_input_file <- paste0("../../data/urbanformbr/cnefe/geo/partial/", muni_uf, "/", muni, "_", muni_name, "_", muni_uf, "_streetbase_2.rds")
+  rds_output_file <- paste0("../../data/urbanformbr/cnefe/geo/partial/", muni_uf, "/", muni, "_", muni_name, "_", muni_uf, "_streetbase_validated3.rds")
+  rds_missing_file <- paste0("../../data/urbanformbr/cnefe/geo/partial/", muni_uf, "/", muni, "_", muni_name, "_", muni_uf, "_streetbase_missing3.rds")
+  gpkg_file <- paste0("../../data/urbanformbr/cnefe/geo/partial/", muni_uf, "/", muni, "_", muni_name, "_", muni_uf, "_streetbase_results.gpkg")
 
   if (file.exists(rds_input_file) & !file.exists(rds_output_file)) {
     message(sprintf("Processing city %s - %s / %s", muni, muni_name, muni_uf))
@@ -257,8 +264,17 @@ validate_streetbase_2 <- function(muni) {
     invalid_sf <- streetbase_sf %>% filter(!(cnefe_id %in% valid_sf$cnefe_id))
 
    # save validated data and still missing data
+    valid_sf <- valid_sf %>% mutate(valid = TRUE) %>% select(uf:geocode_type, valid, geometry) %>%
+      rename(code_tract = code_tract.x)
+    invalid_sf <- invalid_sf %>% mutate(valid = FALSE) %>% select(uf:geocode_type, valid, geometry)
+
     write_rds(valid_sf, rds_output_file, compress = "gz")
     write_rds(invalid_sf, rds_missing_file, compress = "gz")
+
+
+    # combined_sf <- rbind(valid_sf, invalid_sf)
+
+    # st_write(combined_sf, gpkg_file)
 
   }
 }
