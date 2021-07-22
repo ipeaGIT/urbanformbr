@@ -1,10 +1,5 @@
-library(raster)
-library(tidyverse)
-library(data.table)
-
 source('R/setup.R')
 library(landscapemetrics)
-
 
 data_folder <- "../../data/urbanformbr/ghsl/BUILT/urban_extent_cutoff_20"
 
@@ -28,73 +23,134 @@ apply_metrics <- function(file) {
 
   if (cellStats(rst, stat = "sum") > 1) {
 
+    # Prepare geometries: Patches and Cells
     patches <- landscapemetrics::get_patches(rst)
-    patches_sf <- rasterToPolygons(patches[[1]]) %>%
-      sf::st_as_sf() %>%
-      mutate(id = row_number())
 
-    # mapview(patches_sf, zcol = "layer")
+    patches_sf <- map_df(patches, function(p) {
+      rasterToPolygons(p) %>%
+        sf::st_as_sf()
+    })
 
-    cells_sf <- sf::st_centroid(patches_sf) %>% sf::st_transform(4326)
-    distance_matrix <- geodist::geodist(cells_sf %>% sf::st_coordinates(), measure = "geodesic")
+    patches_sf <- patches_sf %>%
+      mutate(cell_id = row_number()) %>%
+      select(patch_id = layer, cell_id, geometry)
+
+    cells_centroids_sf <- sf::st_centroid(patches_sf) %>% sf::st_transform(4326)
+
+    # mapview(patches_sf, zcol = "patch_id")
+
+    # Calculate patch metrics
+    patch_metrics_df <- calculate_lsm(rst, level = "patch") %>%
+      pivot_wider(names_from = metric, values_from = value) %>%
+      mutate(patch_type = case_when(core > 0 ~ "core",
+                                    area >= 500 ~ "large",
+                                    TRUE ~ "small"))
+
+    # Fragmentation metrics - # of Patches
+    n_patches <- nrow(patch_metrics_df)
+    n_core_patches <- nrow(patch_metrics_df %>% filter(core > 0))
+    n_large_patches <- nrow(patch_metrics_df %>% filter(area >= 500))
+
+    proportion_largest_patch <- max(patch_metrics_df$area) / sum(patch_metrics_df$area)
+
+    # Compacity metrics
+
+    ## Distance matrix
+    distance_matrix <- geodist::geodist(cells_centroids_sf %>% sf::st_coordinates(), measure = "geodesic")
     distance_matrix <- distance_matrix / 1000
-    colnames(distance_matrix) <- cells_sf$id
+    colnames(distance_matrix) <- cells_centroids_sf$cell_id
 
     distance_matrix <- as.data.frame(distance_matrix)
-    distance_matrix$from_id <- cells_sf$id
-    distance_matrix <- pivot_longer(distance_matrix, !from_id,
-                                    names_to = "to_id", values_to = "distance") %>%
-      mutate(to_id = as.numeric(to_id))
+    distance_matrix$from_cell <- cells_centroids_sf$cell_id
+    distance_matrix <- pivot_longer(distance_matrix, !from_cell,
+                                    names_to = "to_cell", values_to = "distance") %>%
+      mutate(to_cell = as.numeric(to_cell))
     setDT(distance_matrix)
 
-    cell_patches_dt <- sf::st_set_geometry(cells_sf, NULL)
+    cell_patches_dt <- sf::st_set_geometry(cells_centroids_sf, NULL)
     setDT(cell_patches_dt)
 
-    distance_matrix[cell_patches_dt, on = .(from_id = id), from_patch := i.layer]
-    distance_matrix[cell_patches_dt, on = .(to_id = id), to_patch := i.layer]
+    distance_matrix[cell_patches_dt, on = .(from_cell = cell_id), from_patch := i.patch_id]
+    distance_matrix[cell_patches_dt, on = .(to_cell = cell_id), to_patch := i.patch_id]
 
-    closeness_cell <- distance_matrix[from_id != to_id, .(closeness = sum(1/distance)), by = .(from_id)]
-    closeness_patch <- distance_matrix[from_id != to_id, .(closeness = sum(1/distance)), by = .(from_patch)]
+    ## Average cell and patch distances
+    avg_cell_distance <- mean(distance_matrix[from_cell != to_cell, ]$distance)
 
-    distance_patch <- distance_matrix[from_id != to_id, .(mean_distance = mean(distance)), by = .(from_patch, to_patch)]
+    large_patches <- patch_metrics_df %>% filter(patch_type %in% c("large", "core")) %>% .$id
+    core_patches <- patch_metrics_df %>% filter(patch_type == "core") %>% .$id
 
-    if (nrow(distance_w) == 0) {
-      compactness <- 1
-    } else {
-      distance_w[, gravity := 1 / gravity]
-      distance_w <- distance_w[, .(gravity = sum(gravity)), by = .(from_patch)]
-      compactness <- sum(distance_w$gravity)
+    patch_distances <- distance_matrix[from_cell != to_cell, .(distance = mean(distance)), by = .(from_patch, to_patch)]
+    avg_patch_distance <- mean(patch_distances$distance)
+
+    avg_large_patch_distance <- mean(patch_distances[from_patch %in% large_patches & to_patch %in% large_patches, ]$distance)
+    avg_core_patch_distance <- mean(patch_distances[from_patch %in% core_patches & to_patch %in% core_patches, ]$distance)
+
+
+    ## Ratio Area / Circle
+    circle_radius <- max(distance_matrix$distance) / 2
+    large_circle_radius <- max(distance_matrix[from_patch %in% large_patches & to_patch %in% large_patches, ]$distance) / 2
+    core_circle_radius <- max(distance_matrix[from_patch %in% core_patches & to_patch %in% core_patches, ]$distance) / 2
+
+    area_circle <- pi * circle_radius^2
+    area_circle_large <- pi * large_circle_radius^2
+    area_circle_core <- pi * core_circle_radius^2
+
+    area_city <- sum(patch_metrics_df$area) / 100
+    area_city_large <- sum(patch_metrics_df %>% filter(patch_type %in% c("large", "core")) %>% .$area) / 100
+    area_city_core <- sum(patch_metrics_df %>% filter(patch_type == "core") %>% .$area) / 100
+
+
+    ratio_city_circle <- area_city / area_circle
+    ratio_city_circle_large <- area_city_large / area_circle_large
+    ratio_city_circle_core <- area_city_core / area_circle_core
+
+    ## Entropy of patch sizes
+    patch_sizes <- patch_metrics_df$area
+    patch_prop <- patch_sizes / sum(patch_sizes)
+    patch_size_entropy <- sum(patch_prop * log(1/patch_prop))
+
+    max_entropy <- log(length(patch_sizes))
+    patch_size_entropy_norm <- patch_size_entropy / max_entropy
+
+
+    # Consolidate results
+    patches_sf <- patches_sf %>%
+      left_join(patch_metrics_df, by = c("patch_id" = "id")) %>%
+      mutate(city, year) %>%
+      select(city, year, patch_id, cell_id, patch_type, geometry) %>%
+      group_by(city, year, patch_id, patch_type)
+
+
+    gpkg_file <- paste0("../../data/urbanformbr/landscape_metrics/", city, "_", year, ".gpkg")
+    if (!file.exists(gpkg_file)) {
+      st_write(patches_sf, gpkg_file)
     }
 
-    circle_radius <- max(distance_matrix$distance) / 2
-    area_circle <- pi * circle_radius^2
-    area_city <- nrow(cells_sf)
-    ratio_city_circle <- area_city / area_circle
 
-    city_metrics_df <- calculate_lsm(rst, level = "patch") %>%
-      pivot_wider(names_from = metric, values_from = value)
-
-    n_patches <- nrow(city_metrics_df)
-    n_large_patches <- nrow(city_metrics_df %>% filter(core > 0))
-
-   # mapview::mapview(cells_sf)
+    # mapview(patches_sf, zcol = "patch_type")
 
     urban_sf <- rasterToPolygons(rst) %>%
       sf::st_as_sf() %>%
       summarise() %>%
-      mutate(city, year, n_patches, n_large_patches, area_city, ratio_city_circle, compactness) %>%
-      select(city:compactness, geometry)
+      mutate(city, year,
+             area_city,
+             area_large_patches = area_city_large,
+             area_core_patches = area_city_core,
+             n_patches, n_large_patches, n_core_patches,
+             proportion_largest_patch,
+             patch_size_entropy,
+             patch_size_entropy_norm,
+             ratio_circle = ratio_city_circle,
+             ratio_circle_large = ratio_city_circle_large,
+             ratio_circle_core = ratio_city_circle_core,
+             avg_cell_distance,
+             avg_patch_distance,
+             avg_large_patch_distance,
+             avg_core_patch_distance) %>%
+      select(city:avg_core_patch_distance, geometry)
 
     # mapview::mapview(urban_sf)
 
-
-    # city_metrics_df <- calculate_lsm(rst, level = "patch") %>%
-    #   pivot_wider(names_from = metric, values_from = value) %>%
-    #   mutate(city, year)
-    #
-    #
-    # urban_metrics_sf <- urban_sf %>%
-    #   left_join(city_metrics_df)
 
     return(urban_sf)
 
@@ -114,19 +170,29 @@ apply_metrics <- function(file) {
 
 file = raster_files[735]
 file = raster_files[156]
-file = rio_files[1]
-apply_metrics(raster_files[156])
+
+rio_files <- raster_files[str_detect(raster_files, "rio_de_janeiro")]
+file = rio_files[4]
+
+df <- apply_metrics(rio_files[4])
+
+
+# apply function ----------------------------------------------------------
 
 ls_metrics_df <- map_df(raster_files, apply_metrics)
 
-df_all <- do.call(rbind, df)
-df_all <- df_all %>% filter(!is.na(class))
-sf::st_write(df_all, "landscape_metrics.gpkg")
 
-df_all %>% filter(year == "1975") %>% sf::st_write("landscape_metrics_1975.gpkg")
-df_all %>% filter(year == "1990") %>% sf::st_write("landscape_metrics_1990.gpkg")
-df_all %>% filter(year == "2000") %>% sf::st_write("landscape_metrics_2000.gpkg")
-df_all %>% filter(year == "2014") %>% sf::st_write("landscape_metrics_2014.gpkg")
+sf::st_write(ls_metrics_df, "../../data/urbanformbr/landscape_metrics/landscape_metrics.gpkg")
+
+ls_metrics_df %>% filter(year == "1975") %>% sf::st_write("../../data/urbanformbr/landscape_metrics/landscape_metrics_1975.gpkg")
+ls_metrics_df %>% filter(year == "1990") %>% sf::st_write("../../data/urbanformbr/landscape_metrics/landscape_metrics_1990.gpkg")
+ls_metrics_df %>% filter(year == "2000") %>% sf::st_write("../../data/urbanformbr/landscape_metrics/landscape_metrics_2000.gpkg")
+ls_metrics_df %>% filter(year == "2014") %>% sf::st_write("../../data/urbanformbr/landscape_metrics/landscape_metrics_2014.gpkg")
+
+ls_metrics_df %>%
+  st_set_geometry(NULL) %>%
+  write_csv("../../data/urbanformbr/landscape_metrics/landscape_metrics.csv")
+
 
 
 
