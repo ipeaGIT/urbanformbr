@@ -118,6 +118,12 @@ source('R/setup.R')
     dplyr::rename(code_urban_concentration = code_muni)
 
 
+  # * street metrics --------------------------------------------------------
+  df_street <- data.table::fread("../../data/urbanformbr/pca_regression_df/streets_metrics.csv")
+
+  df_street <- subset(df_street, name_urban_concentration %in% df_prep$name_urban_concentration)
+
+
 # merge data --------------------------------------------------------------
 
 
@@ -147,6 +153,13 @@ source('R/setup.R')
       df_landuse
     )
 
+  df_merge <- dplyr::left_join(
+    df_merge,
+    df_street,
+    by = c('name_urban_concentration' = 'name_urban_concentration')
+  )
+
+
 
   # * reorder columns -------------------------------------------------------
   df_merge <- df_merge %>%
@@ -169,7 +182,7 @@ source('R/setup.R')
     ) %>%
     # independent variables (x)
     dplyr::rename_with(
-      .cols = pop_1970:theil_h,
+      .cols = pop_1970:length(.),
       function(x){paste0("x_", x)}
     )
 
