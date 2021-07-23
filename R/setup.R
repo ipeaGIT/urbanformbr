@@ -59,7 +59,8 @@ list.of.packages <- c('ggplot2'      # visualizacao de dados
                       ,'maptools'
                       ,'rgeos'
                       ,'XLConnect'
-                      ,'geodist')
+                      ,'geodist'
+                      ,'httr')
 
 
 # install packages----

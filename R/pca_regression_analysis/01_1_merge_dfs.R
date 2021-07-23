@@ -123,6 +123,11 @@ source('R/setup.R')
 
   df_street <- subset(df_street, name_urban_concentration %in% df_prep$name_urban_concentration)
 
+  # * fragmentation compacity -----------------------------------------------
+  df_frag_comp <- data.table::fread("../../data/urbanformbr/pca_regression_df/fragmentation_compacity.csv") %>%
+    select(-name_uca_case) %>%
+    dplyr::rename(code_urban_concentration = code_muni)
+
 
 # merge data --------------------------------------------------------------
 
@@ -159,6 +164,11 @@ source('R/setup.R')
     by = c('name_urban_concentration' = 'name_urban_concentration')
   )
 
+  df_merge <- dplyr::left_join(
+    df_merge,
+    df_frag_comp,
+    by = c('code_urban_concentration' = 'code_urban_concentration')
+  )
 
 
   # * reorder columns -------------------------------------------------------

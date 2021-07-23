@@ -234,7 +234,8 @@ df_final_wide <- df_final_wide %>%
 
 saveRDS(
   df_final_wide,
-  "../../data/urbanformbr/pca_regression_df/exp_density_ghsl.rds"
+  "../../data/urbanformbr/pca_regression_df/exp_density_ghsl.rds",
+  compress = 'xz'
 )
 
 
