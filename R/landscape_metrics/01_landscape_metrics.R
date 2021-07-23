@@ -99,7 +99,6 @@ apply_metrics <- function(file) {
     area_city_large <- sum(patch_metrics_df %>% filter(patch_type %in% c("large", "core")) %>% .$area) / 100
     area_city_core <- sum(patch_metrics_df %>% filter(patch_type == "core") %>% .$area) / 100
 
-
     ratio_city_circle <- area_city / area_circle
     ratio_city_circle_large <- area_city_large / area_circle_large
     ratio_city_circle_core <- area_city_core / area_circle_core
@@ -168,19 +167,18 @@ apply_metrics <- function(file) {
   # return(city_metrics_df)
 }
 
-file = raster_files[735]
-file = raster_files[156]
-
-rio_files <- raster_files[str_detect(raster_files, "rio_de_janeiro")]
-file = rio_files[4]
-
-df <- apply_metrics(rio_files[4])
+# file = raster_files[735]
+# file = raster_files[156]
+#
+# rio_files <- raster_files[str_detect(raster_files, "rio_de_janeiro")]
+# file = rio_files[4]
+#
+# df <- apply_metrics(rio_files[4])
 
 
 # apply function ----------------------------------------------------------
 
 ls_metrics_df <- map_df(raster_files, apply_metrics)
-
 
 sf::st_write(ls_metrics_df, "../../data/urbanformbr/landscape_metrics/landscape_metrics.gpkg")
 
@@ -194,35 +192,3 @@ ls_metrics_df %>%
   write_csv("../../data/urbanformbr/landscape_metrics/landscape_metrics.csv")
 
 
-
-
-View(list_lsm())
-df_area <- df %>% filter(class != 0, metric == "area") %>%
-  group_by(city, year) %>% View()
-  summarise(largest_patch = max(value), total_patch = sum(value)) %>%
-  mutate(prop_largest = largest_patch / total_patch)
-
-View(df_area)
-
-df_area %>%
-  ggplot(aes(x=year, y=prop_largest, group = city)) +
-  geom_point() +
-  geom_path()
-
-df_area %>%
-  ggplot(aes(x=total_patch, y=prop_largest, group=city)) +
-  geom_path() +
-  geom_point()
-  scale_x_log10() +
-  scale_y_log10()
-
-  df %>% filter(metric == "ncore") %>%
-    ggplot(aes(value)) + geom_histogram()
-
-unique(df$metric)
-
-df %>% write.csv("landscape_metrics.csv")
-df <- read_csv("landscape_metrics.csv")
-
-
-View(stringr::str_remove(raster_files, pattern = "../../data/urbanformbr/ghsl/BUILT/urban_extent_cutoff_20/GHS_BUILT_LDS"))
