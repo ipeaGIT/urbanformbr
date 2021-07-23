@@ -16,7 +16,7 @@ source('R/setup.R')
 
 # directory ---------------------------------------------------------------
 
-ghsl_dir <- "//storage6/usuarios/Proj_acess_oport/data-raw/ghsl"
+ghsl_dir <- "../../data-raw/ghsl"
 
 # 1 read polygon data -----------------------------------------------------
 
@@ -60,25 +60,25 @@ f_save_brasil_raster <- function(input, output){
   ## any(pop_mask[pop_mask<0])
 
   # create directory
-  if (!dir.exists("//STORAGE6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/POP/")){
-    dir.create("//STORAGE6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/POP/")
+  if (!dir.exists("../../data/urbanformbr/ghsl/POP/")){
+    dir.create("../../data/urbanformbr/ghsl/POP/")
   }
 
-  if (!dir.exists("//STORAGE6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/POP/BRASIL")){
-    dir.create("//STORAGE6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/POP/BRASIL")
+  if (!dir.exists("../../data/urbanformbr/ghsl/POP/BRASIL")){
+    dir.create("../../data/urbanformbr/ghsl/POP/BRASIL")
   }
 
   # don't uses save raster files as .rds.
   # See https://stackoverflow.com/a/48512398 for details
   #saveRDS(
   #  pop_crop,
-  #  paste0('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/',output),
+  #  paste0('../../data/urbanformbr/ghsl/',output),
   #  compress = 'xz'
   #  )
 
   raster::writeRaster(
     x = pop_mask,
-    filename = paste0('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/POP/BRASIL/', output),
+    filename = paste0('../../data/urbanformbr/ghsl/POP/BRASIL/', output),
     overwrite = T
   )
 

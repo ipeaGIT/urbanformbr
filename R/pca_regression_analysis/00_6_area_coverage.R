@@ -25,7 +25,7 @@
 # urban extent area size 2014
 # expansion area size
 # urban extent size ratio = (urban extent 2014 / urban extent 1975)
-# urban_extent_horizontal_growth ( (urban extent 2014 - urban extent 1975) / urban extent 1975 )
+# urban_extent_horizontal_growth_rate ( (urban extent 2014 - urban extent 1975) / urban extent 1975 )
 # saturation *total/consolidated/expansion* *year* = mean value from desired polygon in each year
 # saturation diff = saturation *total/consolidated/expansion* 2014 - saturation *total/consolidated/expansion* 1975
 
@@ -39,7 +39,7 @@ source('R/setup.R')
 
 # directory ---------------------------------------------------------------
 
-ghsl_dir <- "//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/"
+ghsl_dir <- "../../data/urbanformbr/ghsl/"
 
 years <-c('1975','2014')
 
@@ -65,9 +65,9 @@ files_uca_complete_raster[[2]] <- files_uca_complete_raster[[2]][!str_detect(fil
 
 
 ### APAGAR
-input_polygon <- files_built_polygon
-input_urban_extent_raster <- files_urban_extent_raster
-input_uca_complete_raster <- files_uca_complete_raster
+#input_polygon <- files_built_polygon
+#input_urban_extent_raster <- files_urban_extent_raster
+#input_uca_complete_raster <- files_uca_complete_raster
 
 # define function ---------------------------------------------------------
 
@@ -84,6 +84,7 @@ f_area_variables <- function(input_polygon, input_urban_extent_raster, input_uca
   polygon_built_area <- purrr::map(polygon_built_area, ~split(., .$name_uca_case))
   # * * clip expansion polygon ------------------------------------------------
 
+  # create expansion polygon
   polygon_expansion_area <- purrr::modify_in(
     .x = polygon_built_area, .where = 1,
     ~purrr::map(
@@ -103,6 +104,14 @@ f_area_variables <- function(input_polygon, input_urban_extent_raster, input_uca
     function(x,y)
       sf::st_sym_difference(x = x, y =  y)
   )
+
+  # read previously saved expansion area polygon
+  #polygon_expansion_area <- readr::read_rds("../../data/urbanformbr/ghsl/results/expansion_area_cutoff20.rds")
+
+  #polygon_expansion_area <- split(polygon_expansion_area, polygon_expansion_area$name_uca_case)
+
+  #polygon_expansion_area <- polygon_expansion_area[names(polygon_built_area$urban_extent_1975)]
+
 
   # * read raster ---------------------------------------------------------
 
@@ -158,7 +167,8 @@ f_area_variables <- function(input_polygon, input_urban_extent_raster, input_uca
 
   # * * expansion raster ----------------------------------------------------
 
-    # REMOVE itapipoca which expansion area equals to zero
+    # REMOVE itapipoca -> expansion area equals to zero
+  # OBS.: ADD ITAPIPOCA TO FINAL DF later
   raster_expansion <- raster_complete
   raster_expansion$uca_complete_raster_1975$itapipoca <- NULL
   raster_expansion$uca_complete_raster_2014$itapipoca <- NULL
@@ -166,13 +176,9 @@ f_area_variables <- function(input_polygon, input_urban_extent_raster, input_uca
 
   # reorder list to match order
   raster_expansion$uca_complete_raster_1975 <-
-    raster_expansion$uca_complete_raster_1975[
-      names(polygon_expansion_area)
-    ]
+    raster_expansion$uca_complete_raster_1975[names(polygon_expansion_area)]
   raster_expansion$uca_complete_raster_2014 <-
-    raster_expansion$uca_complete_raster_2014[
-      names(polygon_expansion_area)
-    ]
+    raster_expansion$uca_complete_raster_2014[names(polygon_expansion_area)]
 
   raster_expansion$uca_complete_raster_1975 <- purrr::map2(
     .x = raster_expansion$uca_complete_raster_1975, .y = polygon_expansion_area,
@@ -183,6 +189,7 @@ f_area_variables <- function(input_polygon, input_urban_extent_raster, input_uca
     ~raster::crop(.x, .y)
   )
 
+  # erro se deixar itapipoca na base (dado que nao ha df)
   #erro <- purrr::map2(
   #  .x = raster_expansion$uca_complete_raster_1975, .y = polygon_expansion_area,
   #  purrr::possibly(~raster::crop(.x, .y), 'erro')
@@ -239,9 +246,10 @@ f_area_variables <- function(input_polygon, input_urban_extent_raster, input_uca
       # expansion area size in km2
       expansion_area_size = urban_extent_size_2014 - urban_extent_size_1975,
       # ratio between urban extent 2014 and urban extent 1975
-      urban_extent_size_ratio = as.double(urban_extent_size_2014 / urban_extent_size_1975),
+      #urban_extent_size_ratio = as.double(urban_extent_size_2014 / urban_extent_size_1975),
       # horizontal expansion rate of growth 1975-2014
-      urban_extent_horizontal_growth = as.double( (urban_extent_size_2014 - urban_extent_size_1975) / urban_extent_size_1975 )
+      #urban_extent_horizontal_growth_rate = as.double( (urban_extent_size_2014 - urban_extent_size_1975) / urban_extent_size_1975 )
+      urban_extent_horizontal_geometric_growth = ( as.double(urban_extent_size_2014 / urban_extent_size_1975) ^ (1/39) ) - 1
     )
   ]
 
@@ -314,7 +322,7 @@ f_area_variables <- function(input_polygon, input_urban_extent_raster, input_uca
   df_consolidated_area[
     ,
     `:=`(
-      saturation_consolidated_diff = saturation_consolidated_area_2014 - saturation_consolidated_area_1975
+      saturation_consolidated_geometric_growth = ( (saturation_consolidated_area_2014 / saturation_consolidated_area_1975) ^ (1/39) ) - 1
     )
   ]
 
@@ -333,9 +341,18 @@ f_area_variables <- function(input_polygon, input_urban_extent_raster, input_uca
   df_expansion_area[
     ,
     `:=`(
-      saturation_expansion_diff = saturation_expansion_area_2014 - saturation_expansion_area_1975
+      saturation_expansion_geometric_growth = ( (saturation_expansion_area_2014 / saturation_expansion_area_1975) ^ (1/39) ) - 1
     )
   ]
+
+  # ADD ITAPIPOCA TO EXTENSION AREA DF
+  df_expansion_area <- data.table::rbindlist(
+    list(
+      df_expansion_area,
+      list("itapipoca",0L,0L,0L)
+      )
+    )
+  df_expansion_area <- df_expansion_area %>% arrange(name_uca_case)
 
   # * * total area --------------------------------------------------------
   # saturation from total area depends on
@@ -445,7 +462,7 @@ f_area_variables <- function(input_polygon, input_urban_extent_raster, input_uca
   df_total_area_fixed[
     ,
     `:=`(
-      saturation_total_area_fixed_diff = saturation_total_area_fixed_2014 - saturation_total_area_fixed_1975
+      saturation_total_area_fixed_geometric_growth = ( (saturation_total_area_fixed_2014 / saturation_total_area_fixed_1975) ^ (1/39) ) - 1
     )
   ]
 
@@ -464,11 +481,22 @@ f_area_variables <- function(input_polygon, input_urban_extent_raster, input_uca
       by = 'name_uca_case'
     )
 
+  # transform saturation data to percentage (divide by 100)
+  df_merged <- df_merged %>%
+    dplyr::mutate(
+      dplyr::across(
+      c(saturation_total_area_fixed_1975,saturation_total_area_fixed_2014,
+        saturation_consolidated_area_1975,saturation_consolidated_area_2014,
+        saturation_expansion_area_1975, saturation_expansion_area_2014),
+      ~ . / 100
+    )
+  )
+
 
   # save area rds ---------------------------------------------------------
   saveRDS(
     object = df_merged,
-    file = '//storage6/usuarios/Proj_acess_oport/data/urbanformbr/pca_regression_df/area.rds',
+    file = '../../data/urbanformbr/pca_regression_df/area.rds',
     compress = 'xz'
   )
 

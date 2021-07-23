@@ -25,7 +25,7 @@ f_get_density_matrix <- function(df_urban_areas){
   # f_density_uca recebe os centroids
   points_latlon <- suppressWarnings(
     sf::st_centroid(df_urban_areas) %>%
-    sf::st_transform(4326) %>%
+      sf::st_transform(4326) %>%
       sf::st_coordinates()
   )
 
@@ -35,7 +35,7 @@ f_get_density_matrix <- function(df_urban_areas){
   # user  system elapsed
   # 3.450   1.002   4.488
   gc(reset = T,full = T)
-  gc(reset = T,full = T)
+  #gc(reset = T,full = T)
 
   pop_vector <- df_urban_areas$pop
 
@@ -69,14 +69,15 @@ f_get_density_matrix <- function(df_urban_areas){
                             'pop_05km' = pop_05km,
                             'pop_10km' = pop_10km,
                             'built_05km' = built_05km,
-                            'built_10km' = built_10km
-                            )
+                            'built_10km' = built_10km,
+                            'consolidada' = df_urban_areas$consolidada
+  )
 
   setnames(
     x = temp_output,
     old = c("pop_05km.V1","pop_10km.V1","built_05km.V1","built_10km.V1"),
     new = c("pop_05km","pop_10km","built_05km","built_10km")
-    )
+  )
 
   return(temp_output)
 }
@@ -90,7 +91,7 @@ f_get_density_matrix <- function(df_urban_areas){
 #ano <- c(1975,2014)
 
 f_density_uca <- function(ano){
-  areas <- read_rds(sprintf("../../data/urbanformbr/ghsl/results/grid_uca_%s_cutoff20.rds", ano))
+  areas <- read_rds(sprintf("../../data/urbanformbr/ghsl/results/total_area_grid_uca_consolidada_expansao_%s_cutoff20.rds", ano))
 
   codigos <- unique(areas$code_muni)
   #s <- "3550308" ## Sao paulo, SP
@@ -122,13 +123,36 @@ f_density_uca <- function(ano){
       fwrite(output_df, paste0('../../data/urbanformbr/density-experienced/output_density_ghsl_',ano,"_",s,'.csv') )
 
       # total Pop vs avg Density
+      # df total area
       df1 <- output_df[, .(ano = ano, pop_total = sum(pop), built_total = sum(built),
                            density_pop_05km2 = weighted.mean(x=pop_density05km2, w=pop),
                            density_pop_10km2 = weighted.mean(x=pop_density10km2, w=pop),
                            density_built_05km2 = weighted.mean(x=built_density05km2, w=built),
                            density_built_10km2 = weighted.mean(x=built_density10km2, w=built)),
                        by=.(code_muni,name_uca_case) ]
-      return(df1)
+
+      df1 <- df1 %>%
+        mutate(area_type = "total")
+
+      # df group by consolidated (consolidada==1) or expansion area (consolidada==0)
+      df2 <- output_df[, .(ano = ano, pop_total = sum(pop), built_total = sum(built),
+                           density_pop_05km2 = weighted.mean(x=pop_density05km2, w=pop),
+                           density_pop_10km2 = weighted.mean(x=pop_density10km2, w=pop),
+                           density_built_05km2 = weighted.mean(x=built_density05km2, w=built),
+                           density_built_10km2 = weighted.mean(x=built_density10km2, w=built)),
+                       by=.(code_muni,name_uca_case, consolidada) ]
+
+      df2 <- df2 %>%
+        dplyr::mutate(area_type = case_when(
+          consolidada == 0 ~ "expansao",
+          consolidada == 1 ~ "consolidada"
+        )) %>%
+        dplyr::select(-consolidada)
+
+      # join total area values with consolidated/expansion area
+      df_final <- dplyr::bind_rows(df1,df2)
+
+      return(df_final)
 
     }
 
@@ -143,18 +167,76 @@ f_density_uca <- function(ano){
 df_1975 <- f_density_uca(1975)
 df_2014 <- f_density_uca(2014)
 
+# merge dfs and estimate vars. difference ---------------------------------
+
+df_final <- data.table::rbindlist(list(df_1975,df_2014))
+
+df_final[
+  ,
+  `:=`(
+    #pop_total_rel_diff = (pop_total - c(pop_total[1], head(pop_total, -1)) ) / c(pop_total[1], head(pop_total, -1)),
+    pop_total_geom_growth_1975_2015 = ( ( pop_total / c(pop_total[1], head(pop_total, -1)) ) ^ (1/40) ) - 1 ,
+    built_total_geom_growth_1975_2014 = ( ( built_total / c(built_total[1], head(built_total, -1)) ) ^ (1/39) ) - 1 ,
+    density_pop_05km2_abs_diff = ( density_pop_05km2 - c(density_pop_05km2[1], head(density_pop_05km2, -1)) ),
+    density_pop_10km2_abs_diff = ( density_pop_10km2 - c(density_pop_10km2[1], head(density_pop_10km2, -1)) ),
+    density_built_05km2_abs_diff = ( density_built_05km2 - c(density_built_05km2[1], head(density_built_05km2, -1)) ),
+    density_built_10km2_abs_diff = ( density_built_10km2 - c(density_built_10km2[1], head(density_built_10km2, -1)) )
+  ),
+  by = .(code_muni, name_uca_case, area_type)
+]
+
+# salvar base wide -> para diferenciar variaveis
+df_final_wide <- tidyr::pivot_wider(
+  df_final,
+  names_from = c("area_type","ano"),
+  values_from = c(
+    "pop_total","built_total","density_pop_05km2", "density_pop_10km2",
+    "density_built_05km2","density_built_10km2","pop_total_geom_growth_1975_2015",
+    "built_total_geom_growth_1975_2014","density_pop_05km2_abs_diff",
+    "density_pop_10km2_abs_diff","density_built_05km2_abs_diff",
+    "density_built_10km2_abs_diff"
+    )
+  ) %>%
+  # exclude vars relative to 1975 containing abs_difference/change
+  dplyr::select(
+    -c(dplyr::matches("(abs_diff|geom_growth).*1975$")),
+    #-c(dplyr::ends_with("1975"))
+    ) %>%
+  # rename abs_diff variables
+  dplyr::rename_with(
+    .cols = c(pop_total_geom_growth_1975_2015_total_2014:density_built_10km2_abs_diff_expansao_2014),
+    .fn = ~sub("_2014$","",.)
+  )
+
+data.table::setDT(df_final_wide)[
+  ,
+  `:=`(
+    prop_pop_consolidated_area_2014 = pop_total_consolidada_2014 / pop_total_total_2014,
+    prop_built_consolidated_area_2014 = built_total_consolidada_2014 / built_total_total_2014
+  ),
+  by = .(code_muni, name_uca_case)
+]
+
+# replace na values (itapipoca: expansion area equals to zero)
+df_final_wide <- df_final_wide %>%
+  dplyr::mutate(dplyr::across(dplyr::everything(), .fns = ~tidyr::replace_na(.,0)))
+
+df_final_wide <- df_final_wide %>%
+  dplyr::relocate(prop_pop_consolidated_area_2014, .after = pop_total_expansao_2014) %>%
+  dplyr::relocate(prop_built_consolidated_area_2014, .after = built_total_expansao_2014)
+
+# remove pop_total variables:
+# already created by pca_regression/00_3_pop_df.R with Censo data
+#df_final_wide <- df_final_wide %>%
+#  select(-c(pop_total_total_1975:pop_total_expansao_2014))
 
 # save results ------------------------------------------------------------
 
 saveRDS(
-  df_1975,
-  "../../data/urbanformbr/pca_regression_df/exp_density_ghsl_1975.rds"
-  )
-
-saveRDS(
-  df_2014,
-  "../../data/urbanformbr/pca_regression_df/exp_density_ghsl_2014.rds"
+  df_final_wide,
+  "../../data/urbanformbr/pca_regression_df/exp_density_ghsl.rds"
 )
+
 
 # plot data ---------------------------------------------------------------
 
