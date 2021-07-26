@@ -69,14 +69,21 @@ f_download_srtm <- function(code_uca) {
 
   message(paste0("\n working on ", code_uca,"\n"))
 
-  urban_extent_subset <- subset(urban_extent, code_muni == code_uca)
+  urban_extent_subset <- subset(urban_extent, code_muni == code_uca) %>%
+    dplyr::group_by(code_muni, name_uca_case) %>%
+    dplyr::summarise()
 
   urban_shapes_subset <- subset(urban_shapes, code_urban_concentration == code_uca)
 
   # muni_sf %>% mapview()
 
   # extract bounding box
-  bbox <- st_bbox(urban_shapes_subset)
+  if (code_uca == 3205309){
+    bbox <- st_bbox(urban_extent_subset)
+  } else {
+    bbox <- st_bbox(urban_shapes_subset)
+  }
+
   bbox <- as.integer(bbox) - 1
 
   # identify which tiles are needed to cover the whole study area
@@ -103,14 +110,27 @@ f_download_srtm <- function(code_uca) {
               progress())
   })
 
-  walk(zipfiles, unzip, exdir = outputdir)
+  walk(
+    zipfiles, function(z){
+      if (file.size(z) > 500){
+        unzip (z, exdir = outputdir)
+      }
+    }
+    )
 
   # read all raster tiles, merge them together, and then crop to the study area's bounding box
-  rst <- map(rstfiles, raster)
+  rst <- map(
+    rstfiles, function(r){
+      if (file.exists(r)) {
+        return(raster(r))
+      }
+    }
+    )
+
   if (length(rst) == 1) {
     rst_layer <- rst[[1]]
   } else {
-    rst_layer <- do.call(raster::mosaic, args = c(rst, fun = mean))
+    rst_layer <- do.call(raster::mosaic, args = c(rst, fun = mean, na.rm = T))
   }
 
   #rst_layer_crop <- raster::crop(rst_layer, st_bbox(muni_sf))
@@ -119,7 +139,7 @@ f_download_srtm <- function(code_uca) {
 
   # create df
   output_df <- sf::st_drop_geometry(urban_extent_subset)
-  output_df$sd_topography <- raster::cellStats(rst_layer_mask, sd)
+  output_df$sd_topography <- raster::cellStats(rst_layer_mask, sd, na.rm = T)
 
   return(output_df)
 
@@ -135,7 +155,7 @@ f_download_srtm <- function(code_uca) {
 
 # save in a df all topografy standard deviation
 df_topo <- purrr::map_df(
-  urban_shapes$code_urban_concentration,
+  urban_extent$code_muni,
   ~f_download_srtm(code_uca = .)
   )
 
@@ -151,11 +171,9 @@ saveRDS(
 # detectar erro -----------------------------------------------------------
 
 erro <- purrr::map(
-  urban_shapes$code_urban_concentration,
+  urban_extent$code_muni,
   purrr::possibly(~f_download_srtm(.x),'erro') # incluir funcao para verificar erro
 )
-
-# erro -> linha 76 -> 4108304 - internacional_de_foz_do_iguacu_brasil_ciudad_del_este_paraguai
 
 map(erro, class) %>% unique()
 teste <- purrr::keep(erro, inherits, 'character')
@@ -164,8 +182,79 @@ teste2 <- purrr::discard(erro, inherits, 'character')
 teste2 <- bind_rows(teste2)
 
 # deram erro (antes arrange): erro[[8]], erro[[147]], erro[[183]]
-# aracaju (2800308) salvador (2927408) vitoria (3205309)
+# aracaju_se (2800308)
+# salvador_ba (2927408)
+# vitoria_es (3205309)
+
 uca_erro <- urban_shapes %>% filter(!code_urban_concentration %in% teste2$code_muni)
 
 
+codigos_erro <- c(2800308,2927408,3205309)
+filtro_erro <- urban_shapes %>% filter(code_urban_concentration %in% codigos_erro)
+sf::st_is_valid(filtro_erro)
+filtro_erro_valid <- sf::st_make_valid(filtro_erro)
+# salvar erros para explorar
+filtro_split <- split(filtro_erro, filtro_erro$name_uca_case)
+purrr::walk2(
+  .x = filtro_split, .y = names(filtro_split),
+  ~sf::st_write(
+    obj = .x,
+    dsn = paste0("../../data/urbanformbr/urban_area_shapes/", .y,".gpkg")
+    )
+  )
+
+
+
+
+# * check union polygons --------------------------------------------------
+
+uc <- geobr::read_urban_concentrations(simplified = F)
+ara <- uc %>% filter(code_urban_concentration==2800308)
+sf::st_write(ara, "../../data/urbanformbr/urban_area_shapes/ara.gpkg")
+teste <- ara %>% filter(code_muni %in% c(2804805,2803609))
+
+### geometry union with dissolve_polygons function
+
+# to_multipolygon
+dissolved <- to_multipolygon(teste)
+# simplify_temp_sf
+dissolved <- simplify_temp_sf(dissolved)
+# dissolve_polygons
+dissolved <- dissolve_polygons(dissolved, 'code_urban_concentration')
+
+### geometry union with sf::st_union
+
+a <- sf::st_union(teste)
+
+
+### geometry union with summarize
+b <- ara %>% dplyr::group_by(code_urban_concentration) %>%
+  dplyr::summarise()
+# substituir b por urban_shapes_subset (testar usando union no lugar do dissolve)
+# resultado é o mesmo (lons, lats, tiles, todos sao iguais)
+
+# em 2800308, nao é possivel acessar o url S12W037
+# em 2927408, nao é possivel acessar o url S14W038
+# em 3205309, multiplos url nao existem (mais do que 4 urls, como o restante)
+# erro na linha 106: walk(zipfiles, unzip, exdir = outputdir)
+
+
+# detectar erro 2 ---------------------------------------------------------
+
+
+erro <- purrr::map(
+  urban_extent$code_muni,
+  purrr::possibly(~f_download_srtm(.x),'erro') # incluir funcao para verificar erro
+)
+
+map(erro, class) %>% unique()
+teste <- purrr::keep(erro, inherits, 'character')
+
+teste2 <- purrr::discard(erro, inherits, 'character')
+teste2 <- bind_rows(teste2)
+
+# uca errro: 1400100  boa_vista
+
+
+uca_erro <- urban_shapes %>% filter(!code_urban_concentration %in% teste2$code_muni)
 
