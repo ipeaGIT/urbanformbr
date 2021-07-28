@@ -84,10 +84,21 @@ f_download_srtm <- function(code_uca) {
     bbox <- st_bbox(urban_shapes_subset)
   }
 
+  data.table::fifelse(
+    str_detect(names(bbox), "min$"),
+    floor(bbox),
+    ceiling(bbox)
+    )
+
+  #bbox["xmin"] <- floor(bbox["xmin"])
+  #bbox["xmax"] <- ceiling(bbox["xmax"])
+  #bbox["ymin"] <- floor(bbox["ymin"])
+  #bbox["ymax"] <- ceiling(bbox["ymax"])
+
   #bbox["xmin"] <- bbox["xmin"] - 1
   #bbox["xmax"] <- bbox["xmax"] + 1
-  bbox["ymin"] <- bbox["ymin"] - 1
-  bbox["ymax"] <- bbox["ymax"] + 1
+  #bbox["ymin"] <- bbox["ymin"] - 1
+  #bbox["ymax"] <- bbox["ymax"] + 1
 
   #bbox <- as.integer(bbox) - 1
 
@@ -143,7 +154,6 @@ f_download_srtm <- function(code_uca) {
   rst <- rst %>%
     purrr::discard(is.null)
 
-
   if (length(rst) == 1) {
     rst_layer <- rst[[1]]
   } else {
@@ -180,7 +190,7 @@ df_topo <- purrr::map_df(
 
 saveRDS(
   object = df_topo,
-  file = '../../data/urbanformbr/pca_regression_df/censo.rds',
+  file = '../../data/urbanformbr/pca_regression_df/topography.rds',
   compress = 'xz'
 )
 
@@ -278,14 +288,14 @@ uca_erro <- urban_shapes %>% filter(!code_urban_concentration %in% teste2$code_m
 
 # TESTAR CIDADES EM DIFERENTES POSICOES GEOGRAFICAS
 # toda no hemisferio SUL
-  # bh
+  # salvador
 # toda no hemisferio Norte (existe na amostra?)
   # boa vista
 # parte Sul parte Norte
   # macapa
-cod_hem <- c(3106200,1400100,1600303)
+cod_hem <- c(2927408,1400100,1600303)
 
-code_uca <- cod_hem[[3]]
+code_uca <- cod_hem[[1]]
 
 # save urban shape
 sf::write_sf(
@@ -301,23 +311,49 @@ raster::writeRaster(
   )
 
 
+# COMPARACAO BOUNDING BOX X QGIS
+# formula nova:
+#bbox["ymin"] <- bbox["ymin"] - 1
+#bbox["ymax"] <- bbox["ymax"] + 1
+#bbox <- ifelse(bbox, as.integer(floor(bbox)), "erro")
+2927408
+xmin ymin xmax ymax
+-39  -15  -38  -12
+1400100
+xmin ymin xmax ymax
+-62    1  -61    4
+1600303
+xmin ymin xmax ymax
+-52   -2  -50    2
 
-# codigo antigo -----------------------------------------------------------
+# formula original:
+#as.integer(st_bbox(urban_shapes_subset)) - 1
+2927408
+xmin ymin xmax ymax
+-39  -14  -38  -13
+1400100
+xmin ymin xmax ymax
+-62   1  -61   2
+1600303
+xmin ymin xmax ymax
+-52  -1 -50   0
 
+# QGIS
+2927408
+xmin ymin xmax ymax
+-39   -14 -37  -12
+1400100
+xmin ymin xmax ymax
+-62   2   -59   4
+1600303
+xmin ymin xmax ymax
+-52   -1   -49  2
+2800308
+xmin ymin xmax ymax
+-38  -12  -36  -10
 
-# extract bounding box
-if (code_uca == 3205309){
-  bbox <- st_bbox(urban_extent_subset)
-} else {
-  bbox <- st_bbox(urban_shapes_subset)
-}
-
-bbox <- as.integer(bbox) - 1
-
-# identify which tiles are needed to cover the whole study area
-lons <- seq(floor(bbox[1]), ceiling(bbox[3]), by = 1)
-lats <- seq(floor(bbox[2]), ceiling(bbox[4]), by = 1)
-tiles <- expand.grid(lat = lats, lon = lons) %>%
-  mutate(hx = data.table::fifelse(lon < 0, "W", "E"),
-         hy = data.table::fifelse(lat < 0, "S", "N"))
-tile = sprintf("%s%02d%s%03d", tiles$hy, abs(tiles$lat), tiles$hx, abs(tiles$lon))
+# nova formula:
+#data.table::fifelse(str_detect(names(bbox), "min$"),floor(bbox),ceiling(bbox))
+2800308
+xmin ymin xmax ymax
+-38  -12  -36  -10

@@ -12,7 +12,6 @@ source('R/setup.R')
 
   # * prep data -------------------------------------------------------------
   df_prep <- readr::read_rds("../../data/urbanformbr/pca_regression_df/pca_regression_df.rds") %>%
-    # QUAL COLUNA DE NOME REMOVER?
     dplyr::select(-c(code_muni_uca))
 
 
@@ -34,23 +33,55 @@ source('R/setup.R')
 
   # * pop -------------------------------------------------------------------
 
-  df_pop <- readr::read_rds("../../data/urbanformbr/pca_regression_df/1970-2015_pop.rds")
+  # * * pop censo -----------------------------------------------------------
+
+  df_pop_censo <- readr::read_rds("../../data/urbanformbr/pca_regression_df/1970-2015_pop.rds")
 
   # filter only 184 from our df
-  df_pop <- subset(df_pop, code_urban_concentration %in% df_prep$code_urban_concentration)
+  df_pop_censo <- subset(df_pop_censo, code_urban_concentration %in% df_prep$code_urban_concentration)
 
-  df_pop <- df_pop %>%
+  df_pop_censo <- df_pop_censo %>%
     tidyr::pivot_wider(
       names_from = c("ano"),
       values_from = c("pop"),
       names_prefix = "pop_"
     )
 
-  data.table::setDT(df_pop)[
+  df_pop_censo <- df_pop_censo %>%
+    dplyr::select(-pop_1970)
+
+
+# * * pop ghsl ------------------------------------------------------------
+  df_pop_ghsl <- readr::read_rds('../../data/urbanformbr/ghsl/results/uca_pop_100000_built_up_area_population_results.rds')
+
+  df_pop_ghsl <- df_pop_ghsl %>%
+    sf::st_drop_geometry() %>%
+    dplyr::select(code_urban_concentration, pop1975, pop2015) %>%
+    rename(
+      pop_ghsl_1975 = pop1975,
+      pop_ghsl_2015 = pop2015
+      ) %>%
+    dplyr::filter(code_urban_concentration %in% df_prep$code_urban_concentration)
+
+
+  data.table::setDT(df_pop_ghsl)[
     ,
-    pop_geom_growth_1970_2015 := ( (pop_2015 / pop_1970) ^ (1/45) ) - 1,
+    pop_geom_growth_1975_2015 := ( (pop_ghsl_2015 / pop_ghsl_1975) ^ (1/40) ) - 1,
     by = .(code_urban_concentration)
   ]
+
+  df_pop_ghsl <- df_pop_ghsl %>%
+    dplyr::select(-c(pop_ghsl_2015,pop_ghsl_1975))
+
+  # * * merge pop data ------------------------------------------------------
+  df_pop <- dplyr::left_join(
+    df_pop_censo, df_pop_ghsl,
+    by = c("code_urban_concentration" = "code_urban_concentration")
+  ) %>%
+    dplyr::select(-pop_geom_growth_1975_2015 )
+
+  # remove pop_geom_growth_1975_2015 derived from ghsl since we already have
+  # a pop growth variable estimated at experienced density dataset
 
 
   # * fuel ------------------------------------------------------------------
@@ -128,6 +159,11 @@ source('R/setup.R')
     select(-name_uca_case) %>%
     dplyr::rename(code_urban_concentration = code_muni)
 
+  # * topography ------------------------------------------------------------
+  df_topo <- readr::read_rds("../../data/urbanformbr/pca_regression_df/topography.rds") %>%
+    dplyr::select(-name_uca_case) %>%
+    dplyr::rename(code_urban_concentration = code_muni)
+
 
 # merge data --------------------------------------------------------------
 
@@ -170,6 +206,11 @@ source('R/setup.R')
     by = c('code_urban_concentration' = 'code_urban_concentration')
   )
 
+  df_merge <- dplyr::left_join(
+    df_merge, df_topo,
+    by = c('code_urban_concentration' = 'code_urban_concentration')
+  )
+
 
   # * reorder columns -------------------------------------------------------
   df_merge <- df_merge %>%
@@ -192,7 +233,7 @@ source('R/setup.R')
     ) %>%
     # independent variables (x)
     dplyr::rename_with(
-      .cols = pop_1970:length(.),
+      .cols = pop_2015:length(.),
       function(x){paste0("x_", x)}
     )
 
@@ -200,6 +241,8 @@ source('R/setup.R')
 
 # save data ---------------------------------------------------------------
 
+  # check if there is any missing values
+  any(is.na(df_merge))
   # complete.cases to avoid missing values
   df_merge <- df_merge[complete.cases(df_merge)]
 
