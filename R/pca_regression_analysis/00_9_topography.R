@@ -84,7 +84,20 @@ f_download_srtm <- function(code_uca) {
     bbox <- st_bbox(urban_shapes_subset)
   }
 
-  bbox <- as.integer(bbox) - 1
+  #bbox["xmin"] <- bbox["xmin"] - 1
+  #bbox["xmax"] <- bbox["xmax"] + 1
+  bbox["ymin"] <- bbox["ymin"] - 1
+  bbox["ymax"] <- bbox["ymax"] + 1
+
+  #bbox <- as.integer(bbox) - 1
+
+  bbox <- ifelse(bbox, as.integer(floor(bbox)), "erro")
+
+  #(bbox <- data.table::fifelse(
+  #  bbox < 0,
+  #  as.integer(floor(bbox)),
+  #  as.integer(ceiling(bbox))
+  #))
 
   # identify which tiles are needed to cover the whole study area
   lons <- seq(floor(bbox[1]), ceiling(bbox[3]), by = 1)
@@ -119,13 +132,17 @@ f_download_srtm <- function(code_uca) {
     )
 
   # read all raster tiles, merge them together, and then crop to the study area's bounding box
-  rst <- map(
+  rst <- purrr::map(
     rstfiles, function(r){
       if (file.exists(r)) {
         return(raster(r))
       }
     }
     )
+
+  rst <- rst %>%
+    purrr::discard(is.null)
+
 
   if (length(rst) == 1) {
     rst_layer <- rst[[1]]
@@ -258,3 +275,49 @@ teste2 <- bind_rows(teste2)
 
 uca_erro <- urban_shapes %>% filter(!code_urban_concentration %in% teste2$code_muni)
 
+
+# TESTAR CIDADES EM DIFERENTES POSICOES GEOGRAFICAS
+# toda no hemisferio SUL
+  # bh
+# toda no hemisferio Norte (existe na amostra?)
+  # boa vista
+# parte Sul parte Norte
+  # macapa
+cod_hem <- c(3106200,1400100,1600303)
+
+code_uca <- cod_hem[[3]]
+
+# save urban shape
+sf::write_sf(
+  urban_shapes_subset,
+  paste0("../../data/urbanformbr/urban_area_shapes/",code_uca,"_shape.gpkg"
+         )
+  )
+# save raster
+raster::writeRaster(
+  rst_layer,
+  paste0("../../data/urbanformbr/urban_area_shapes/",code_uca,"_raster.tif"),
+  overwrite=TRUE
+  )
+
+
+
+# codigo antigo -----------------------------------------------------------
+
+
+# extract bounding box
+if (code_uca == 3205309){
+  bbox <- st_bbox(urban_extent_subset)
+} else {
+  bbox <- st_bbox(urban_shapes_subset)
+}
+
+bbox <- as.integer(bbox) - 1
+
+# identify which tiles are needed to cover the whole study area
+lons <- seq(floor(bbox[1]), ceiling(bbox[3]), by = 1)
+lats <- seq(floor(bbox[2]), ceiling(bbox[4]), by = 1)
+tiles <- expand.grid(lat = lats, lon = lons) %>%
+  mutate(hx = data.table::fifelse(lon < 0, "W", "E"),
+         hy = data.table::fifelse(lat < 0, "S", "N"))
+tile = sprintf("%s%02d%s%03d", tiles$hy, abs(tiles$lat), tiles$hx, abs(tiles$lon))
