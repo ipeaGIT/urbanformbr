@@ -77,8 +77,8 @@ source('R/setup.R')
   df_pop <- dplyr::left_join(
     df_pop_censo, df_pop_ghsl,
     by = c("code_urban_concentration" = "code_urban_concentration")
-  ) %>%
-    dplyr::select(-pop_geom_growth_1975_2015 )
+  ) #%>%
+    #dplyr::select(-pop_geom_growth_1975_2015 )
 
   # remove pop_geom_growth_1975_2015 derived from ghsl since we already have
   # a pop growth variable estimated at experienced density dataset
@@ -244,7 +244,7 @@ source('R/setup.R')
   # check if there is any missing values
   any(is.na(df_merge))
   # complete.cases to avoid missing values
-  df_merge <- df_merge[complete.cases(df_merge)]
+  #df_merge <- df_merge[complete.cases(df_merge)]
 
 
   saveRDS(

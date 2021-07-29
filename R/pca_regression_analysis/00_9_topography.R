@@ -84,7 +84,7 @@ f_download_srtm <- function(code_uca) {
     bbox <- st_bbox(urban_shapes_subset)
   }
 
-  data.table::fifelse(
+  bbox <- data.table::fifelse(
     str_detect(names(bbox), "min$"),
     floor(bbox),
     ceiling(bbox)
@@ -101,14 +101,6 @@ f_download_srtm <- function(code_uca) {
   #bbox["ymax"] <- bbox["ymax"] + 1
 
   #bbox <- as.integer(bbox) - 1
-
-  bbox <- ifelse(bbox, as.integer(floor(bbox)), "erro")
-
-  #(bbox <- data.table::fifelse(
-  #  bbox < 0,
-  #  as.integer(floor(bbox)),
-  #  as.integer(ceiling(bbox))
-  #))
 
   # identify which tiles are needed to cover the whole study area
   lons <- seq(floor(bbox[1]), ceiling(bbox[3]), by = 1)
@@ -166,7 +158,27 @@ f_download_srtm <- function(code_uca) {
 
   # create df
   output_df <- sf::st_drop_geometry(urban_extent_subset)
-  output_df$sd_topography <- raster::cellStats(rst_layer_mask, sd, na.rm = T)
+
+  rst_lasyer_terrain <- raster::terrain(
+    rst_layer_mask,
+    opt = c("slope","TRI"),
+    neighbours = 8,
+    unit = 'degrees'
+  )
+
+  # generate variables (all for urban extent, not administrative polygon)
+  data.table::setDT(output_df)[
+    ,
+    `:=`(
+      # elevation
+      sd_elevation = raster::cellStats(rst_layer_mask, sd, na.rm = T),
+      # slope
+      mean_slope = raster::cellStats(rst_lasyer_terrain, mean, na.rm = T)["slope"],
+      # tri (indice de rugosidade) extensao urbana
+      mean_ruggedness = raster::cellStats(rst_lasyer_terrain, mean, na.rm = T)["tri"]
+    )
+  ]
+
 
   return(output_df)
 
