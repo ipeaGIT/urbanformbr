@@ -36,13 +36,13 @@ f_censo <- function(){
     'V0010', # peso amostral
     "V0300", # controle
     "V1006", # situacao do domicilio (1 urbana 2 rural)
-    'V0221', # existencia de motocicleta para uso particular
-    'V0222', # existencia de automovel para uso particular
+    'V0221', # existencia de motocicleta para uso particular (1 sim, 2 nao)
+    'V0222', # existencia de automovel para uso particular (1 sim, 2 nao)
     "V0203", # numero de comodos -> criar numero medio de comodos por domicilio
     "V6203", # densidade morador/cômodo
     "V6204", # densidade morador/dormitorio
     "V0401"  # quantas pessoas moravam no domicilio 31/07/10
-    )
+  )
 
   df_censo_dom <- data.table::fread(
     file = '//storage6/bases2/NINSOC/Bases/Censo_Demografico/2010/CSV/censo_2010.domicilios.csv.bz2',
@@ -70,12 +70,12 @@ f_censo <- function(){
     "V6462", # ocupacao CBO
     #"V6910", # condicao na ocupacao (2- desocupadas)
     "V6920", # situacao na ocupacao (2- nao ocupadas) -> USAR ESSE
-    "V0661", # retorna do trabalho para casa diariamente
+    "V0661", # retorna do trabalho para casa diariamente (1 sim, 2 nao)
     "V0662", # tempo deslocamento casa-trabalho
     "V0606", # raca
     "V0660", # em que municipio e UF trabalha
     "V6531"  # rendimento domiciliar (domicilio particular) per capita julho 2010
-    )
+  )
 
   df_censo_pes <- data.table::fread(
     file = '//storage6/bases2/NINSOC/Bases/Censo_Demografico/2010/CSV/censo_2010.pessoas.csv.bz2',
@@ -185,15 +185,15 @@ f_censo <- function(){
         V0662 == 4, 90,
         V0662 == 5, 120,
         default = NA_real_
-        ),
+      ),
       sexo_raca = data.table::fcase(
         V0601 == 1 & V0606 == 1, "Homem branco",
-        V0601 == 1 & V0606 == 2 | V0606 == 4, "Homem preto ou pardo",
+        V0601 == 1 & (V0606 == 2 | V0606 == 4), "Homem preto ou pardo",
         V0601 == 1 & V0606 == 3, "Homem amarelo",
         V0601 == 1 & V0606 == 5, "Homem indígena",
         V0601 == 1 & V0606 == 9, "Homem não-especificado",
         V0601 == 2 & V0606 == 1, "Mulher branca",
-        V0601 == 2 & V0606 == 2 | V0606 == 4, "Mulher preta ou parda",
+        V0601 == 2 & (V0606 == 2 | V0606 == 4), "Mulher preta ou parda",
         V0601 == 2 & V0606 == 3, "Mulher amarela",
         V0601 == 2 & V0606 == 5, "Mulher indígena",
         V0601 == 2 & V0606 == 9, "Mulher não-especificada",
@@ -217,22 +217,27 @@ f_censo <- function(){
       ),
       # V6471 categories for activities (CNAE) : industry, services/comerce, agro
       sector = data.table::fcase(
-        V6471 > 0 & V6471 <= 03999 #| V6471 >= 10000 & v6471 <= 12999
+        V6471 > 0 & V6471 <= 03999          # AGRICULTURA, PECUÁRIA, PRODUÇÃO FLORESTAL, PESCA E AQUICULTURA
         , "Agricultura",
-
-        V6471 >= 05000 & V6471 <= 09999 |
-          V6471 >= 10000 & V6471 <= 33999 | # conferir industria da transformacao
-          V6471 >= 41000 & V6471 <= 43999
+        V6471 >= 05000 & V6471 <= 09999 |   # INDÚSTRIAS EXTRATIVAS
+          V6471 >= 10000 & V6471 <= 33999 | # INDÚSTRIAS DE TRANSFORMAÇÃO
+          V6471 >= 41000 & V6471 <= 43999   # CONSTRUÇÃO
         , "Indústria",
-
-        V6471 >= 35000 & V6471 <= 39999 |
-          V6471 >= 45000 & V6471 <= 48999 |
-          V6471 >= 49000 & V6471 <= 53999 |
-          V6471 >= 55000 & V6471 <= 56999 |
-          V6471 >= 58000 & V6471 <= 75999 |
-          V6471 >= 77000 & V6471 <= 88999 |
-          V6471 >= 90000 & V6471 <= 94999 |
-          V6471 >= 95000 & V6471 <= 99999
+        V6471 >= 35000 & V6471 <= 39999 |   # ELETRICIDADE E GÁS
+          V6471 >= 45000 & V6471 <= 48999 | # COMÉRCIO;REPARAÇÃO DE VEÍCULOS AUTOMOTORES E MOTOCICLETAS
+                                            # COMÉRCIO, EXCETO DE VEICULOS AUTOMOTORES E MOTOCICLETAS
+          V6471 >= 49000 & V6471 <= 53999 | # TRANSPORTE, ARMAZENAGEM E CORREIO
+          V6471 >= 55000 & V6471 <= 56999 | # ALOJAMENTO E ALIMENTAÇÃO
+          V6471 >= 58000 & V6471 <= 75999 | # INFORMAÇÃO E COMUNICAÇÃO|
+                                            # ATIVIDADES IMOBILIÁRIAS |
+                                            # ATIVIDADES PROFISSIONAIS, CIENTÍFICAS E TÉCNICAS
+          V6471 >= 77000 & V6471 <= 88999 | # ATIVIDADES ADMINISTRATIVAS E SERVIÇOS COMPLEMENTARES
+                                            # ADMINISTRAÇÃO PÚBLICA, DEFESA E SEGURIDADE SOCIAL
+                                            # SAÚDE HUMANA E SERVIÇOS SOCIAIS
+          V6471 >= 90000 & V6471 <= 94999 | # ARTES, CULTURA, ESPORTE E RECREAÇÃO
+          V6471 >= 95000 & V6471 <= 99999   # OUTRAS ATIVIDADES DE SERVIÇOS
+                                            # SERVIÇOS DOMÉSTICOS
+                                            # ORGANISMOS INTERNACIONAIS E OUTRAS INSTITUIÇÕES EXTRATERRITORIAIS
         , "Serviços",
         default = NA_character_
       ),
@@ -264,7 +269,7 @@ f_censo <- function(){
   #    prop_serv = sum(V0010[which(sector == "Serviços" & V6920==1 & V6036>=16)], na.rm = T) / sum(V0010[which(V6920==1 & V6036>=16)], na.rm = T),
   #    prop_agri = sum(V0010[which(sector == "Agricultura" & V6920==1 & V6036>=16)], na.rm = T) / sum(V0010[which(V6920==1 & V6036>=16)], na.rm = T)
   #  )#,
-    #by = .(code_urban_concentration)
+  #by = .(code_urban_concentration)
   #]
 
   ## GERAR TRABALHO INFORMAL (CRIAR VARIAVEIS NECESSARIAS)
@@ -277,7 +282,8 @@ f_censo <- function(){
           (V6462>=1210L & V6462<=1230L) |
           V6462==1310L |
           V6462==1320L,
-        1L, #Membros superiores do Poder Publico, dirigentes de organizacoes de interesse publico e de empresas, gerentes
+        1L, # Membros superiores do Poder Publico, dirigentes de organizacoes de
+        # interesse publico e de empresas, gerentes
 
         (V6462>=2011L & V6462<=2021L) |
           (V6462>=2111L & V6462<=2153L) |
@@ -426,17 +432,17 @@ f_censo <- function(){
 
   # * vars domicilios (households) -----------------------------------------------
   # V1006: % domicilios em situacao urbana
-    # estimar proporcao 1 at V1006
+  # estimar proporcao 1 at V1006
 
   #### obs: a partir da var de cima, todas as estimacoes devem ter filtro V1006==1
   # car_motorcycle: % domicilios com car/bike
-    # var criada; estimar proporcao
+  # var criada; estimar proporcao
   # V0203: numero medio de comodos por domicilio
-    # estimar media via V0203
+  # estimar media via V0203
   # V6203: media de densidade morador/comodo
-    # estimar media via V6203
+  # estimar media via V6203
   # V6204: media de densidade morador/dormitorio
-    # estimar media via V6204
+  # estimar media via V6204
 
   df_wghtd_mean_dom <- df_censo_dom[
     V1006 == 1, # filter only individuals from urban areas
@@ -457,7 +463,7 @@ f_censo <- function(){
     .(
       prop_dom_urban = sum(V0010[which(V1006 == 1)], na.rm = T) / sum(V0010, na.rm = T),
       prop_car_motorcycle_dom = sum(V0010[which(car_motorcycle == "Carro ou motocicleta" & V1006 == 1)], na.rm = T) / sum(V0010[which(V1006 == 1)], na.rm = T)
-      ),
+    ),
     by = .(code_urban_concentration)
   ]
 
@@ -484,37 +490,37 @@ f_censo <- function(){
   # * vars pessoas (individuals) --------------------------------------------
   ## prorportion
   # V1006: % pessoas em domicilios em situacao urbana
-    # estimar proporcao 1 at V1006
+  # estimar proporcao 1 at V1006
   # V0601: % sexo masculino
-    # estimar proporcao 1 at V0601
+  # estimar proporcao 1 at V0601
   # V0601: % sexo feminino
-    # estimar proporcao 2 at V0601
+  # estimar proporcao 2 at V0601
   # raca: % pessoas brancas (ou Preta ou Parda)
-    # var criada; estimar prop
+  # var criada; estimar prop
   # education: % baixa escolaridade
-    # var criada; esitmar prop education->baixa
+  # var criada; esitmar prop education->baixa
   # education: % alta escolaridade
-    # var criada; esitmar prop education->alta
+  # var criada; esitmar prop education->alta
   # age: % 15<
   # var criada; esitmar prop age
   # age: % 18-39
-    # var criada; esitmar prop age
+  # var criada; esitmar prop age
   # age: % 40-64
-    # var criada; esitmar prop age
+  # var criada; esitmar prop age
   # age: % 65+
-    # var criada; esitmar prop age
+  # var criada; esitmar prop age
   # informal: % trabalhadores (in)formais
-    # var criada; esitmar prop formal
+  # var criada; esitmar prop formal
   # work_muni: % trab. que trabalham em outro municipio
-    # var criada; esitmar prop "outro muni"
+  # var criada; esitmar prop "outro muni"
   # V6920: trabalhadores empregados
-    # estimar proporcao 1 at V6920
+  # estimar proporcao 1 at V6920
   # sector: % trab. industria
-    # var criada; estimar prop industria (secundario)
+  # var criada; estimar prop industria (secundario)
   # sector: % trab. servicos
-    # var criada: estimar prop servicos (terciario)
+  # var criada: estimar prop servicos (terciario)
   # car_motorcycle: % prop individuos moram dom. com car/bike
-    # var criada: estimar prop "Carro ou motocicleta"
+  # var criada: estimar prop "Carro ou motocicleta"
 
   ## weighted mean
   # commute_time (apenas V0661 == 1): tempo deslocamento casa-trabalho
@@ -576,14 +582,20 @@ f_censo <- function(){
   ]
 
 
-  df_vars_pes <- dplyr::left_join(
-    df_wghtd_mean_pes, df_prop_pes_urban,
-    by = c("code_urban_concentration" = "code_urban_concentration")
-  ) %>%
-    dplyr::left_join(
-      df_prop_pes,
-      by = c("code_urban_concentration" = "code_urban_concentration")
-      )
+  # df_vars_pes <- dplyr::left_join(
+  #   df_wghtd_mean_pes, df_prop_pes_urban,
+  #   by = c("code_urban_concentration" = "code_urban_concentration")
+  # ) %>%
+  #   dplyr::left_join(
+  #     df_prop_pes,
+  #     by = c("code_urban_concentration" = "code_urban_concentration")
+  #   )
+  df_vars_pes <- data.table::merge.data.table(x = df_wghtd_mean_pes
+                                              ,y = df_prop_pes_urban
+                                              ,by = "code_urban_concentration")
+  df_vars_pes <- data.table::merge.data.table(x = df_vars_pes
+                                              ,y = df_prop_pes
+                                              ,by = "code_urban_concentration")
 
 
   # * merge dom pes vars ----------------------------------------------------
