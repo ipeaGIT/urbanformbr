@@ -1,35 +1,35 @@
 rm(list=ls())
-library(sidrar)
-library(magrittr)
-library(data.table)
+source('R/setup.R')
 
 
-### projection 2015 --
-info2020 <- sidrar::info_sidra(x = 6579)
+### projection 2015 ----
+sidrar::info_sidra(x = 6579)
 
 pop2015 <- sidrar::get_sidra(x = 6579
                              , variable = 9324
-                             , period = as.character(c(2015))
+                             , period = as.character("2015")
                              , geo = "City"
-                             #, geo.filter = "City"
 )
 
+
 # fix names
+
 data.table::setDT(pop2015)
 names(pop2015) <- janitor::make_clean_names(names(pop2015))
 
-# add 2015 projection on census 1970 - 2010 data
+# add 2015 projection on census 1970 to 2010 data------
+
 pop <- readr::read_rds("../../data/urbanformbr/population/population_muni_ibge.rds")
-pop <- pop[ano == 1970]
-pop_muni <- list(pop,pop2015) %>% data.table::rbindlist(use.names = TRUE
-                                                              ,fill = TRUE)
+
+pop_muni <- list(pop[ano == 1975],pop2015) %>%
+  data.table::rbindlist(use.names = TRUE,fill = TRUE)
 
 pop_muni[,c("situacao_do_domicilio",
             "situacao_do_domicilio_codigo",
             "sexo_codigo","sexo") := NULL]
 
 
-# read amc
+# read amc---------
 amc_muni <- readr::read_rds("../../data/urbanformbr/population/comparable_areas_ibge.rds")
 
 
@@ -61,6 +61,7 @@ pop_muni_df <- pop_muni_df[!is.na(valor) & valor != 0]
 names(pop_muni_df) <- c("code_urban_concentration",
                         "ano",
                         "pop")
+
 
 ## save
 readr::write_rds(pop_muni_df,"../../data/urbanformbr/pca_regression_df/1970-2015_pop.rds",
