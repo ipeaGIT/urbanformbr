@@ -33,6 +33,14 @@ source('R/setup.R')
 
   # * pop -------------------------------------------------------------------
 
+  # * * pop growth -----------------------------------------------------------
+
+  df_pop_growth <- readr::read_rds("../../data/urbanformbr/pca_regression_df/pop_growth.rds")
+  df_pop_growth[,c("pop2000","pop2015") := NULL]
+  df_pop_growth[,code_urban_concentration := as.integer(code_urban_concentration)]
+  data.table::setnames(df_pop_growth,"r15_00","pop_growth_15_00")
+
+
   # * * pop censo -----------------------------------------------------------
 
   df_pop_censo <- readr::read_rds("../../data/urbanformbr/pca_regression_df/1970-2015_pop.rds")
@@ -192,6 +200,9 @@ source('R/setup.R')
     ) %>%
     dplyr::left_join(
       df_landuse
+    ) %>%
+    dplyr::left_join(
+      df_pop_growth
     )
 
   df_merge <- dplyr::left_join(
