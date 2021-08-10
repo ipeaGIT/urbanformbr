@@ -10,6 +10,7 @@ library('corrplot')
 library('car')
 library('ggcorrplot')
 library('doParallel')
+library('normtest')
 
 #LOAD DATA BASE
 pca_regression_df_ready_to_use <- readRDS(
@@ -34,9 +35,12 @@ x_density_pop_10km2_total_2014=NULL,x_density_built_10km2_consolidada_2014=NULL,
 x_density_built_10km2_expansao_2014=NULL,x_density_built_10km2_total_2014=NULL,
 x_dissimilarity_15km=NULL,x_dissimilarity_10km=NULL,
 x_pop_total_geom_growth_1975_2015_consolidada=NULL,
-x_pop_total_geom_growth_1975_2015_total=NULL,x_pop_total_geom_growth_1975_2015_expansao=NULL)
+x_pop_total_geom_growth_1975_2015_total=NULL,x_pop_total_geom_growth_1975_2015_expansao=NULL,
+x_prop_age_65_more=NULL)
 
 plot_qq(onlynumbersbase)
+
+normtest::kurtosis.norm.test(onlynumbersbase,nrepl = 1000)
 
 ## logaritmizing ASSIMETRIC VARIABLES (base on qqplot)
 
@@ -93,7 +97,7 @@ comboInfo <- findLinearCombos(x)
 comboInfo
 ## PARALELIZANDO
 
-cl <- makePSOCKcluster(4)
+cl <- makePSOCKcluster(5)
 registerDoParallel(cl)
 
 ### CARET
@@ -122,11 +126,11 @@ rf_safuel
 ggplot(rf_safuel) + theme_bw()
 
 
-set.seed(10)
-rf_rf_sacomute <- safs(x = x, y = y2,
+set.seed(100)
+rf_sacomute <- safs(x = x, y = y2,
                   iters = 100,
                   safsControl = rfsacontrl)
-rf_rf_sacomute
+rf_sacomute
 
 stopCluster(cl)
 
@@ -173,13 +177,13 @@ lmtest::coeftest(regfuelmtcl)
 opsetcomute <- rf_sacomute$sa$final
 depfuel <- "y_wghtd_mean_commute_time"
 
-fuelset <- as.formula(
+comuteset <- as.formula(
   paste(depfuel,
         paste(opsetcomute, collapse = " + "),
         sep = " ~ "))
 print(fuelset)
 
-regfuel <- lm(comuteset,data=lnreghib)
+regcomute <- lm(comuteset,data=lnreghib)
 
 summary(regcomute)
 
