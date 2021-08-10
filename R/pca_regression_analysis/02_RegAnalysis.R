@@ -1,22 +1,14 @@
-#URBAN FORM BASE ANALYSIS
 
 library('DataExplorer')
 library('dplyr')
 library('tidyverse')
 library('caret')
-library('broom')
-library('stats')
 library('data.table')
 library('lmtest')
-library('mlbench')
-library('Hmisc')
-library('randomForest')
 library('faux')
-library('sandwich')
 library('corrplot')
 library('car')
 library('ggcorrplot')
-library('MultivariateAnalysis')
 library('doParallel')
 
 #LOAD DATA BASE
@@ -29,7 +21,7 @@ onlynumbersbase <- pca_regression_df_ready_to_use %>% mutate(
 plot_qq(onlynumbersbase)
 
 
-### THIS TRANSFORMATION FOR ONLYNUMBERS BASE IS BASED ON BRIEF CONCEPTUAL DISCUSSION
+### THIS TRANSFORMATION FOR ONLYNUMBERS BASE IS BASED ON BRIEF CONCEPTUAL DISCUSSION ----
 
 onlynumbersbase <- onlynumbersbase %>% mutate(x_pib_capita_2010=NULL,
 x_prop_yellow_men=NULL,x_prop_pes_urban=NULL, x_prop_not_specified_men=NULL,
@@ -78,9 +70,7 @@ summary(lnreghib)
 plot_intro(lnreghib)
 
 
-##########CARET############
-
-#TRAINING THE FOR THE BEST MODEL SELECTION
+##########CARET############ ----
 
 ###### CARET SAFS CRITERIA APPLICATION
 
@@ -103,7 +93,7 @@ comboInfo <- findLinearCombos(x)
 comboInfo
 ## PARALELIZANDO
 
-cl <- makePSOCKcluster(3)
+cl <- makePSOCKcluster(4)
 registerDoParallel(cl)
 
 ### CARET
@@ -123,7 +113,7 @@ rfsacontrl <- safsControl(functions = rfSA,
                        repeats = 10,
                        improve = 15)
 
-set.seed(100)
+set.seed(154)
 rf_safuel <- safs(x = x, y = y1,
               iters = 100,
               safsControl = rfsacontrl)
@@ -140,7 +130,7 @@ rf_rf_sacomute
 
 stopCluster(cl)
 
-#REGRESSION WITH OPTIMAL subSET
+#REGRESSION WITH OPTIMAL subSET ----
 
 opsetfuel <- rf_safuel$sa$final
 
@@ -215,22 +205,6 @@ lmtest::bptest(regcomutemtcln)
 lmtest::coeftest(regcomutemtcln)
 
 
-#CORRELATION ANALYSIS BY CARET
-
-
-matrizcorr <- as.data.frame(cor(dfx))
-
-descrCor <- sum(abs(matrizcorr[upper.tri(matrizcorr)]) >.5)
-
-summary(descrCor[upper.tri(descrCor)])
-
-
-comboInfo <- findLinearCombos(x)
-
-comboInfo
-
-colnames(x)[c(9,34)]
-
 ### DETECTING AND CORRECTING HETEROCEDASTICITY
 
 lmtest::bptest(reglist)
@@ -239,7 +213,7 @@ lmtest::coeftest(reglist)
 lmtest::bptest(reglist2)
 lmtest::coeftest(reglist2)
 
-#### CORRELATION analysis
+#### CORRELATION analysis ----
 
 
 cor.test(pca_regression_df_ready_to_use$y_wghtd_mean_commute_time,pca_regression_df_ready_to_use$x_wghtd_mean_household_income_per_capita)
@@ -249,7 +223,7 @@ dfx <- select()
 ggcorrplot(cor(dfx),tl.cex = 8)
 
 
-#SAVING MODELS
+#SAVING MODELS ----
 
 setwd("//storage6/usuarios/Proj_acess_oport/git_luiz/urbanformbr/Outputs")
 
