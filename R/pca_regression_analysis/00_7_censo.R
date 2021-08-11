@@ -34,9 +34,19 @@ f_censo <- function(){
   df_censo_pes <- readr::read_rds('../../data/urbanformbr/censo/censo_pes.rds')
 
   # * pca regression df -----------------------------------------------------
+
   # read df with code and names of urban concentration, and codes of each muni
   #..belonging to them
   df_codes <- readr::read_rds("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/pca_regression_df/pca_regression_df.rds")
+
+  # count the number of munis in each urban concentration
+  df_codes <- df_codes %>%
+    dplyr::mutate(
+      isolated_muni = data.table::fcase(
+        purrr::map_int(code_muni_uca, length) == 1L, 1L,
+        default = 0L
+      )
+    )
 
   # format df_codes so that it can be used at a left join (two columns):
   # i. urban concentration code (whole uca)
@@ -44,6 +54,33 @@ f_censo <- function(){
   df_codes <- df_codes %>%
     tidyr::unnest_longer(code_muni_uca) %>%
     data.table::setDT()
+
+  df_codes <- df_codes %>%
+    dplyr::mutate(
+      nucleo = data.table::fcase(
+        code_muni_uca == code_urban_concentration, 1L,
+        code_muni_uca != code_urban_concentration, 0L,
+        default = 100L
+
+      )
+    )
+
+
+  # * * read urban shapes df ------------------------------------------------
+  df_urban_shapes <- readr::read_rds("../../data/urbanformbr/urban_area_shapes/urban_area_pop_100000_dissolved.rds") %>%
+    sf::st_drop_geometry() %>%
+    dplyr::select(code_urban_concentration,pop_ibge_total_2010) %>%
+    dplyr::rename(pop_uca_2010 = pop_ibge_total_2010)
+
+
+  # * * merge codes urban_shapes --------------------------------------------
+  df_codes <- dplyr::left_join(
+    df_codes,
+    df_urban_shapes,
+    by = c("code_urban_concentration" = "code_urban_concentration")
+    )
+
+
 
   # clean data --------------------------------------------------------------
 
@@ -70,7 +107,10 @@ f_censo <- function(){
     df_codes,
     `:=`(
       code_urban_concentration = i.code_urban_concentration,
-      name_uca_case = i.name_uca_case
+      name_uca_case = i.name_uca_case,
+      isolated_muni = i.isolated_muni,
+      nucleo = i.nucleo,
+      pop_uca_2010 = i.pop_uca_2010
     ),
     on = c("code_muni" = "code_muni_uca")
   ]
@@ -120,6 +160,21 @@ f_censo <- function(){
 
 
   # * create vars. pes ------------------------------------------------------
+
+
+  #classify uca
+  # from IBGE (2016) - Arranjos Populacionais e Concentracoes Urbanas:
+  # uca (with more than 100000 pop) can be classified as
+  # medium uca: ucas or isolated (only one muni) muni with 100000 <= pop <= 750000
+  # large: ucas or isolated (only one muni) muni with pop > 750000
+
+  # pop size by microdata
+  #df_size <- df_censo_pes[
+  #  ,
+  #  .(pop_sum = sum(V0010,na.rm = T)),
+  #  by = .(code_urban_concentration)
+  #  ]
+
 
   df_censo_pes[
     ,
@@ -201,6 +256,10 @@ f_censo <- function(){
         V0660 == 2, "Mesmo município, mas não no domicílio",
         V0660 >= 3 & V0660 <= 5, "Outro ou mais municípios/país",
         default = NA_character_
+      ),
+      large_uca_pop = data.table::fcase(
+        pop_uca_2010 > 750000, 1L,
+        default = 0L
       )
     )
   ]
@@ -333,7 +392,7 @@ f_censo <- function(){
 
         V6930_conta_propria == "Empregados com carteira de trabalho assinada" |
           V6930_conta_propria == "Militares e funcionários públicos estatutários" |
-          V6930_conta_propria == "Empregadores" | # empregadores
+          V6930_conta_propria == "Empregadores" |
           V6930_conta_propria == "Conta própria com profissão liberal - formal",
         "Formal",
 
@@ -486,26 +545,29 @@ f_censo <- function(){
     ]
   )
 
-  df_prop_pes_urban <- df_censo_pes[
-    ,
-    .(prop_pes_urban = sum(V0010[which(V1006 == 1)], na.rm = T) / sum(V0010, na.rm = T)),
-    by = .(code_urban_concentration)
-  ]
+  #df_prop_pes_urban <- df_censo_pes[
+  #  ,
+  #  .(prop_pes_urban = sum(V0010[which(V1006 == 1)], na.rm = T) / sum(V0010, na.rm = T)),
+  #  by = .(code_urban_concentration)
+  #]
 
   df_prop_pes <- df_censo_pes[
     V1006 == 1, # filter only individuals from urban areas
     .(
-      #prop_men = sum(V0010[which(V0601 == 1)], na.rm = T) / sum(V0010, na.rm = T),
+      prop_men = sum(V0010[which(V0601 == 1L)], na.rm = T) / sum(V0010, na.rm = T),
+      prop_women = sum(V0010[which(V0601 == 2L)], na.rm = T) / sum(V0010, na.rm = T),
+      prop_white = sum(V0010[which(raca == "Branca")], na.rm = T) / sum(V0010, na.rm = T),
+      prop_black = sum(V0010[which(raca == "Preta ou Parda")], na.rm = T) / sum(V0010, na.rm = T),
       prop_white_men = sum(V0010[which(sexo_raca == "Homem branco")], na.rm = T) / sum(V0010, na.rm = T),
       prop_black_men = sum(V0010[which(sexo_raca == "Homem preto ou pardo")], na.rm = T) / sum(V0010, na.rm = T),
-      prop_yellow_men = sum(V0010[which(sexo_raca == "Homem amarelo")], na.rm = T) / sum(V0010, na.rm = T),
-      prop_indigenous_men = sum(V0010[which(sexo_raca == "Homem indígena")], na.rm = T) / sum(V0010, na.rm = T),
-      prop_not_specified_men = sum(V0010[which(sexo_raca == "Homem não-especificado")], na.rm = T) / sum(V0010, na.rm = T),
+      #prop_yellow_men = sum(V0010[which(sexo_raca == "Homem amarelo")], na.rm = T) / sum(V0010, na.rm = T),
+      #prop_indigenous_men = sum(V0010[which(sexo_raca == "Homem indígena")], na.rm = T) / sum(V0010, na.rm = T),
+      #prop_not_specified_men = sum(V0010[which(sexo_raca == "Homem não-especificado")], na.rm = T) / sum(V0010, na.rm = T),
       prop_white_women = sum(V0010[which(sexo_raca == "Mulher branca")], na.rm = T) / sum(V0010, na.rm = T),
       prop_black_women = sum(V0010[which(sexo_raca == "Mulher preta ou parda")], na.rm = T) / sum(V0010, na.rm = T),
-      prop_yellow_women = sum(V0010[which(sexo_raca == "Mulher amarela")], na.rm = T) / sum(V0010, na.rm = T),
-      prop_indigenous_women = sum(V0010[which(sexo_raca == "Mulher indígena")], na.rm = T) / sum(V0010, na.rm = T),
-      prop_not_specified_women = sum(V0010[which(sexo_raca == "Mulher não-especificada")], na.rm = T) / sum(V0010, na.rm = T),
+      #prop_yellow_women = sum(V0010[which(sexo_raca == "Mulher amarela")], na.rm = T) / sum(V0010, na.rm = T),
+      #prop_indigenous_women = sum(V0010[which(sexo_raca == "Mulher indígena")], na.rm = T) / sum(V0010, na.rm = T),
+      #prop_not_specified_women = sum(V0010[which(sexo_raca == "Mulher não-especificada")], na.rm = T) / sum(V0010, na.rm = T),
       prop_low_educ = sum(V0010[which(education =="Baixa escolaridade")],na.rm = T) / sum(V0010, na.rm=T),
       prop_high_educ = sum(V0010[which(education == "Alta escolaridade")],na.rm = T) / sum(V0010, na.rm=T),
       prop_age_15_less = sum(V0010[which(age == "Até 15 anos")],na.rm = T) / sum(V0010, na.rm=T),
@@ -515,18 +577,33 @@ f_censo <- function(){
       # all work related variables filter age != "Até 15 anos" & V6920 == 1 (situacao ocupacao == ocupada)
       prop_employed = sum(V0010[which(age != "Até 15 anos" & V6920 == 1)],na.rm = T) / sum(V0010[which(age != "Até 15 anos")], na.rm=T),
       prop_formal = sum(V0010[which(informal == "Formal" & age != "Até 15 anos" & V6920 == 1)],na.rm = T) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1)], na.rm=T),
-      prop_informal = sum(V0010[which(informal == "Informal" & age != "Até 15 anos" & V6920 == 1)],na.rm = T) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1)], na.rm=T),
+      #prop_informal = sum(V0010[which(informal == "Informal" & age != "Até 15 anos" & V6920 == 1)],na.rm = T) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1)], na.rm=T),
       prop_work_other_muni = sum(V0010[which(work_muni == "Outro ou mais municípios/país" & age != "Até 15 anos" & V6920 == 1)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1)], na.rm = T),
       prop_work_home_office = sum(V0010[which(work_muni == "Próprio domicílio" & age != "Até 15 anos" & V6920 == 1)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1)], na.rm = T),
       prop_work_same_muni_not_home_office = sum(V0010[which(work_muni == "Mesmo município, mas não no domicílio" & age != "Até 15 anos" & V6920 == 1)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1)], na.rm = T),
       prop_industry = sum(V0010[which(sector == "Indústria" & age != "Até 15 anos" & V6920 == 1)],na.rm = T) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1)], na.rm=T),
       prop_services = sum(V0010[which(sector == "Serviços" & age != "Até 15 anos" & V6920 == 1)],na.rm = T) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1)], na.rm=T),
       prop_car_motorcycle_pes = sum(V0010[which(car_motorcycle == "Carro ou motocicleta" & age != "Até 15 anos" & V6920 == 1)],na.rm = T) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1)], na.rm=T)
-
     ),
     by = .(code_urban_concentration)
   ]
 
+66666666666666 COMPLETAR
+  df_vars_pes_interaction <- df_censo_pes[
+    V1006 == 1, # filter only individuals from urban areas,
+    .(
+      prop_industry = sum(V0010[which(sector == "Indústria" & age != "Até 15 anos" & V6920 == 1 & large_uca_pop == 1L)],na.rm = T) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1)], na.rm=T),
+      prop_services = sum(V0010[which(sector == "Serviços" & age != "Até 15 anos" & V6920 == 1)],na.rm = T) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1)], na.rm=T),
+
+      prop_services_medium,
+      prop_services_large,
+      prop_industry_medium,
+      prop_industry_large,
+
+      # interacao nucleo/isolated com work_muni
+    ),
+    by = .(code_urban_concentration)
+  ]
 
   # df_vars_pes <- dplyr::left_join(
   #   df_wghtd_mean_pes, df_prop_pes_urban,
@@ -536,10 +613,10 @@ f_censo <- function(){
   #     df_prop_pes,
   #     by = c("code_urban_concentration" = "code_urban_concentration")
   #   )
+  #df_vars_pes <- data.table::merge.data.table(x = df_wghtd_mean_pes
+  #                                            ,y = df_prop_pes_urban
+  #                                            ,by = "code_urban_concentration")
   df_vars_pes <- data.table::merge.data.table(x = df_wghtd_mean_pes
-                                              ,y = df_prop_pes_urban
-                                              ,by = "code_urban_concentration")
-  df_vars_pes <- data.table::merge.data.table(x = df_vars_pes
                                               ,y = df_prop_pes
                                               ,by = "code_urban_concentration")
 
