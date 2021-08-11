@@ -173,6 +173,19 @@ source('R/setup.R')
     dplyr::select(-c(name_uca_case,mean_ruggedness)) %>%
     dplyr::rename(code_urban_concentration = code_muni)
 
+  # * Transport System -----------------------------------------------------
+rede_tma <- readRDS("../../data/urbanformbr/rede_tma.rds/") 
+tpocorredor <- as.data.frame(
+  cbind(rede_tma$corredores$modo,rede_tma$estacoes$cidade,rede_tma$corredores$ano)) %>%
+  dplyr::filter( V3>1 & V3<2011) %>% mutate(V1=NULL, V3=1) %>% unique()
+colnames(tpocorredor) <- c("i_code_urban_name","D_SistBMT")
+i_code_urban_conc <- data.frame(i_code_urban_conc = c(3304557,5300108,3106200,5208707,3170107,3550308,
+                 3170206,4106902,2611606,0,4314902,4204608,2507507,1501402,2304400,4205407,2927408,2211001,
+                 2307304,2111300,2408102,2704302,3548500,2312908)) 
+tpocorredor <- cbind(tpocorredor,i_code_urban_conc)
+pca_regression_df_ready_to_use <-  pca_regression_df_ready_to_use.rds %>% dplyr::left_join(
+  tpocorredor, by = c("i_code_urban_concentration" = "i_code_urban_conc")) 
+pca_regression_df_ready_to_use <- dplyr::mutate_all(pca_regression_df_ready_to_use, ~replace(.,is.na(.),0)) 
 
 # merge data --------------------------------------------------------------
 
