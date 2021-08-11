@@ -11,7 +11,6 @@ library('car')
 library('ggcorrplot')
 library('doParallel')
 library('normtest')
-library('VGAM')
 
 #LOAD DATA BASE
 pca_regression_df_ready_to_use <- readRDS(
@@ -21,8 +20,6 @@ onlynumbersbase <- pca_regression_df_ready_to_use %>% mutate(
   i_name_urban_concentration=NULL,i_name_uca_case=NULL,i_code_urban_concentration=NULL)
 
 plot_qq(onlynumbersbase)
-
-
 ### THIS TRANSFORMATION FOR ONLYNUMBERS BASE IS BASED ON BRIEF CONCEPTUAL DISCUSSION ----
 
 onlynumbersbase <- onlynumbersbase %>% mutate(x_pib_capita_2010=NULL,
@@ -40,13 +37,8 @@ x_pop_total_geom_growth_1975_2015_total=NULL,x_pop_total_geom_growth_1975_2015_e
 x_prop_age_65_more=NULL)
 
 plot_qq(onlynumbersbase)
-
 normtest::kurtosis.norm.test(onlynumbersbase,nrepl = 1000)
-
 ## Data Transforming
-
-basenumberyeo <- VGAM::yeo.johnson(onlynumbersbase,lambda = )
-
 onlynmbrhip <- onlynumbersbase %>%
   dplyr::mutate_if(is.numeric,~log(((.x + .x^2+1)^(1/2))))
 
@@ -86,7 +78,7 @@ registerDoParallel(cl)
 #           method = "lm")
 #obj
 
-# By cross validation with 0.8 split sample
+# By cross validation with 80% split sample
 rfsacontrl <- safsControl(functions = rfSA,
                        method = "repeatedcv",
                        repeats = 10,
@@ -137,9 +129,6 @@ regfuelmtcln <- lm(y_fuel_consumption_per_capita_2010~x_pop_growth_15_00+x_urban
                       x_dissimilarity+x_theil_h+x_n_large_patches+x_ratio_circle+D_SistBMT
                       ,data=lnreghib)
 
-
-
-
 summary(regfuelmtcln)
 
 ### CORRECTING HETEROCEDASCITITY
@@ -149,7 +138,6 @@ lmtest::coeftest(regfuel)
 
 lmtest::bptest(regfuelmtcl)
 lmtest::coeftest(regfuelmtcl)
-
 
 ### FOR THE AVG COMMUTING TIME
 
@@ -174,19 +162,14 @@ regcomuttlmtcln <- lm(y_fuel_consumption_per_capita_2010~x_pop_growth_15_00+x_ur
                      x_dissimilarity+x_theil_h+x_n_large_patches+x_ratio_circle+D_SistBMT
                    ,data=lnreghib)
 
-
-
-
 summary(regcomuttlmtcln)
 
 ### CORRECTING HETEROCEDASCITITY
-
 lmtest::bptest(regcomute)
 lmtest::coeftest(regcomute)
 
 lmtest::bptest(regcomutemtcln)
 lmtest::coeftest(regcomutemtcln)
-
 
 ### DETECTING AND CORRECTING HETEROCEDASTICITY
 
@@ -198,16 +181,13 @@ lmtest::coeftest(reglist2)
 
 #### CORRELATION analysis ----
 
-
 cor.test(pca_regression_df_ready_to_use$y_wghtd_mean_commute_time,pca_regression_df_ready_to_use$x_wghtd_mean_household_income_per_capita)
 
 dfx <- select()
 
 ggcorrplot(cor(dfx),tl.cex = 8)
 
-
 #SAVING MODELS ----
-
 setwd("//storage6/usuarios/Proj_acess_oport/git_luiz/urbanformbr/Outputs")
 
 stargazer::stargazer(regfuel,regfuel1,regcomutime, type = 'html', out = "caretregs")
