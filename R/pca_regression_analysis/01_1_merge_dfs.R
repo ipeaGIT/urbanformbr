@@ -16,8 +16,6 @@ source('R/setup.R')
 
 
   # * fleet -----------------------------------------------------------------
-  # CONSERTAR: REMOVER VALORES REPETIDOS PARA UCA
-
   df_fleet <- readr::read_rds("../../data/urbanformbr/pca_regression_df/fleet_and_pop.rds") %>%
     janitor::clean_names() %>%
     dplyr::select(-c(uf,total_autos,total_motos,pop))
@@ -30,6 +28,9 @@ source('R/setup.R')
      names_from = c("ano"),
     values_from = c('autos_per_pop','motos_per_pop','motorization_rate')
    )
+
+  df_fleet <- df_fleet %>%
+    dplyr::select(code_urban_concentration,autos_per_pop_2010,motos_per_pop_2010)
 
   # * pop -------------------------------------------------------------------
 
@@ -120,8 +121,6 @@ source('R/setup.R')
   # filter only 184 from our df
   df_pib <- subset(df_pib, code_urban_concentration %in% df_prep$code_urban_concentration)
 
-
-
   df_pib <- df_pib %>%
     tidyr::pivot_wider(
       names_from = c("ano"),
@@ -174,18 +173,36 @@ source('R/setup.R')
     dplyr::rename(code_urban_concentration = code_muni)
 
   # * Transport System -----------------------------------------------------
-rede_tma <- readRDS("../../data/urbanformbr/rede_tma.rds/") 
+rede_tma <- readRDS("../../data/urbanformbr/rede_tma.rds/")
 tpocorredor <- as.data.frame(
   cbind(rede_tma$corredores$modo,rede_tma$estacoes$cidade,rede_tma$corredores$ano)) %>%
   dplyr::filter( V3>1 & V3<2011) %>% mutate(V1=NULL, V3=1) %>% unique()
 colnames(tpocorredor) <- c("i_code_urban_name","D_SistBMT")
 i_code_urban_conc <- data.frame(i_code_urban_conc = c(3304557,5300108,3106200,5208707,3170107,3550308,
                  3170206,4106902,2611606,0,4314902,4204608,2507507,1501402,2304400,4205407,2927408,2211001,
-                 2307304,2111300,2408102,2704302,3548500,2312908)) 
+                 2307304,2111300,2408102,2704302,3548500,2312908))
 tpocorredor <- cbind(tpocorredor,i_code_urban_conc)
 pca_regression_df_ready_to_use <-  pca_regression_df_ready_to_use.rds %>% dplyr::left_join(
-  tpocorredor, by = c("i_code_urban_concentration" = "i_code_urban_conc")) 
-pca_regression_df_ready_to_use <- dplyr::mutate_all(pca_regression_df_ready_to_use, ~replace(.,is.na(.),0)) 
+  tpocorredor, by = c("i_code_urban_concentration" = "i_code_urban_conc"))
+pca_regression_df_ready_to_use <- dplyr::mutate_all(pca_regression_df_ready_to_use, ~replace(.,is.na(.),0))
+
+
+  # * classify uca ----------------------------------------------------------
+
+  # * * large uca -----------------------------------------------------------
+
+  df_classify_uca_large <- readr::read_rds('../../data/urbanformbr/pca_regression_df/classify_uca_large_pop.rds') %>%
+  dplyr::select(-pop_uca_2010)
+
+  # filter ucas
+  df_classify_uca_large <- subset(
+    df_classify_uca_large,
+    code_urban_concentration %in% df_prep$code_urban_concentration
+    )
+
+  # * * isolated uca --------------------------------------------------------
+  df_classify_isolated <- readr::read_rds('../../data/urbanformbr/pca_regression_df/classify_uca_isolated.rds')
+
 
 # merge data --------------------------------------------------------------
 
@@ -197,6 +214,9 @@ pca_regression_df_ready_to_use <- dplyr::mutate_all(pca_regression_df_ready_to_u
     dplyr::left_join(
       df_pop_growth
       ) %>%
+    dplyr::left_join(
+      df_fleet
+    ) %>%
     dplyr::left_join(
       df_fuel
     ) %>%
@@ -233,6 +253,11 @@ pca_regression_df_ready_to_use <- dplyr::mutate_all(pca_regression_df_ready_to_u
     by = c('code_urban_concentration' = 'code_urban_concentration')
   )
 
+  df_merge <- dplyr::left_join(
+    df_merge, df_classify_uca_large,
+    by = c('code_urban_concentration' = 'code_urban_concentration')
+  ) %>%
+    dplyr::left_join(df_classify_isolated)
 
   # * reorder columns -------------------------------------------------------
   df_merge <- df_merge %>%
@@ -241,12 +266,24 @@ pca_regression_df_ready_to_use <- dplyr::mutate_all(pca_regression_df_ready_to_u
       .after = name_uca_case
       )
 
+  df_merge <- df_merge %>%
+    dplyr::relocate(
+      c(large_uca_pop,isolated_muni),
+      .after = wghtd_mean_commute_time
+    )
+
   # * add prefix (dependent & independent variable) -------------------------
+
   df_merge <- df_merge %>%
     # id
     dplyr::rename_with(
       .cols = code_urban_concentration:name_uca_case,
       function(x){paste0("i_", x)}
+    ) %>%
+    # dummy variables
+    dplyr::rename_with(
+      .cols = large_uca_pop:isolated_muni,
+      function(x){paste0("d_", x)}
     ) %>%
     # dependent variables (y)
     dplyr::rename_with(
@@ -259,6 +296,8 @@ pca_regression_df_ready_to_use <- dplyr::mutate_all(pca_regression_df_ready_to_u
       function(x){paste0("x_", x)}
     )
 
+
+# GENERATE INTERACTIONS?
 
 
 # save data ---------------------------------------------------------------
