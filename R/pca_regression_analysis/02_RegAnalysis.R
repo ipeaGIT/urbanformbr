@@ -12,6 +12,7 @@ library('ggcorrplot')
 library('doParallel')
 library('normtest')
 library('VGAM')
+library('pivottabler')
 
 #LOAD DATA BASE
 pca_regression_df_ready_to_use <- readRDS(
@@ -52,7 +53,7 @@ summary(onlynmbrhip)
 onlynmbrhip <- onlynumbersbase %>%
   dplyr::mutate_if(is.numeric,~log(((.x + .x^2+1)^(1/2))))
 
-basenumberyeo  <- basenumberyeo  %>% mutate(D_SistBMT=onlynumbersbase$D_SistBMT)
+onlynmbrhip  <- onlynmbrhip  %>% mutate(D_SistBMT=onlynumbersbase$D_SistBMT)
 
 ## DATA PLOT
 
@@ -139,33 +140,28 @@ regfuelyeo <- lm(fuelhipset,data=basenumberyeo)
 
 summary(regfuelyeo)
 
-vif(regfuel)
+### MODEL CORRECTING FOR MULTICOLINEARITY
 
-viffuel <- as.numeric(vif(regfuel))
-dfviffuel <- filter(viffuel<10.0)
+dfxviffuelhip <- as.data.frame(vif(regfuelhip))
+dfxviffuelhip <- filter(dfxviffuelhip, vif(regfuelhip) <= 10)
+dfxviffuelhip <- row.names(dfxviffuelhip)
 
-viffuel <- vif(regfuel)
-dfviffuel <- filter(viffuel,viffuel<10.0)
-dfviffuel <- as.numeric(cbind(viffuel,opsetfuel))
+depfuel <- "y_fuel_consumption_per_capita_2010"
 
-coefiviffuel <- filter(dfviffuel, viffuel>=10)
-coefiviffuel <- as.data.frame(coefiviffuel)
+fuelhipvifset <- as.formula(
+  paste(depfuel,
+        paste(dfxviffuelyeo, collapse = " + "),
+        sep = " ~ "))
+regfuelhipmtcl <- lm(fuelhipset,data=onlynmbryeo)
 
-regfuelmtcln <- lm(y_fuel_consumption_per_capita_2010~x_pop_growth_15_00+x_urban_extent_size_2014+
-                      x_wghtd_mean_density_rooms_household+x_prop_white_men+x_prop_low_educ+x_prop_age_65_more+
-                      x_prop_work_home_office+x_prop_built_consolidated_area_2014+x_density_pop_05km2_expansao_2014+
-                      x_dissimilarity+x_theil_h+x_n_large_patches+x_ratio_circle+D_SistBMT
-                      ,data=lnreghib)
+summary(regfuelyeomtcl)
 
 
-
-
-summary(regfuelmtcln)
 
 ### CORRECTING HETEROCEDASCITITY
 
-lmtest::bptest(regfuel)
-lmtest::coeftest(regfuel)
+lmtest::bptest(regfuelyeo)
+lmtest::coeftest(regfuelyeo)
 
 lmtest::bptest(regfuelmtcl)
 lmtest::coeftest(regfuelmtcl)
@@ -184,18 +180,22 @@ regcomuteyeo <- lm(comutesetyeo,data=basenumberyeo)
 
 summary(regcomuteyeo)
 
-vif(regcomute)
+### MODEL CORRECTING FOR MULTICOLINEARITY
 
-regcomuttlmtcln <- lm(y_fuel_consumption_per_capita_2010~x_pop_growth_15_00+x_urban_extent_size_2014+
-                     x_wghtd_mean_density_rooms_household+x_prop_white_men+x_prop_low_educ+x_prop_age_65_more+
-                     x_prop_work_home_office+x_prop_built_consolidated_area_2014+x_density_pop_05km2_expansao_2014+
-                     x_dissimilarity+x_theil_h+x_n_large_patches+x_ratio_circle+D_SistBMT
-                   ,data=lnreghib)
+dfxviffuelyeo <- as.data.frame(vif(regfuelyeo))
+dfxviffuelyeo <- filter(dfxviffuelyeo, vif <= 10)
+dfxviffuelyeo <- row.names(dfxviffuelyeo)
 
+depfuel <- "y_fuel_consumption_per_capita_2010"
 
+fuelhipset <- as.formula(
+  paste(depfuel,
+        paste(dfxviffuelyeo, collapse = " + "),
+        sep = " ~ "))
+regfuelyeomtcl <- lm(fuelhipset,data=basenumberyeo)
 
+summary(regfuelyeomtcl)
 
-summary(regcomuttlmtcln)
 
 ### CORRECTING HETEROCEDASCITITY
 
@@ -205,14 +205,6 @@ lmtest::coeftest(regcomute)
 lmtest::bptest(regcomutemtcln)
 lmtest::coeftest(regcomutemtcln)
 
-
-### DETECTING AND CORRECTING HETEROCEDASTICITY
-
-lmtest::bptest(reglist)
-lmtest::coeftest(reglist)
-
-lmtest::bptest(reglist2)
-lmtest::coeftest(reglist2)
 
 #### CORRELATION analysis ----
 
@@ -226,11 +218,11 @@ ggcorrplot(cor(dfx),tl.cex = 8)
 
 #SAVING MODELS ----
 
-setwd("//storage6/usuarios/Proj_acess_oport/git_luiz/urbanformbr/Outputs")
+setwd("//storage6/usuarios/Proj_acess_oport/git_luiz/urbanformbr/Outputs/Regs/")
 
-stargazer::stargazer(regfuelhip,regfuelyeo,regcomutehip,regcomuteyeo, type = 'html', out = "caretregs")
+stargazer::stargazer(regfuelhip,regfuelyeo,regcomutehip,regcomuteyeo, type = 'html', out = "caretfuelregs")
 
-stargazer::stargazer(regfuelmtcl,regfuel1mtcln,regcomutimemtcl, type = 'html', out = "cleaneregs")
+stargazer::stargazer(regfuelyeomtcl,regfuelhipmtcl, type = 'html', out = "cleaneregs")
 
 car::scatterplot(y_wghtd_mean_commute_time ~
     log(x_urban_extent_size_2014) | D_SistBMT, data=pca_regression_df_ready_to_use,
