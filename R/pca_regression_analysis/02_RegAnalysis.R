@@ -50,10 +50,9 @@ normtest::kurtosis.norm.test(onlynumbersbase$x_pop_2015,nrepl = 100)
 basenumberyeo <- VGAM::yeo.johnson(onlynumbersbase,lambda = 0) ##ILHEUS DA PROBLEMA
 basenumberyeo <- basenumberyeo[-c(72)]
 
-summary(onlynmbrhip)
+## HIPERBOLIC TRANSFORMATION
 onlynmbrhip <- onlynumbersbase %>%
   dplyr::mutate_if(is.numeric,~log(((.x + .x^2+1)^(1/2))))
-## HIPERBOLIC TRANSFORMATION
 onlynmbrhip  <- onlynmbrhip  %>% mutate(D_SistBMT=onlynumbersbase$D_SistBMT)
 
 ### LOG FOR POSITIVE VALUES VARIABLES
