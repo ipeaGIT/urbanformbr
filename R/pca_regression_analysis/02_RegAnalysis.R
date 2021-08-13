@@ -23,11 +23,6 @@ onlynumbersbase <- pca_regression_df_ready_to_use %>% mutate(
 
 plot_qq(onlynumbersbase)
 
-onlynumbersbase <- cbind(onlynumbersbase, x_dens_pop_ativa = c(pca_regression_df_ready_to_use$x_prop_age_15_less+
-                       pca_regression_df_ready_to_use$x_prop_age_65_more)/(
-                         pca_regression_df_ready_to_use$x_prop_age_16_39+
-                           pca_regression_df_ready_to_use$x_prop_age_40_64))
-
 ### THIS TRANSFORMATION FOR ONLYNUMBERS BASE IS BASED ON BRIEF CONCEPTUAL DISCUSSION ----
 
 onlynumbersbase <- onlynumbersbase %>% mutate(x_pib_capita_2010=NULL,
