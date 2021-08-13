@@ -23,6 +23,10 @@ onlynumbersbase <- pca_regression_df_ready_to_use %>% mutate(
 
 plot_qq(onlynumbersbase)
 
+onlynumbersbase <- cbind(onlynumbersbase, x_dens_pop_ativa = c(pca_regression_df_ready_to_use$x_prop_age_15_less+
+                       pca_regression_df_ready_to_use$x_prop_age_65_more)/(
+                         pca_regression_df_ready_to_use$x_prop_age_16_39+
+                           pca_regression_df_ready_to_use$x_prop_age_40_64))
 
 ### THIS TRANSFORMATION FOR ONLYNUMBERS BASE IS BASED ON BRIEF CONCEPTUAL DISCUSSION ----
 
@@ -42,19 +46,30 @@ x_prop_age_65_more=NULL)
 
 plot_qq(onlynumbersbase)
 
-normtest::kurtosis.norm.test(onlynumbersbase$x_pop_2015,nrepl = 1000)
+normtest::kurtosis.norm.test(onlynumbersbase$x_pop_2015,nrepl = 100)
+
+
 
 ## Data Transforming -----
-
+## YEO JOHNSON TRANSFORMATIOn
 basenumberyeo <- VGAM::yeo.johnson(onlynumbersbase,lambda = 0) ##ILHEUS DA PROBLEMA
 basenumberyeo <- basenumberyeo[-c(72)]
 
 summary(onlynmbrhip)
 onlynmbrhip <- onlynumbersbase %>%
   dplyr::mutate_if(is.numeric,~log(((.x + .x^2+1)^(1/2))))
-
+## HIPERBOLIC TRANSFORMATION
 onlynmbrhip  <- onlynmbrhip  %>% mutate(D_SistBMT=onlynumbersbase$D_SistBMT)
 
+### LOG FOR POSITIVE VALUES VARIABLES
+prblmtc_detect <- function(x) {
+
+  return(ifelse(x %>% min() <= 0,FALSE,TRUE))
+
+}
+
+lognumbrbase <- onlynumbersbase %>%
+  dplyr::mutate_if(prblmtc_detect,log)
 ## DATA PLOT
 
 matplot(onlynmbrhip$y_fuel_consumption_per_capita_2010,
@@ -142,17 +157,17 @@ summary(regfuelyeo)
 
 ### MODEL CORRECTING FOR MULTICOLINEARITY
 
-dfxviffuelhip <- as.data.frame(vif(regfuelhip))
-dfxviffuelhip <- filter(dfxviffuelhip, vif(regfuelhip) <= 10)
-dfxviffuelhip <- row.names(dfxviffuelhip)
+dfxviffuelyeo <- as.data.frame(vif(regfuelyeo))
+dfxviffuelyeo <- filter(dfxviffuelyeo, vif(regfuelyeo) <= 10)
+dfxviffuelyeo <- row.names(dfxviffuelyeo)
 
 depfuel <- "y_fuel_consumption_per_capita_2010"
 
-fuelhipvifset <- as.formula(
+fuelyeovifset <- as.formula(
   paste(depfuel,
         paste(dfxviffuelyeo, collapse = " + "),
         sep = " ~ "))
-regfuelhipmtcl <- lm(fuelhipset,data=onlynmbryeo)
+regfuelyeomtcl <- lm(fuelyeovifset,data=onlynmbryeo)
 
 summary(regfuelyeomtcl)
 
@@ -182,19 +197,19 @@ summary(regcomuteyeo)
 
 ### MODEL CORRECTING FOR MULTICOLINEARITY
 
-dfxviffuelyeo <- as.data.frame(vif(regfuelyeo))
-dfxviffuelyeo <- filter(dfxviffuelyeo, vif <= 10)
-dfxviffuelyeo <- row.names(dfxviffuelyeo)
+dfxvifcomutehip<- as.data.frame(vif(regcomutehip))
+dfxvifcomutehip <- filter(dfxvifcomutehip, vif(regcomutehip) <= 10)
+dfxvifcomutehip <- row.names(dfxvifcomutehip)
 
-depfuel <- "y_fuel_consumption_per_capita_2010"
+depfuel <- "y_wghtd_mean_commute_time"
 
-fuelhipset <- as.formula(
+comutevifyeoset <- as.formula(
   paste(depfuel,
-        paste(dfxviffuelyeo, collapse = " + "),
+        paste(dfxvifcomuteyeo, collapse = " + "),
         sep = " ~ "))
-regfuelyeomtcl <- lm(fuelhipset,data=basenumberyeo)
+regcomuteyeomtcl <- lm(comutevifyeoset,data=onlynmbryeo)
 
-summary(regfuelyeomtcl)
+summary(regcomuteyeomtcl)
 
 
 ### CORRECTING HETEROCEDASCITITY
@@ -211,7 +226,7 @@ lmtest::coeftest(regcomutemtcln)
 
 cor.test(pca_regression_df_ready_to_use$y_wghtd_mean_commute_time,pca_regression_df_ready_to_use$x_wghtd_mean_household_income_per_capita)
 
-dfx <- select()
+dfx <- select(opsetcomutehip)
 
 ggcorrplot(cor(dfx),tl.cex = 8)
 
@@ -222,7 +237,8 @@ setwd("//storage6/usuarios/Proj_acess_oport/git_luiz/urbanformbr/Outputs/Regs/")
 
 stargazer::stargazer(regfuelhip,regfuelyeo,regcomutehip,regcomuteyeo, type = 'html', out = "caretfuelregs")
 
-stargazer::stargazer(regfuelyeomtcl,regfuelhipmtcl, type = 'html', out = "cleaneregs")
+stargazer::stargazer(regfuelyeomtcl,regfuelhipmtcl, regcomuteyeomtcl,
+                     regcomutehipmtcl,type = 'html', out = "cleaneregs")
 
 car::scatterplot(y_wghtd_mean_commute_time ~
     log(x_urban_extent_size_2014) | D_SistBMT, data=pca_regression_df_ready_to_use,
