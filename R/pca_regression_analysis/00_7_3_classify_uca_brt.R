@@ -76,7 +76,7 @@ df_tma[, tma := replace_na(tma, 0)]
 
 df_tma <- df_tma %>%
   dplyr::group_by(code_urban_concentration) %>%
-  dplyr::summarise(tma = sum(stma))
+  dplyr::summarise(tma = as.integer(sum(tma)))
 
 # save data ---------------------------------------------------------------
 

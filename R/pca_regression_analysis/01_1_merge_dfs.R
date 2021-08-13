@@ -175,7 +175,7 @@ source('R/setup.R')
   # * classify uca ----------------------------------------------------------
 
   # * * tma (transporte media alta capacidade) ------------------------------
-  df_tma <- readr::read_rds("../../data/urbanformbr/pca_regression_df/classify_uca_brt.rds")
+  df_classify_tma <- readr::read_rds("../../data/urbanformbr/pca_regression_df/classify_uca_tma.rds")
 
   # * * large uca -----------------------------------------------------------
 
@@ -245,7 +245,8 @@ source('R/setup.R')
     df_merge, df_classify_uca_large,
     by = c('code_urban_concentration' = 'code_urban_concentration')
   ) %>%
-    dplyr::left_join(df_classify_isolated)
+    dplyr::left_join(df_classify_isolated) %>%
+    dplyr::left_join(df_classify_tma)
 
   # * reorder columns -------------------------------------------------------
   df_merge <- df_merge %>%
@@ -256,7 +257,7 @@ source('R/setup.R')
 
   df_merge <- df_merge %>%
     dplyr::relocate(
-      c(large_uca_pop,isolated_muni),
+      c(large_uca_pop:tma),
       .after = wghtd_mean_commute_time
     )
 
@@ -270,7 +271,7 @@ source('R/setup.R')
     ) %>%
     # dummy variables
     dplyr::rename_with(
-      .cols = large_uca_pop:isolated_muni,
+      .cols = large_uca_pop:tma,
       function(x){paste0("d_", x)}
     ) %>%
     # dependent variables (y)
