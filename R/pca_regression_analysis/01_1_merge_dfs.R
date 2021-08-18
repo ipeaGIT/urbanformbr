@@ -146,8 +146,8 @@ source('R/setup.R')
     dplyr::select(
       -c(name_uca_case),
       -ends_with("1975"),
-      -c(pop_total_total_1975:pop_total_expansao_2014),
-      -dplyr::matches("abs_diff")
+      -c(pop_total_total_1975:pop_total_expansao_2014)
+      #,-dplyr::matches("abs_diff")
       ) %>%
     dplyr::rename(code_urban_concentration = code_muni)
 

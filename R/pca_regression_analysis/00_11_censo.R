@@ -432,7 +432,9 @@ f_censo <- function(){
     df_censo_dom,
     `:=`(
       car_motorcycle_sep = i.car_motorcycle_sep,
-      car_motorcycle = i.car_motorcycle
+      car_motorcycle = i.car_motorcycle,
+      V0221 = i.V0221,
+      V0222 = i.V0222
     ),
     on = c("V0300" = "V0300")
   ]
@@ -469,10 +471,14 @@ f_censo <- function(){
             "wghtd_mean_density_resident_bedroom","wghtd_mean_density_resident_household")
   )
 
-  df_prop_dom <- df_censo_pes[
+  df_prop_dom <- df_censo_dom[
     ,
     .(
       prop_dom_urban = sum(V0010[which(V1006 == 1L)], na.rm = T) / sum(V0010, na.rm = T),
+
+      prop_motos_dom = sum(V0010[which(V0221 == 1L & V1006 == 1L)], na.rm = T) / sum(V0010[which(V1006 == 1L)], na.rm = T),
+      prop_autos_dom = sum(V0010[which(V0222 == 1L & V1006 == 1L)], na.rm = T) / sum(V0010[which(V1006 == 1L)], na.rm = T),
+
       prop_car_or_motorcycle_dom = sum(V0010[which(car_motorcycle == "Carro ou motocicleta" & V1006 == 1L)], na.rm = T) / sum(V0010[which(V1006 == 1L)], na.rm = T),
       prop_car_dom = sum(V0010[which(car_motorcycle_sep == "Apenas carro" & V1006 == 1L)], na.rm = T) / sum(V0010[which(V1006 == 1L)], na.rm = T),
       prop_motorcycle_dom = sum(V0010[which(car_motorcycle_sep == "Apenas motocicleta" & V1006 == 1L)], na.rm = T) / sum(V0010[which(V1006 == 1L)], na.rm = T),
@@ -582,6 +588,15 @@ f_censo <- function(){
       #prop_age_65_more = sum(V0010[which(age == "65+ anos")],na.rm = T) / sum(V0010, na.rm=T),
       prop_razao_dep = sum(V0010[which(razao_dep == "Até 14 anos" | razao_dep == "65+ anos")],na.rm = T) / sum(V0010[which(razao_dep == "15-64 anos")], na.rm=T),
 
+      # motos e autos
+      prop_motos_pes = sum(V0010[which(V0221 == 1L)],na.rm = T) / sum(V0010, na.rm=T),
+      prop_autos_pes = sum(V0010[which(V0222 == 1L)],na.rm = T) / sum(V0010, na.rm=T),
+
+      prop_car_or_motorcycle_pes = sum(V0010[which(car_motorcycle == "Carro ou motocicleta")],na.rm = T) / sum(V0010, na.rm=T),
+      prop_car_pes = sum(V0010[which(car_motorcycle_sep == "Apenas carro")], na.rm = T) / sum(V0010, na.rm = T),
+      prop_motorcycle_pes = sum(V0010[which(car_motorcycle_sep == "Apenas motocicleta")], na.rm = T) / sum(V0010, na.rm = T),
+      prop_car_and_motorcycle_pes = sum(V0010[which(car_motorcycle_sep == "Carro e motocicleta")], na.rm = T) / sum(V0010, na.rm = T),
+
       # all work related variables filter age != "Até 15 anos" & V6920 == 1 (situacao ocupacao == ocupada)
       prop_employed = sum(V0010[which(age != "Até 15 anos" & V6920 == 1L)],na.rm = T) / sum(V0010[which(age != "Até 15 anos")], na.rm=T),
       prop_formal = sum(V0010[which(informal == "Formal" & age != "Até 15 anos" & V6920 == 1L)],na.rm = T) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L)], na.rm=T),
@@ -590,12 +605,7 @@ f_censo <- function(){
       prop_work_home_office = sum(V0010[which(work_muni == "Próprio domicílio" & age != "Até 15 anos" & V6920 == 1L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L)], na.rm = T),
       prop_work_same_muni_not_home_office = sum(V0010[which(work_muni == "Mesmo município, mas não no domicílio" & age != "Até 15 anos" & V6920 == 1L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1)], na.rm = T),
       prop_industry = sum(V0010[which(sector == "Indústria" & age != "Até 15 anos" & V6920 == 1L)],na.rm = T) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L)], na.rm=T),
-      prop_services = sum(V0010[which(sector == "Serviços" & age != "Até 15 anos" & V6920 == 1L)],na.rm = T) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L)], na.rm=T),
-      prop_car_or_motorcycle_pes = sum(V0010[which(car_motorcycle == "Carro ou motocicleta" & age != "Até 15 anos" & V6920 == 1L)],na.rm = T) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L)], na.rm=T),
-      prop_car_pes = sum(V0010[which(car_motorcycle_sep == "Apenas carro" & V1006 == 1L)], na.rm = T) / sum(V0010[which(V1006 == 1L)], na.rm = T),
-      prop_motorcycle_pes = sum(V0010[which(car_motorcycle_sep == "Apenas motocicleta" & V1006 == 1L)], na.rm = T) / sum(V0010[which(V1006 == 1L)], na.rm = T),
-      prop_car_and_motorcycle_pes = sum(V0010[which(car_motorcycle_sep == "Carro e motocicleta" & V1006 == 1L)], na.rm = T) / sum(V0010[which(V1006 == 1L)], na.rm = T)
-
+      prop_services = sum(V0010[which(sector == "Serviços" & age != "Até 15 anos" & V6920 == 1L)],na.rm = T) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L)], na.rm=T)
     ),
     by = .(code_urban_concentration)
   ]
