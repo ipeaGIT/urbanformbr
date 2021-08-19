@@ -16,21 +16,21 @@ source('R/setup.R')
 
 
   # * fleet -----------------------------------------------------------------
-  df_fleet <- readr::read_rds("../../data/urbanformbr/pca_regression_df/fleet_and_pop.rds") %>%
-    janitor::clean_names() %>%
-    dplyr::select(-c(uf,total_autos,total_motos,pop))
+  #df_fleet <- readr::read_rds("../../data/urbanformbr/pca_regression_df/fleet_and_pop.rds") %>%
+  #  janitor::clean_names() %>%
+  #  dplyr::select(-c(uf,total_autos,total_motos,pop))
 
   # filter only 184 from our df
-  df_fleet <- subset(df_fleet, code_urban_concentration %in% df_prep$code_urban_concentration)
+  #df_fleet <- subset(df_fleet, code_urban_concentration %in% df_prep$code_urban_concentration)
 
-  df_fleet <- df_fleet %>%
-   tidyr::pivot_wider(
-     names_from = c("ano"),
-    values_from = c('autos_per_pop','motos_per_pop','motorization_rate')
-   )
+  #df_fleet <- df_fleet %>%
+  # tidyr::pivot_wider(
+  #   names_from = c("ano"),
+  #  values_from = c('autos_per_pop','motos_per_pop','motorization_rate')
+  # )
 
-  df_fleet <- df_fleet %>%
-    dplyr::select(code_urban_concentration,autos_per_pop_2010,motos_per_pop_2010)
+  #df_fleet <- df_fleet %>%
+  #  dplyr::select(code_urban_concentration,autos_per_pop_2010,motos_per_pop_2010)
 
   # * pop -------------------------------------------------------------------
 
@@ -146,10 +146,17 @@ source('R/setup.R')
     dplyr::select(
       -c(name_uca_case),
       -ends_with("1975"),
-      -c(pop_total_total_1975:pop_total_expansao_2014)
-      #,-dplyr::matches("abs_diff")
+      -c(pop_total_total_1975:pop_total_expansao_2014),
+      -dplyr::matches("(abs_diff|expansao|consolidada)"),
+      -dplyr::matches("growth")
       ) %>%
-    dplyr::rename(code_urban_concentration = code_muni)
+    dplyr::rename(
+      code_urban_concentration = code_muni,
+      density_pop_05km_total_2014 = density_pop_05km2_total_2014,
+      density_pop_10km_total_2014 = density_pop_10km2_total_2014,
+      density_built_05km_total_2014 = density_built_05km2_total_2014,
+      density_built_10km_total_2014 = density_built_10km2_total_2014
+      )
 
   # * landuse metrics -------------------------------------------------------
   df_landuse <- data.table::fread("../../data/urbanformbr/pca_regression_df/landuse_mix_metrics.csv") %>%
@@ -202,9 +209,9 @@ source('R/setup.R')
     dplyr::left_join(
       df_pop_growth
       ) %>%
-    dplyr::left_join(
-      df_fleet
-    ) %>%
+    #dplyr::left_join(
+    #  df_fleet
+    #) %>%
     dplyr::left_join(
       df_fuel
     ) %>%

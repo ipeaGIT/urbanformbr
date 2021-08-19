@@ -474,15 +474,15 @@ f_censo <- function(){
   df_prop_dom <- df_censo_dom[
     ,
     .(
-      prop_dom_urban = sum(V0010[which(V1006 == 1L)], na.rm = T) / sum(V0010, na.rm = T),
+      prop_dom_urban = sum(V0010[which(V1006 == 1L)], na.rm = T) / sum(V0010, na.rm = T)#,
 
-      prop_motos_dom = sum(V0010[which(V0221 == 1L & V1006 == 1L)], na.rm = T) / sum(V0010[which(V1006 == 1L)], na.rm = T),
-      prop_autos_dom = sum(V0010[which(V0222 == 1L & V1006 == 1L)], na.rm = T) / sum(V0010[which(V1006 == 1L)], na.rm = T),
+      #prop_motos_dom = sum(V0010[which(V0221 == 1L & V1006 == 1L)], na.rm = T) / sum(V0010[which(V1006 == 1L)], na.rm = T),
+      #prop_autos_dom = sum(V0010[which(V0222 == 1L & V1006 == 1L)], na.rm = T) / sum(V0010[which(V1006 == 1L)], na.rm = T),
 
-      prop_car_or_motorcycle_dom = sum(V0010[which(car_motorcycle == "Carro ou motocicleta" & V1006 == 1L)], na.rm = T) / sum(V0010[which(V1006 == 1L)], na.rm = T),
-      prop_car_dom = sum(V0010[which(car_motorcycle_sep == "Apenas carro" & V1006 == 1L)], na.rm = T) / sum(V0010[which(V1006 == 1L)], na.rm = T),
-      prop_motorcycle_dom = sum(V0010[which(car_motorcycle_sep == "Apenas motocicleta" & V1006 == 1L)], na.rm = T) / sum(V0010[which(V1006 == 1L)], na.rm = T),
-      prop_car_and_motorcycle_dom = sum(V0010[which(car_motorcycle_sep == "Carro e motocicleta" & V1006 == 1L)], na.rm = T) / sum(V0010[which(V1006 == 1L)], na.rm = T)
+      #prop_car_or_motorcycle_dom = sum(V0010[which(car_motorcycle == "Carro ou motocicleta" & V1006 == 1L)], na.rm = T) / sum(V0010[which(V1006 == 1L)], na.rm = T),
+      #prop_car_dom = sum(V0010[which(car_motorcycle_sep == "Apenas carro" & V1006 == 1L)], na.rm = T) / sum(V0010[which(V1006 == 1L)], na.rm = T),
+      #prop_motorcycle_dom = sum(V0010[which(car_motorcycle_sep == "Apenas motocicleta" & V1006 == 1L)], na.rm = T) / sum(V0010[which(V1006 == 1L)], na.rm = T),
+      #prop_car_and_motorcycle_dom = sum(V0010[which(car_motorcycle_sep == "Carro e motocicleta" & V1006 == 1L)], na.rm = T) / sum(V0010[which(V1006 == 1L)], na.rm = T)
     ),
     by = .(code_urban_concentration)
   ]
@@ -592,10 +592,10 @@ f_censo <- function(){
       prop_motos_pes = sum(V0010[which(V0221 == 1L)],na.rm = T) / sum(V0010, na.rm=T),
       prop_autos_pes = sum(V0010[which(V0222 == 1L)],na.rm = T) / sum(V0010, na.rm=T),
 
-      prop_car_or_motorcycle_pes = sum(V0010[which(car_motorcycle == "Carro ou motocicleta")],na.rm = T) / sum(V0010, na.rm=T),
-      prop_car_pes = sum(V0010[which(car_motorcycle_sep == "Apenas carro")], na.rm = T) / sum(V0010, na.rm = T),
-      prop_motorcycle_pes = sum(V0010[which(car_motorcycle_sep == "Apenas motocicleta")], na.rm = T) / sum(V0010, na.rm = T),
-      prop_car_and_motorcycle_pes = sum(V0010[which(car_motorcycle_sep == "Carro e motocicleta")], na.rm = T) / sum(V0010, na.rm = T),
+      #prop_car_or_motorcycle_pes = sum(V0010[which(car_motorcycle == "Carro ou motocicleta")],na.rm = T) / sum(V0010, na.rm=T),
+      #prop_car_pes = sum(V0010[which(car_motorcycle_sep == "Apenas carro")], na.rm = T) / sum(V0010, na.rm = T),
+      #prop_motorcycle_pes = sum(V0010[which(car_motorcycle_sep == "Apenas motocicleta")], na.rm = T) / sum(V0010, na.rm = T),
+      #prop_car_and_motorcycle_pes = sum(V0010[which(car_motorcycle_sep == "Carro e motocicleta")], na.rm = T) / sum(V0010, na.rm = T),
 
       # all work related variables filter age != "Até 15 anos" & V6920 == 1 (situacao ocupacao == ocupada)
       prop_employed = sum(V0010[which(age != "Até 15 anos" & V6920 == 1L)],na.rm = T) / sum(V0010[which(age != "Até 15 anos")], na.rm=T),
@@ -604,11 +604,26 @@ f_censo <- function(){
       prop_work_other_muni = sum(V0010[which(work_muni == "Outro ou mais municípios/país" & age != "Até 15 anos" & V6920 == 1L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L)], na.rm = T),
       prop_work_home_office = sum(V0010[which(work_muni == "Próprio domicílio" & age != "Até 15 anos" & V6920 == 1L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L)], na.rm = T),
       prop_work_same_muni_not_home_office = sum(V0010[which(work_muni == "Mesmo município, mas não no domicílio" & age != "Até 15 anos" & V6920 == 1L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1)], na.rm = T),
+
+      prop_work_other_muni_nucleo = sum(V0010[which(work_muni == "Outro ou mais municípios/país" & age != "Até 15 anos" & V6920 == 1L & nucleo == 1L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & nucleo == 1L)], na.rm = T),
+      prop_work_other_muni_not_nucleo = sum(V0010[which(work_muni == "Outro ou mais municípios/país" & age != "Até 15 anos" & V6920 == 1L & nucleo == 0L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & nucleo == 0L)], na.rm = T),
+
+      prop_work_home_office_nucleo = sum(V0010[which(work_muni == "Próprio domicílio" & age != "Até 15 anos" & V6920 == 1L & nucleo == 1L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & nucleo == 1L)], na.rm = T),
+      prop_work_home_office_not_nucleo = sum(V0010[which(work_muni == "Próprio domicílio" & age != "Até 15 anos" & V6920 == 1L & nucleo == 0L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & nucleo == 0L)], na.rm = T),
+
+      prop_work_same_muni_not_home_office_nucleo = sum(V0010[which(work_muni == "Mesmo município, mas não no domicílio" & age != "Até 15 anos" & V6920 == 1L & nucleo == 1L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1 & nucleo == 1L)], na.rm = T),
+      prop_work_same_muni_not_home_office_not_nucleo = sum(V0010[which(work_muni == "Mesmo município, mas não no domicílio" & age != "Até 15 anos" & V6920 == 1L & nucleo == 0L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1 & nucleo == 0L)], na.rm = T),
+
+
       prop_industry = sum(V0010[which(sector == "Indústria" & age != "Até 15 anos" & V6920 == 1L)],na.rm = T) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L)], na.rm=T),
       prop_services = sum(V0010[which(sector == "Serviços" & age != "Até 15 anos" & V6920 == 1L)],na.rm = T) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L)], na.rm=T)
     ),
     by = .(code_urban_concentration)
   ]
+
+  # replace nan from not_nucleo
+  df_prop_pes <- df_prop_pes %>%
+    mutate_all(~replace(.,is.nan(.),0))
 
   #REMOVER -> GERAR INTERACAO SOMENTE AO RODAR O MODELO
   #df_vars_pes_interaction <- df_censo_pes[

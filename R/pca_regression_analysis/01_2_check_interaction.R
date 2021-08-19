@@ -14,21 +14,63 @@ df <- readr::read_rds('../../data/urbanformbr/pca_regression_df/pca_regression_d
 
 # analysis ----------------------------------------------------------------
 
-r_wo_int <- lm(
+
+# * industry --------------------------------------------------------------
+r_wo_int_ind <- lm(
   data = df,
   formula = y_fuel_consumption_per_capita_2010 ~ x_prop_industry + d_large_uca_pop
 )
-summary(r_wo_int)
+summary(r_wo_int_ind)
 
-r_int <- lm(
+r_int_ind <- lm(
   data = df,
   formula = y_fuel_consumption_per_capita_2010 ~ x_prop_industry + d_large_uca_pop + x_prop_industry:d_large_uca_pop
 )
 
-summary(r_int)
+summary(r_int_ind)
 
 
-anova(r_wo_int,r_int)
+anova(r_wo_int_ind,r_int_ind)
+
+
+# * services --------------------------------------------------------------
+r_wo_int_ser <- lm(
+  data = df,
+  formula = y_fuel_consumption_per_capita_2010 ~ x_prop_services + d_large_uca_pop
+)
+summary(r_wo_int_ser)
+
+r_int_ser <- lm(
+  data = df,
+  formula = y_fuel_consumption_per_capita_2010 ~ x_prop_services + d_large_uca_pop + x_prop_services:d_large_uca_pop
+)
+
+summary(r_int_ser)
+
+
+anova(r_wo_int_ser,r_int_ser)
+
+# * industry & services ---------------------------------------------------
+r_wo_int_both <- lm(
+  data = df,
+  formula = y_fuel_consumption_per_capita_2010 ~
+    x_prop_industry + x_prop_services + d_large_uca_pop
+)
+summary(r_wo_int_both)
+
+r_int_both <- lm(
+  data = df,
+  formula = y_fuel_consumption_per_capita_2010 ~
+    x_prop_industry + x_prop_services + #d_large_uca_pop +
+    x_prop_industry:d_large_uca_pop + x_prop_services:d_large_uca_pop
+)
+
+summary(r_int_both)
+
+
+anova(r_wo_int_both,r_int_both)
+
+
 
 # save data ---------------------------------------------------------------
 
