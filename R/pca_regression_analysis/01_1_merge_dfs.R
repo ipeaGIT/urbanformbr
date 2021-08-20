@@ -134,7 +134,7 @@ source('R/setup.R')
 
   # * area coverage ---------------------------------------------------------
   df_area <- readr::read_rds("../../data/urbanformbr/pca_regression_df/area.rds") %>%
-    dplyr::select(code_muni,urban_extent_size_2014,urban_extent_horizontal_geometric_growth) %>%
+    dplyr::select(code_muni,urban_extent_size_2014) %>%
     dplyr::rename(code_urban_concentration = code_muni)
 
   # * censo -----------------------------------------------------------------
@@ -160,7 +160,7 @@ source('R/setup.R')
 
   # * landuse metrics -------------------------------------------------------
   df_landuse <- data.table::fread("../../data/urbanformbr/pca_regression_df/landuse_mix_metrics.csv") %>%
-    dplyr::select(-name_uca_case) %>%
+    dplyr::select(-c(name_uca_case,theil_h,entropy)) %>%
     dplyr::rename(code_urban_concentration = code_muni)
 
 
@@ -171,7 +171,8 @@ source('R/setup.R')
 
   # * fragmentation compacity -----------------------------------------------
   df_frag_comp <- data.table::fread("../../data/urbanformbr/pca_regression_df/fragmentation_compacity.csv") %>%
-    select(-name_uca_case) %>%
+    select(-c(name_uca_case,n_patches,avg_cell_distance_w_pop,
+              ratio_circle,ratio_circle_large)) %>%
     dplyr::rename(code_urban_concentration = code_muni)
 
   # * topography ------------------------------------------------------------

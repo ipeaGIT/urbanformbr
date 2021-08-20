@@ -601,18 +601,18 @@ f_censo <- function(){
       prop_employed = sum(V0010[which(age != "Até 15 anos" & V6920 == 1L)],na.rm = T) / sum(V0010[which(age != "Até 15 anos")], na.rm=T),
       prop_formal = sum(V0010[which(informal == "Formal" & age != "Até 15 anos" & V6920 == 1L)],na.rm = T) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L)], na.rm=T),
       #prop_informal = sum(V0010[which(informal == "Informal" & age != "Até 15 anos" & V6920 == 1)],na.rm = T) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1)], na.rm=T),
-      prop_work_other_muni = sum(V0010[which(work_muni == "Outro ou mais municípios/país" & age != "Até 15 anos" & V6920 == 1L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L)], na.rm = T),
-      prop_work_home_office = sum(V0010[which(work_muni == "Próprio domicílio" & age != "Até 15 anos" & V6920 == 1L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L)], na.rm = T),
-      prop_work_same_muni_not_home_office = sum(V0010[which(work_muni == "Mesmo município, mas não no domicílio" & age != "Até 15 anos" & V6920 == 1L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1)], na.rm = T),
+      #prop_work_other_muni = sum(V0010[which(work_muni == "Outro ou mais municípios/país" & age != "Até 15 anos" & V6920 == 1L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L)], na.rm = T),
+      #prop_work_home_office = sum(V0010[which(work_muni == "Próprio domicílio" & age != "Até 15 anos" & V6920 == 1L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L)], na.rm = T),
+      #prop_work_same_muni_not_home_office = sum(V0010[which(work_muni == "Mesmo município, mas não no domicílio" & age != "Até 15 anos" & V6920 == 1L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1)], na.rm = T),
 
-      prop_work_other_muni_nucleo = sum(V0010[which(work_muni == "Outro ou mais municípios/país" & age != "Até 15 anos" & V6920 == 1L & nucleo == 1L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & nucleo == 1L)], na.rm = T),
-      prop_work_other_muni_not_nucleo = sum(V0010[which(work_muni == "Outro ou mais municípios/país" & age != "Até 15 anos" & V6920 == 1L & nucleo == 0L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & nucleo == 0L)], na.rm = T),
+      prop_work_other_muni_res_nucleo = sum(V0010[which(work_muni == "Outro ou mais municípios/país" & age != "Até 15 anos" & V6920 == 1L & nucleo == 1L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & nucleo == 1L)], na.rm = T),
+      prop_work_other_muni_res_not_nucleo = sum(V0010[which(work_muni == "Outro ou mais municípios/país" & age != "Até 15 anos" & V6920 == 1L & nucleo == 0L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & nucleo == 0L)], na.rm = T),
 
-      prop_work_home_office_nucleo = sum(V0010[which(work_muni == "Próprio domicílio" & age != "Até 15 anos" & V6920 == 1L & nucleo == 1L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & nucleo == 1L)], na.rm = T),
-      prop_work_home_office_not_nucleo = sum(V0010[which(work_muni == "Próprio domicílio" & age != "Até 15 anos" & V6920 == 1L & nucleo == 0L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & nucleo == 0L)], na.rm = T),
+      prop_work_home_office_res_nucleo = sum(V0010[which(work_muni == "Próprio domicílio" & age != "Até 15 anos" & V6920 == 1L & nucleo == 1L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & nucleo == 1L)], na.rm = T),
+      prop_work_home_office_res_not_nucleo = sum(V0010[which(work_muni == "Próprio domicílio" & age != "Até 15 anos" & V6920 == 1L & nucleo == 0L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & nucleo == 0L)], na.rm = T),
 
-      prop_work_same_muni_not_home_office_nucleo = sum(V0010[which(work_muni == "Mesmo município, mas não no domicílio" & age != "Até 15 anos" & V6920 == 1L & nucleo == 1L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1 & nucleo == 1L)], na.rm = T),
-      prop_work_same_muni_not_home_office_not_nucleo = sum(V0010[which(work_muni == "Mesmo município, mas não no domicílio" & age != "Até 15 anos" & V6920 == 1L & nucleo == 0L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1 & nucleo == 0L)], na.rm = T),
+      #prop_work_same_muni_not_home_office_nucleo = sum(V0010[which(work_muni == "Mesmo município, mas não no domicílio" & age != "Até 15 anos" & V6920 == 1L & nucleo == 1L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1 & nucleo == 1L)], na.rm = T),
+      #prop_work_same_muni_not_home_office_not_nucleo = sum(V0010[which(work_muni == "Mesmo município, mas não no domicílio" & age != "Até 15 anos" & V6920 == 1L & nucleo == 0L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1 & nucleo == 0L)], na.rm = T),
 
 
       prop_industry = sum(V0010[which(sector == "Indústria" & age != "Até 15 anos" & V6920 == 1L)],na.rm = T) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L)], na.rm=T),

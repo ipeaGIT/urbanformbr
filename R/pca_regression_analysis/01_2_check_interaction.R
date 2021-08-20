@@ -12,7 +12,7 @@ source('R/setup.R')
 df <- readr::read_rds('../../data/urbanformbr/pca_regression_df/pca_regression_df_ready_to_use.rds')
 
 
-# analysis ----------------------------------------------------------------
+# sector ----------------------------------------------------------------
 
 
 # * industry --------------------------------------------------------------
@@ -70,6 +70,29 @@ summary(r_int_both)
 
 anova(r_wo_int_both,r_int_both)
 
+
+# work place --------------------------------------------------------------
+
+
+# * other muni ------------------------------------------------------------
+r_wo_int_other <- lm(
+  data = df,
+  formula = y_fuel_consumption_per_capita_2010 ~
+    x_prop_work_other_muni_nucleo + d_isolated_muni
+)
+summary(r_wo_int_other)
+
+r_int_other <- lm(
+  data = df,
+  formula = y_fuel_consumption_per_capita_2010 ~
+    x_prop_work_other_muni_nucleo + d_isolated_muni +
+    x_prop_work_other_muni_nucleo:d_isolated_muni
+)
+
+summary(r_int_other)
+
+
+anova(r_wo_int_other,r_int_other)
 
 
 # save data ---------------------------------------------------------------
