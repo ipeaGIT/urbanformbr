@@ -115,21 +115,21 @@ source('R/setup.R')
     dplyr::select(code_urban_concentration, fuel_consumption_per_capita_2010)
 
   # * pib -------------------------------------------------------------------
-  df_pib <- readr::read_rds("../../data/urbanformbr/pca_regression_df/pib.rds") %>%
-    dplyr::select(-c(valor,pop))
+  #df_pib <- readr::read_rds("../../data/urbanformbr/pca_regression_df/pib.rds") %>%
+  #  dplyr::select(-c(valor,pop))
 
   # filter only 184 from our df
-  df_pib <- subset(df_pib, code_urban_concentration %in% df_prep$code_urban_concentration)
+  #df_pib <- subset(df_pib, code_urban_concentration %in% df_prep$code_urban_concentration)
 
-  df_pib <- df_pib %>%
-    tidyr::pivot_wider(
-      names_from = c("ano"),
-      values_from = c("pib_capita"),
-      names_prefix = "pib_capita_"
-    )
+  #df_pib <- df_pib %>%
+  #  tidyr::pivot_wider(
+  #    names_from = c("ano"),
+  #    values_from = c("pib_capita"),
+  #    names_prefix = "pib_capita_"
+  #  )
 
-  df_pib <- df_pib %>%
-    dplyr::select(code_urban_concentration, pib_capita_2010)
+  #df_pib <- df_pib %>%
+  #  dplyr::select(code_urban_concentration, pib_capita_2010)
 
 
   # * area coverage ---------------------------------------------------------
@@ -216,9 +216,9 @@ source('R/setup.R')
     dplyr::left_join(
       df_fuel
     ) %>%
-    dplyr::left_join(
-      df_pib
-    ) %>%
+    #dplyr::left_join(
+    #  df_pib
+    #) %>%
     dplyr::left_join(
       df_area
     ) %>%

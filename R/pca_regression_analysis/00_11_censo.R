@@ -163,6 +163,21 @@ f_censo <- function(){
   ]
 
 
+# * merge dom + pes data --------------------------------------------------
+
+  # merge household and individual data
+  df_censo_pes[
+    df_censo_dom,
+    `:=`(
+      car_motorcycle_sep = i.car_motorcycle_sep,
+      car_motorcycle = i.car_motorcycle,
+      V0221 = i.V0221,
+      V0222 = i.V0222
+    ),
+    on = c("V0300" = "V0300")
+  ]
+
+
   # * create vars. pes ------------------------------------------------------
 
 
@@ -184,7 +199,8 @@ f_censo <- function(){
     ,
     `:=`(
       commute_time = data.table::fcase(
-        V0662 == 1L, 5,
+        #V0660 == 1L, 0, # em que municipio trabalha == no proprio domicilio
+        V0662 == 1L, 5, # tempo de deslocamento casa-trabalho
         V0662 == 2L, 15,
         V0662 == 3L, 45,
         V0662 == 4L, 90,
@@ -264,7 +280,7 @@ f_censo <- function(){
       work_muni = data.table::fcase(
         V0660 == 1L, "Próprio domicílio",
         V0660 == 2L, "Mesmo município, mas não no domicílio",
-        V0660 >= 3L & V0660 <= 5L, "Outro ou mais municípios/país",
+        V0660 == 3L | V0660 == 4L, "Outro município ou país",
         default = NA_character_
       )
     )
@@ -425,19 +441,6 @@ f_censo <- function(){
   #  by = .(code_urban_concentration)
   #]
 
-  # merge dom + pes data ----------------------------------------------------
-
-  # merge household and individual data
-  df_censo_pes[
-    df_censo_dom,
-    `:=`(
-      car_motorcycle_sep = i.car_motorcycle_sep,
-      car_motorcycle = i.car_motorcycle,
-      V0221 = i.V0221,
-      V0222 = i.V0222
-    ),
-    on = c("V0300" = "V0300")
-  ]
 
 
   # estimate variables ------------------------------------------------------
@@ -546,8 +549,8 @@ f_censo <- function(){
 
   df_wghtd_mean_pes <- dplyr::left_join(
     df_censo_pes[
-      # V0661==1 (commute daily), more than 16 years of age, V1006==1 (urban)
-      V0661 == 1L & age != "Até 15 anos" & V1006 == 1L,
+      # situacao ocupacao==ocupada; more than 16 years of age; V1006==1 (urban)
+      V6920 == 1L & age != "Até 15 anos" & V1006 == 1L,
       .(wghtd_mean_commute_time = weighted.mean(commute_time, w = V0010, na.rm = T)),
       by = .(code_urban_concentration)
     ],
@@ -601,15 +604,15 @@ f_censo <- function(){
       prop_employed = sum(V0010[which(age != "Até 15 anos" & V6920 == 1L)],na.rm = T) / sum(V0010[which(age != "Até 15 anos")], na.rm=T),
       prop_formal = sum(V0010[which(informal == "Formal" & age != "Até 15 anos" & V6920 == 1L)],na.rm = T) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L)], na.rm=T),
       #prop_informal = sum(V0010[which(informal == "Informal" & age != "Até 15 anos" & V6920 == 1)],na.rm = T) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1)], na.rm=T),
-      #prop_work_other_muni = sum(V0010[which(work_muni == "Outro ou mais municípios/país" & age != "Até 15 anos" & V6920 == 1L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L)], na.rm = T),
       #prop_work_home_office = sum(V0010[which(work_muni == "Próprio domicílio" & age != "Até 15 anos" & V6920 == 1L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L)], na.rm = T),
+      #prop_work_other_muni = sum(V0010[which(work_muni == "Outro ou mais municípios/país" & age != "Até 15 anos" & V6920 == 1L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L)], na.rm = T),
       #prop_work_same_muni_not_home_office = sum(V0010[which(work_muni == "Mesmo município, mas não no domicílio" & age != "Até 15 anos" & V6920 == 1L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1)], na.rm = T),
-
-      prop_work_other_muni_res_nucleo = sum(V0010[which(work_muni == "Outro ou mais municípios/país" & age != "Até 15 anos" & V6920 == 1L & nucleo == 1L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & nucleo == 1L)], na.rm = T),
-      prop_work_other_muni_res_not_nucleo = sum(V0010[which(work_muni == "Outro ou mais municípios/país" & age != "Até 15 anos" & V6920 == 1L & nucleo == 0L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & nucleo == 0L)], na.rm = T),
 
       prop_work_home_office_res_nucleo = sum(V0010[which(work_muni == "Próprio domicílio" & age != "Até 15 anos" & V6920 == 1L & nucleo == 1L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & nucleo == 1L)], na.rm = T),
       prop_work_home_office_res_not_nucleo = sum(V0010[which(work_muni == "Próprio domicílio" & age != "Até 15 anos" & V6920 == 1L & nucleo == 0L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & nucleo == 0L)], na.rm = T),
+
+      prop_work_other_muni_res_nucleo = sum(V0010[which(work_muni == "Outro município ou país" & age != "Até 15 anos" & V6920 == 1L & nucleo == 1L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & nucleo == 1L)], na.rm = T),
+      prop_work_other_muni_res_not_nucleo = sum(V0010[which(work_muni == "Outro município ou país" & age != "Até 15 anos" & V6920 == 1L & nucleo == 0L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & nucleo == 0L)], na.rm = T),
 
       #prop_work_same_muni_not_home_office_nucleo = sum(V0010[which(work_muni == "Mesmo município, mas não no domicílio" & age != "Até 15 anos" & V6920 == 1L & nucleo == 1L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1 & nucleo == 1L)], na.rm = T),
       #prop_work_same_muni_not_home_office_not_nucleo = sum(V0010[which(work_muni == "Mesmo município, mas não no domicílio" & age != "Até 15 anos" & V6920 == 1L & nucleo == 0L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1 & nucleo == 0L)], na.rm = T),
