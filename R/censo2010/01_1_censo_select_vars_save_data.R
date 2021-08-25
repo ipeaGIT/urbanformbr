@@ -59,7 +59,14 @@ cols_to_read_pes <-c(
   "V0662", # tempo deslocamento casa-trabalho
   "V0606", # raca
   "V0660", # em que municipio e UF trabalha
-  "V6531"  # rendimento domiciliar (domicilio particular) per capita julho 2010
+  "V6531", # rendimento domiciliar (domicilio particular) per capita julho 2010
+
+  "V0641", # trabalho remunerado
+  "V0642", # tinha trabalho remunerado do qual estava temporariamente afastado
+  "V6940", # subgrupo e categoria no emprego principal (grupo c/ trab. domestico)
+  "V0651", # qual o rendimento bruto trab principal (n tem, dinheiro, somente beneficios)
+  "V6513"  # rendimento trabalho principal
+
 )
 
 df_censo_pes <- data.table::fread(
@@ -99,9 +106,10 @@ saveRDS(
 #'        2- Não
 #'        Branco"
 #' V0222 "AUTOMÓVEL PARA USO PARTICULAR, EXISTÊNCIA:
-#         1- Sim
-#         2- Não
-#         Branco"
+#' #         1- Sim
+#' #         2- Não
+#' #         Branco"
+#' V6203	DENSIDADE DE MORADOR/CÔMODO
 
 
 
@@ -196,22 +204,48 @@ saveRDS(
 #'       4- Mais de uma hora até duas horas
 #'       5- Mais de duas horas
 #'       Branco"
+#'
+#'V0641	"NA SEMANA DE 25 A 31/07/10, DURANTE PELO MENOS 1 HORA, TRABALHOU GANHANDO EM DINHEIRO, PRODUTOS, MERCADORIAS OU BENEFÍCIOS:
+#'1- Sim
+#'2- Não
+#'Branco"
+#'V0642	"NA SEMANA DE 25 A 31/07/10, TINHA TRABALHO REMUNERADO DO QUAL ESTAVA TEMPORARIAMENTE AFASTADO(A):
+#'  1- Sim
+#'  2- Não
+#'  Branco"
+#'  V0606	"COR OU RAÇA:
+#'  1- Branca
+#'  2- Preta
+#'  3- Amarela
+#'  4- Parda
+#'  5- Indígena
+#'  9- Ignorado"
+#'
+#'  V0660	"EM QUE MUNICÍPIO E UNIDADE DA FEDERAÇÃO OU PAÍS ESTRANGEIRO TRABALHA:
+#'  1- No próprio domicílio
+#'  2- Apenas neste município, mas não no próprio domicílio
+#'  3- Em outro município
+#'  4- Em país estrangeiro
+#'  5- Em mais de um município ou país
+#'  Branco"
+#'
+#'  V6940	"SUBGRUPO E CATEGORIA DO EMPREGO NO TRABALHO PRINCIPAL
+#'  1- Trabalhadores domésticos com carteira de trabalho assinada
+#'  2- Trabalhadores domésticos sem carteira de trabalho assinada
+#'  3- Demais empregados com carteira de trabalho assinada
+#'  4- Militares e funcionários públicos estatutários
+#'  5- Demais empregados sem carteira de trabalho assinada
+#'  Branco"
+#'
+#'  V0651	"NO TRABALHO PRINCIPAL, QUAL ERA O RENDIMENTO BRUTO (OU A RETIRADA) MENSAL QUE GANHAVA HABITUALMENTE EM JULHO DE 2010:
+#'  0- Não tem
+#'  1- Em dinheiro, produtos ou mercadorias
+#'  2- Somente em benefícios
+#'  Branco"
+#'
+#'  V6513	RENDIMENTO NO TRABALHO PRINCIPAL: (pode ter valor branco)
 
 
-# VARIAVEIS POTENCIAIS
 
-# DOM
-# V6203 DENSIDADE DE MORADOR/CÔMODO
-
-# PES:
-# RACA: V0606
-# EM QUE MUNICIPIO TRABALHA: V0660
-# V0660 "EM QUE MUNICÍPIO E UNIDADE DA FEDERAÇÃO OU PAÍS ESTRANGEIRO TRABALHA:
-#1- No próprio domicílio
-#2- Apenas neste município, mas não no próprio domicílio
-#3- Em outro município
-#4- Em país estrangeiro
-#5- Em mais de um município ou país
-#Branco"
 
 

@@ -608,11 +608,11 @@ f_censo <- function(){
       #prop_work_other_muni = sum(V0010[which(work_muni == "Outro ou mais municípios/país" & age != "Até 15 anos" & V6920 == 1L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L)], na.rm = T),
       #prop_work_same_muni_not_home_office = sum(V0010[which(work_muni == "Mesmo município, mas não no domicílio" & age != "Até 15 anos" & V6920 == 1L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1)], na.rm = T),
 
-      prop_work_home_office_res_nucleo = sum(V0010[which(work_muni == "Próprio domicílio" & age != "Até 15 anos" & V6920 == 1L & nucleo == 1L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & nucleo == 1L)], na.rm = T),
-      prop_work_home_office_res_not_nucleo = sum(V0010[which(work_muni == "Próprio domicílio" & age != "Até 15 anos" & V6920 == 1L & nucleo == 0L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & nucleo == 0L)], na.rm = T),
+      prop_work_home_office_res_nucleo = sum(V0010[which(V0660 == 1L & age != "Até 15 anos" & V6920 == 1L & nucleo == 1L)], na.rm = T) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & nucleo == 1L)], na.rm = T),
+      prop_work_home_office_res_not_nucleo = sum(V0010[which(V0660 == 1L & age != "Até 15 anos" & V6920 == 1L & nucleo == 0L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & nucleo == 0L)], na.rm = T),
 
-      prop_work_other_muni_res_nucleo = sum(V0010[which(work_muni == "Outro município ou país" & age != "Até 15 anos" & V6920 == 1L & nucleo == 1L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & nucleo == 1L)], na.rm = T),
-      prop_work_other_muni_res_not_nucleo = sum(V0010[which(work_muni == "Outro município ou país" & age != "Até 15 anos" & V6920 == 1L & nucleo == 0L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & nucleo == 0L)], na.rm = T),
+      prop_work_other_muni_res_nucleo = sum(V0010[which( (V0660 == 3L | V0660 == 4L) & age != "Até 15 anos" & V6920 == 1L & nucleo == 1L)], na.rm = T) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & nucleo == 1L)], na.rm = T),
+      prop_work_other_muni_res_not_nucleo = sum(V0010[which( (V0660 == 3L | V0660 == 4L) & age != "Até 15 anos" & V6920 == 1L & nucleo == 0L)], na.rm = T) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & nucleo == 0L)], na.rm = T),
 
       #prop_work_same_muni_not_home_office_nucleo = sum(V0010[which(work_muni == "Mesmo município, mas não no domicílio" & age != "Até 15 anos" & V6920 == 1L & nucleo == 1L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1 & nucleo == 1L)], na.rm = T),
       #prop_work_same_muni_not_home_office_not_nucleo = sum(V0010[which(work_muni == "Mesmo município, mas não no domicílio" & age != "Até 15 anos" & V6920 == 1L & nucleo == 0L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1 & nucleo == 0L)], na.rm = T),
@@ -701,6 +701,16 @@ f_censo()
 #  scale_x_log10() +
 #  scale_y_log10()
 
+# check prop home office --------------------------------------------------
+df_censo_pes[age != "Até 15 anos" & V6920 == 1L] %>%
+  count(V0660,informal, wt = V0010)
+df_censo_pes[age != "Até 15 anos" & V6920 == 1L] %>%
+  count(V0660,V6940, wt = V0010)
+df_censo_pes[age != "Até 15 anos" & V6920 == 1L] %>%
+  count(V0660,sector, wt = V0010)
+df_censo_pes[age != "Até 15 anos" & V6920 == 1L] %>%
+  count(V0660,grupocup, wt = V0010)
+
 # vars description --------------------------------------------------------
 
 # * censo domicilios ------------------------------------------------------
@@ -744,7 +754,14 @@ cols_to_read_pes <-c(
   "V0662", # tempo deslocamento casa-trabalho
   "V0606", # raca
   "V0660", # em que municipio e UF trabalha
-  "V6531"  # rendimento domiciliar (domicilio particular) per capita julho 2010
+  "V6531", # rendimento domiciliar (domicilio particular) per capita julho 2010
+
+  "V0641", # trabalho remunerado
+  "V0642", # tinha trabalho remunerado do qual estava temporariamente afastado
+  "V6940", # subgrupo e categoria no emprego principal (grupo c/ trab. domestico)
+  "V0651", # qual o rendimento bruto trab principal (n tem, dinheiro, somente beneficios)
+  "V6513"  # rendimento trabalho principal
+
 )
 
 
