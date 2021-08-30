@@ -77,7 +77,7 @@ legend(x = 1, y = -0.5, lty = 1:lltry, legend = as.character(ltry),
 
 ##########CARET############ ----
 
-### FEATURE ANNEALING OUTPUTS
+### FEATURE ANNEALING OUTPUTS - YOU CAN STRAIGHT TO THE NEXT SECTION IF YOU LOAD THEM -
 
 rf_safuellog1000 <- readRDS("../../GitHub/urbanformbr/R/pca_regression_")
 
