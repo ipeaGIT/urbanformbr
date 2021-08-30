@@ -77,7 +77,13 @@ legend(x = 1, y = -0.5, lty = 1:lltry, legend = as.character(ltry),
 
 ##########CARET############ ----
 
-###### CARET SAFS CRITERIA APPLICATIon
+### FEATURE ANNEALING OUTPUTS
+
+rf_safuellog1000 <- readRDS("../../GitHub/urbanformbr/R/pca_regression_")
+
+rf_sacomutelog1000 <- readRDS("../Caret/rf_sacomutelog1000iteracoes")
+
+###### CARET SAFS CRITERIA APPLICATION (FROM THE BEGINNING)
 
 xyeo <- basenumberyeo %>% dplyr::mutate(y_fuel_consumption_per_capita_2010=NULL,
                                 y_wghtd_mean_commute_time=NULL)
@@ -95,13 +101,13 @@ DataExplorer::plot_qq(x)
 
 comboInfo <- findLinearCombos(xyeo)
 comboInfo
-## PARALELIZANDO
+## PARALELIZANDO 
 
 cl <- makePSOCKcluster(3)
 registerDoParallel(cl)
 
 ### CARET
-#ctrl <- safsControl(functions = caretSA, improve = 10)
+#ctrl <- safsControl(functions = "lm", improve = 10)
 
 #obj <- safs(x = x,y = y1,
 #            iters = 100,
@@ -135,7 +141,7 @@ rf_sacomute
 
 stopCluster(cl)
 
-#REGRESSION WITH OPTIMAL subSET ----
+#REGRESSION WITH OPTIMAL SUbSET ----
 
 opsetfuelyeo <- rf_safuelyeo$sa$final
 
