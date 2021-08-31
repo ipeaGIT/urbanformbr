@@ -64,7 +64,7 @@ rf_sacomutelog1000 <- readRDS("../urbanformbr/Outputs/Caret/rf_sacomutelog1000it
 
 ###### CARET SAFS CRITERIA APPLICATION (FROM THE BEGINNING)
 
-xyeo <- basenumberyeo %>% dplyr::mutate(y_fuel_consumption_per_capita_2010=NULL,
+xlog <- basenumberyeo %>% dplyr::mutate(y_fuel_consumption_per_capita_2010=NULL,
                                 y_wghtd_mean_commute_time=NULL)
 
 y1yeo <- basenumberyeo$y_fuel_consumption_per_capita_2010
