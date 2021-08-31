@@ -79,9 +79,10 @@ legend(x = 1, y = -0.5, lty = 1:lltry, legend = as.character(ltry),
 
 ### FEATURE ANNEALING OUTPUTS - YOU CAN STRAIGHT TO THE NEXT SECTION IF YOU LOAD THEM -
 
-rf_safuellog1000 <- readRDS("../../GitHub/urbanformbr/R/pca_regression_")
+rf_safuellog1000 <- readRDS("../urbanformbr/Outputs/Caret/rf_safuellog1000iteracoes")
 
-rf_sacomutelog1000 <- readRDS("../Caret/rf_sacomutelog1000iteracoes")
+rf_sacomutelog1000 <- readRDS("../urbanformbr/Outputs/Caret/rf_sacomutelog1000iteracoes")
+
 
 ###### CARET SAFS CRITERIA APPLICATION (FROM THE BEGINNING)
 
