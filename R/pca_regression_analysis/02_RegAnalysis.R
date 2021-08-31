@@ -21,17 +21,26 @@ onlynumbersbase <- pca_regression_df_ready_to_use %>% mutate(
 
 plot_qq(onlynumbersbase)
 
+
+plot_qq(onlynumbersbase,nrow = 2, ncol = 2) + theme(axis.text =)
+
 normtest::kurtosis.norm.test(onlynumbersbase$x_pop_2015,nrepl = 100)
+
+
 
 ## Data Transforming -----
 ## YEO JOHNSON TRANSFORMATIOn
 basenumberyeo <- VGAM::yeo.johnson(onlynumbersbase,lambda = 0) ##ILHEUS DA PROBLEMA
-basenumberyeo <- basenumberyeo[-c(72)]
 
+basenumberyeo <- basenumberyeo  %>% mutate(D_SistBMT=onlynumbersbase$D_SistBMT,
+d_isolated_muni=onlynumbersbase$d_isolated_muni,d_large_uca_pop=onlynumbersbase$d_large_uca_pop)
+
+basenumberyeo <- basenumberyeo[-c(72)]
 ## HIPERBOLIC TRANSFORMATION
-onlynmbrhip <- onlynumbersbase %>%
+basenumberhip <- onlynumbersbase %>%
   dplyr::mutate_if(is.numeric,~log(((.x + .x^2+1)^(1/2))))
-onlynmbrhip  <- onlynmbrhip  %>% mutate(D_SistBMT=onlynumbersbase$D_SistBMT)
+basenumberhip  <- basenumberhip  %>% mutate(D_SistBMT=onlynumbersbase$D_SistBMT,
+d_isolated_muni=onlynumbersbase$d_isolated_muni,d_large_uca_pop=onlynumbersbase$d_large_uca_pop)
 
 ### LOG FOR POSITIVE VALUES VARIABLES
 prblmtc_detect <- function(x) {
@@ -40,11 +49,12 @@ prblmtc_detect <- function(x) {
 
 }
 
-lognumbrbase <- onlynumbersbase %>%
+basenumberlog <- onlynumbersbase %>%
   dplyr::mutate_if(prblmtc_detect,log)
+
 ## DATA PLOT
 
-matplot(onlynmbrhip$y_fuel_consumption_per_capita_2010,
+matplot(basenumberhip$y_fuel_consumption_per_capita_2010,
         onlynumbersbase$y_fuel_consumption_per_capita_2010, type = "l", ylim = c(-10, 500)
         , lwd = 2, lty = 1:lltry,
         ylab = "Yeo-Johnson transformation", col = 1:lltry, las = 1,
@@ -53,22 +63,21 @@ abline(v = 0, h = 0)
 legend(x = 1, y = -0.5, lty = 1:lltry, legend = as.character(ltry),
        lwd = 2, col = 1:lltry)
 
-##########CARET############ ----
+###CARET############ ----
 
-### FEATURE ANNEALING OUTPUTS - YOU CAN GO STRAIGHT TO THE NEXT SECTION IF YOU LOAD THEM -
+### FEATURE ANNEALING OUTPUTS
 
 rf_safuellog1000 <- readRDS("../urbanformbr/Outputs/Caret/rf_safuellog1000iteracoes")
 
 rf_sacomutelog1000 <- readRDS("../urbanformbr/Outputs/Caret/rf_sacomutelog1000iteracoes")
 
+###### CARET SAFS CRITERIA APPLICATIon
 
-###### CARET SAFS CRITERIA APPLICATION (FROM THE BEGINNING)
-
-xlog <- basenumberyeo %>% dplyr::mutate(y_fuel_consumption_per_capita_2010=NULL,
+xlog <- basenumberlog %>% dplyr::mutate(y_fuel_consumption_per_capita_2010=NULL,
                                 y_wghtd_mean_commute_time=NULL)
 
-y1yeo <- basenumberyeo$y_fuel_consumption_per_capita_2010
-y2yeo <- basenumberyeo$y_wghtd_mean_commute_time
+y1log <- basenumberlog$y_fuel_consumption_per_capita_2010
+y2log <- basenumberlog$y_wghtd_mean_commute_time
 
 summary(x)
 DataExplorer::plot_intro(x)
@@ -78,15 +87,19 @@ DataExplorer::plot_qq(x)
 
 # SEGUINDO CRITERIO DO CARET PARA REMOVER VARIÁVEIS COM ALTA COLINEARIDADE
 
-comboInfo <- findLinearCombos(xyeo)
+comboInfo <- findLinearCombos(xlog)
 comboInfo
-## PARALELIZANDO 
 
-cl <- makePSOCKcluster(3)
+xhip <- onlynmbrhip %>% mutate(x_prop_car_pes=NULL,
+x_prop_motorcycle_pes=NULL,x_prop_car_and_motorcycle_pes=NULL)
+
+## PARALELIZANDO
+
+cl <- makePSOCKcluster(4)
 registerDoParallel(cl)
 
 ### CARET
-#ctrl <- safsControl(functions = "lm", improve = 10)
+#ctrl <- safsControl(functions = caretSA, improve = 10)
 
 #obj <- safs(x = x,y = y1,
 #            iters = 100,
@@ -102,93 +115,99 @@ rfsacontrl <- safsControl(functions = rfSA,
                        repeats = 10,
                        improve = 15)
 
-set.seed(1540)
-rf_safuel <- safs(x = xyeo, y = y1yeo,
-              iters = 100,
+set.seed(0)
+
+rf_safuellog1000 <- safs(x = xlog, y = y1log,
+              iters = 1000,
               safsControl = rfsacontrl)
-rf_safuelyeo <- rf_safuel
-rf_safuelyeo
 
-ggplot(rf_safuel) + theme_bw()
+#### PLOTING MEAN SQUARED ERROR X NUMBER OF ITERACTIONS
 
+ggplot(rf_sacomutelog200) + theme_bw()
 
-set.seed(154)
-rf_sacomutehip <- safs(x = xhip, y = y2hip,
-                  iters = 100,
+### FEATURE ANNEALING FOR OPTIMAL COMMUTE SET PREDICTOR
+
+set.seed(0)
+rf_sacomutelog1000 <- safs(x = xlog, y = y2log,
+                  iters = 1000,
                   safsControl = rfsacontrl)
-rf_sacomute
+
+saveRDS(rf_sacomutelog1000,file = "rf_sacomutelog1000iteracoes")
+
+
+### DESATIVANDO A PARALELIZACAO
 
 stopCluster(cl)
 
-#REGRESSION WITH OPTIMAL SUbSET ----
+#REGRESSION WITH CARET'S FEATURE ANNEALING OPTIMAL SUBSETs ----
 
-opsetfuelyeo <- rf_safuelyeo$sa$final
+opxsetfuellog <- rf_safuellog1000$sa$final
 
 depfuel <- "y_fuel_consumption_per_capita_2010"
 
-fuelhipset <- as.formula(
+setfuellog <- as.formula(
   paste(depfuel,
-        paste(opsetfuelyeo, collapse = " + "),
+        paste(opxsetfuellog, collapse = " + "),
         sep = " ~ "))
-regfuelyeo <- lm(fuelhipset,data=basenumberyeo)
+regfuellog1000 <- lm(setfuellog,data=basenumberlog)
 
-summary(regfuelyeo)
+summary(regfuellog1000)
 
 ### MODEL CORRECTING FOR MULTICOLINEARITY
 
-dfxviffuelyeo <- as.data.frame(vif(regfuelyeo))
-dfxviffuelyeo <- filter(dfxviffuelyeo, vif(regfuelyeo) <= 10)
-dfxviffuelyeo <- row.names(dfxviffuelyeo)
+dfxviffuellog <- as.data.frame(vif(regfuellog3))
+dfxviffuellog <- filter(dfxviffuellog, vif(regfuellog3) <= 10)
+dfxviffuellog <- row.names(dfxviffuellog)
 
 depfuel <- "y_fuel_consumption_per_capita_2010"
 
-fuelyeovifset <- as.formula(
+fuellogvifset <- as.formula(
   paste(depfuel,
-        paste(dfxviffuelyeo, collapse = " + "),
+        paste(dfxviffuellog, collapse = " + "),
         sep = " ~ "))
-regfuelyeomtcl <- lm(fuelyeovifset,data=onlynmbryeo)
+regfuellogmtcl3 <- lm(fuellogvifset,data=basenumberlog)
 
-summary(regfuelyeomtcl)
+summary(regfuellogmtcl3)
 
 
 
 ### CORRECTING HETEROCEDASCITITY
 
 lmtest::bptest(regfuelyeo)
-lmtest::coeftest(regfuelyeo)
+regfuellogmtclseed10<- lmtest::coeftest(regfuelyeo)
 
-lmtest::bptest(regfuelmtcl)
-lmtest::coeftest(regfuelmtcl)
+lmtest::bptest(regfuelyeomtcl)
+lmtest::coeftest(regfuelyeomtcl)
 
 
 ### FOR THE AVG COMMUTING TIME
 
-opsetcomuteyeo <- rf_sacomuteyeo$sa$final
+opsetcomutelog <- rf_sacomutelog1000$sa$final
 depcomute <- "y_wghtd_mean_commute_time"
 
-comutesetyeo <- as.formula(
+comutesetlog <- as.formula(
   paste(depfuel,
-        paste(opsetcomuteyeo, collapse = " + "),
+        paste(opsetcomutelog, collapse = " + "),
         sep = " ~ "))
-regcomuteyeo <- lm(comutesetyeo,data=basenumberyeo)
+regcomutelog <- lm(comutesetlog,data=basenumberlog)
 
-summary(regcomuteyeo)
+summary(regcomutelog)
 
 ### MODEL CORRECTING FOR MULTICOLINEARITY
 
-dfxvifcomutehip<- as.data.frame(vif(regcomutehip))
-dfxvifcomutehip <- filter(dfxvifcomutehip, vif(regcomutehip) <= 10)
-dfxvifcomutehip <- row.names(dfxvifcomutehip)
+dfxvifcomutelog<- as.data.frame(vif(regcomutelog))
+dfxvifcomutelog <- filter(dfxvifcomutelog, vif(regcomutelog) <= 10)
+dfxvifcomutelog <- row.names(dfxvifcomutelog)
 
 depfuel <- "y_wghtd_mean_commute_time"
 
-comutevifyeoset <- as.formula(
+comuteviflogset <- as.formula(
   paste(depfuel,
-        paste(dfxvifcomuteyeo, collapse = " + "),
+        paste(dfxvifcomutelog, collapse = " + "),
         sep = " ~ "))
-regcomuteyeomtcl <- lm(comutevifyeoset,data=onlynmbryeo)
+regcomutelogmtcl <- lm(comuteviflogset,data=basenumberlog)
 
-summary(regcomuteyeomtcl)
+summary(regcomutelogmtcl)
 
 
 ### CORRECTING HETEROCEDASCITITY
@@ -214,14 +233,15 @@ ggcorrplot(cor(dfx),tl.cex = 8)
 
 setwd("//storage6/usuarios/Proj_acess_oport/git_luiz/urbanformbr/Outputs/Regs/")
 
-stargazer::stargazer(regfuelhip,regfuelyeo,regcomutehip,regcomuteyeo, type = 'html', out = "caretfuelregs")
+stargazer::stargazer(regfuellog200,regfuellog500,regfuellog1000,type = 'html', out = "caretfuelregs")
 
-stargazer::stargazer(regfuelyeomtcl,regfuelhipmtcl, regcomuteyeomtcl,
-                     regcomutehipmtcl,type = 'html', out = "cleaneregs")
+stargazer::stargazer(regfuellogmtclseed10,regfuellogmtclseed100,regfuellogmtcl3,
+                     type = 'html', out = "cleaneregs")
 
 car::scatterplot(y_wghtd_mean_commute_time ~
     log(x_urban_extent_size_2014) | D_SistBMT, data=pca_regression_df_ready_to_use,
     xlab = 'Extensão Urbana em KM', ylab = 'Tempo Médio de Comutação ao Trabalho')
+
 
 
 
