@@ -65,13 +65,13 @@ legend(x = 1, y = -0.5, lty = 1:lltry, legend = as.character(ltry),
 
 ###CARET############ ----
 
-### FEATURE ANNEALING OUTPUTS
+### FEATURE ANNEALING OUTPUTS - IF YOU READ THESE LISTS, GO STRAIGHT DOWN TO THE REGRESSION SECTION - 
 
 rf_safuellog1000 <- readRDS("../urbanformbr/Outputs/Caret/rf_safuellog1000iteracoes")
 
 rf_sacomutelog1000 <- readRDS("../urbanformbr/Outputs/Caret/rf_sacomutelog1000iteracoes")
 
-###### CARET SAFS CRITERIA APPLICATIon
+###### CARET SAFS (FEATURE ANNEALING) CALIBRATION
 
 xlog <- basenumberlog %>% dplyr::mutate(y_fuel_consumption_per_capita_2010=NULL,
                                 y_wghtd_mean_commute_time=NULL)
