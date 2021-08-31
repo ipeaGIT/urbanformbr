@@ -21,27 +21,7 @@ onlynumbersbase <- pca_regression_df_ready_to_use %>% mutate(
 
 plot_qq(onlynumbersbase)
 
-### THIS TRANSFORMATION FOR ONLYNUMBERS BASE IS BASED ON BRIEF CONCEPTUAL DISCUSSION ----
-
-onlynumbersbase <- onlynumbersbase %>% mutate(x_pib_capita_2010=NULL,
-x_prop_yellow_men=NULL,x_prop_pes_urban=NULL, x_prop_not_specified_men=NULL,
-x_prop_not_specified_women=NULL, x_prop_yellow_women=NULL, x_prop_indigenous_men=NULL,
-x_prop_indigenous_women=NULL,x_prop_low_educ=NULL,x_prop_informal=NULL,
-x_prop_work_same_muni_not_home_office=NULL,x_built_total_geom_growth_1975_2014_consolidada=NULL,
-x_built_total_geom_growth_1975_2014_expansao=NULL,x_built_total_geom_growth_1975_2014_total=NULL,
-x_density_pop_10km2_consolidada_2014=NULL,x_density_built_10km2_expansao_2014=NULL,
-x_density_pop_10km2_total_2014=NULL,x_density_built_10km2_consolidada_2014=NULL,
-x_density_built_10km2_expansao_2014=NULL,x_density_built_10km2_total_2014=NULL,
-x_dissimilarity_15km=NULL,x_dissimilarity_10km=NULL,
-x_pop_total_geom_growth_1975_2015_consolidada=NULL,
-x_pop_total_geom_growth_1975_2015_total=NULL,x_pop_total_geom_growth_1975_2015_expansao=NULL,
-x_prop_age_65_more=NULL)
-
-plot_qq(onlynumbersbase)
-
 normtest::kurtosis.norm.test(onlynumbersbase$x_pop_2015,nrepl = 100)
-
-
 
 ## Data Transforming -----
 ## YEO JOHNSON TRANSFORMATIOn
@@ -75,7 +55,7 @@ legend(x = 1, y = -0.5, lty = 1:lltry, legend = as.character(ltry),
 
 ##########CARET############ ----
 
-### FEATURE ANNEALING OUTPUTS - YOU CAN STRAIGHT TO THE NEXT SECTION IF YOU LOAD THEM -
+### FEATURE ANNEALING OUTPUTS - YOU CAN GO STRAIGHT TO THE NEXT SECTION IF YOU LOAD THEM -
 
 rf_safuellog1000 <- readRDS("../urbanformbr/Outputs/Caret/rf_safuellog1000iteracoes")
 
