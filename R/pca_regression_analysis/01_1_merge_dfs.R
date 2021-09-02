@@ -165,7 +165,8 @@ source('R/setup.R')
 
 
   # * street metrics --------------------------------------------------------
-  df_street <- data.table::fread("../../data/urbanformbr/pca_regression_df/streets_metrics.csv")
+  df_street <- data.table::fread("../../data/urbanformbr/pca_regression_df/streets_metrics.csv") %>%
+    dplyr::select(-intersection_count)
 
   df_street <- subset(df_street, name_urban_concentration %in% df_prep$name_urban_concentration)
 
@@ -197,7 +198,7 @@ source('R/setup.R')
     )
 
   # * * isolated uca --------------------------------------------------------
-  df_classify_isolated <- readr::read_rds('../../data/urbanformbr/pca_regression_df/classify_uca_isolated.rds')
+  #df_classify_isolated <- readr::read_rds('../../data/urbanformbr/pca_regression_df/classify_uca_isolated.rds')
 
 
 # merge data --------------------------------------------------------------
@@ -253,7 +254,7 @@ source('R/setup.R')
     df_merge, df_classify_uca_large,
     by = c('code_urban_concentration' = 'code_urban_concentration')
   ) %>%
-    dplyr::left_join(df_classify_isolated) %>%
+    #dplyr::left_join(df_classify_isolated) %>%
     dplyr::left_join(df_classify_tma)
 
   # * reorder columns -------------------------------------------------------
@@ -292,9 +293,6 @@ source('R/setup.R')
       .cols = pop_2015:length(.),
       function(x){paste0("x_", x)}
     )
-
-
-# GENERATE INTERACTIONS?
 
 
 # save data ---------------------------------------------------------------
