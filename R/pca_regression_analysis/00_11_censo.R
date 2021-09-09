@@ -437,7 +437,7 @@ f_censo <- function(){
   #]
   #df_household_size <- df_censo_pes[
   #  V1006==1,
-  #  .(wghtd_mean_density_resident_household = weighted.mean(household_size, w = V0010, na.rm = T)),
+  #  .(residents_per_household = weighted.mean(household_size, w = V0010, na.rm = T)),
   #  by = .(code_urban_concentration)
   #]
 
@@ -470,8 +470,8 @@ f_censo <- function(){
   data.table::setnames(
     x = df_wghtd_mean_dom,
     old = c("V0203","V6203","V6204","V0401"),
-    new = c("wghtd_mean_density_rooms_household","wghtd_mean_density_resident_rooms",
-            "wghtd_mean_density_resident_bedroom","wghtd_mean_density_resident_household")
+    new = c("rooms_per_household","residents_per_room",
+            "residents_per_bedroom","residents_per_household")
   )
 
   df_prop_dom <- df_censo_dom[
@@ -502,7 +502,7 @@ f_censo <- function(){
 
   df_vars_dom <- data.table::merge.data.table(
     x = df_wghtd_mean_dom %>%
-      select(-c(wghtd_mean_density_resident_bedroom,wghtd_mean_density_resident_rooms)),
+      select(-c(residents_per_bedroom,residents_per_room)),
     y = df_prop_dom,
     by = "code_urban_concentration"
   )
