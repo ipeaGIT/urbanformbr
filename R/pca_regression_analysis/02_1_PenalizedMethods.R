@@ -33,6 +33,7 @@ xvector <- basenumberlog %>% mutate(y_fuel_consumption_per_capita_2010=NULL,
                                                   d_tma=NULL)
 
 ### TRAINING SET ----
+#### HERE WE OBTAIN THE BEST LAMBDA TO REDUCE RSME THROUGH CROSS VALIDATION
 
 train_rows <- sample(1:184, 0.66*184)
 
@@ -93,7 +94,7 @@ alpha0.6.predicted <- predict(alpha1.fit, s=alpha1.fit$lambda.1se,newx = x.test)
 mean((y.test - alpha1.predicted)^2)
 
 
-#### PENALIZAÇOES ----
+#### PENALIZAÃ‡OES ----
 
 ### ELASTIC
 
@@ -113,7 +114,7 @@ Ridge_modelfuel <- glmnet(xvector, yfuel, alpha = 0, lambda = alpha0.fit$lambda.
 
 coef(Ridge_modelfuel)
 
-##### REGRESSÃO COM MELHOR MODELO ----
+##### REGRESSÃƒO COM MELHOR MODELO (BASEADO EM OUTPUTS DO GLMNET) ----
 
 coef(Elastic_modelfuel)
 
