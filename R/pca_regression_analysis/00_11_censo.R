@@ -39,7 +39,7 @@ f_censo <- function(){
   #..belonging to them
   df_codes <- readr::read_rds("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/pca_regression_df/pca_regression_df.rds")
 
-  # count the number of munis in each urban concentration
+  # dummy to identify urban concentrations with a sinle muni
   df_codes <- df_codes %>%
     dplyr::mutate(
       isolated_muni = data.table::fcase(
@@ -47,6 +47,7 @@ f_censo <- function(){
         default = 0L
       )
     )
+
 
   # format df_codes so that it can be used at a left join (two columns):
   # i. urban concentration code (whole uca)
@@ -82,6 +83,7 @@ f_censo <- function(){
 
 
   # * add urban concentration area code -------------------------------------
+  head(df_codes)
 
   # fix muni code
   df_censo_dom[, code_muni := (V0001*100000) + V0002]
@@ -116,12 +118,10 @@ f_censo <- function(){
 
   # filter only dom/pes from cities that belong to uca present at df_codes
   data.table::setkey(df_censo_dom, code_urban_concentration)
-  df_censo_dom <- df_censo_dom[.(unique(df_codes$code_urban_concentration))]
-  # or filter by na at code_urban_concentration
-  #df_censo_dom <- df_censo_dom[!is.na(code_urban_concentration)]
+  df_censo_dom <- df_censo_dom[ !is.na(code_urban_concentration), ]
 
   data.table::setkey(df_censo_pes, code_urban_concentration)
-  df_censo_pes <- df_censo_pes[.(unique(df_codes$code_urban_concentration))]
+  df_censo_pes <- df_censo_pes[!is.na(code_urban_concentration),]
 
 
   # filter only dom/pes from urban areas (V1006 == 1)
