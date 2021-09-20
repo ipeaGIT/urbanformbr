@@ -141,8 +141,8 @@ f_censo <- function(){
       car_motorcycle_sep = data.table::fcase(
         V0221 == 1L & V0222 == 1L, "Carro e motocicleta",
 
-        V0222 == 1L & ( V0221 == 2L | is.na(V0221) ), "Apenas carro",
-        V0221 == 1L & ( V0222 == 2L | is.na(V0222) ), "Apenas motocicleta",
+        V0222 == 1L & V0221 == 2L | is.na(V0221), "Apenas carro",
+        V0221 == 1L & V0222 == 2L | is.na(V0222), "Apenas motocicleta",
 
         (V0221 == 2L & ( V0222 == 2L | is.na(V0222)) ) |
           (V0222 == 2L & ( V0221 == 2L | is.na(V0221)) ),
@@ -151,14 +151,13 @@ f_censo <- function(){
         is.na(V0221) & is.na(V0222), NA_character_,
 
         default = 'Erro'
-      ),
-      car_motorcycle = data.table::fcase(
-        V0221 == 1 | V0222 == 1, "Carro ou motocicleta",
-        (V0221 == 2 & V0222 == 2) | (V0221 == 2) | (V0222 == 2)
-        , "Nem carro nem motocicleta",
-
-        default = NA_character_
-      )
+      )#,
+      #car_motorcycle = data.table::fcase(
+      #  V0221 == 1 | V0222 == 1, "Carro ou motocicleta",
+      #  (V0221 == 2 & V0222 == 2) | (V0221 == 2) | (V0222 == 2)
+      #  , "Nem carro nem motocicleta",
+      #  default = NA_character_
+      #)
     )
   ]
 
@@ -170,7 +169,6 @@ f_censo <- function(){
     df_censo_dom,
     `:=`(
       car_motorcycle_sep = i.car_motorcycle_sep,
-      car_motorcycle = i.car_motorcycle,
       V0221 = i.V0221,
       V0222 = i.V0222
     ),
@@ -240,25 +238,25 @@ f_censo <- function(){
       sector = data.table::fcase(
         V6471 > 0L & V6471 <= 03999L          # AGRICULTURA, PECUÁRIA, PRODUÇÃO FLORESTAL, PESCA E AQUICULTURA
         , "Agricultura",
-        V6471 >= 05000L & V6471 <= 09999L |   # INDÚSTRIAS EXTRATIVAS
-          V6471 >= 10000L & V6471 <= 33999L | # INDÚSTRIAS DE TRANSFORMAÇÃO
-          V6471 >= 41000L & V6471 <= 43999L   # CONSTRUÇÃO
+        (V6471 >= 05000L & V6471 <= 09999L) |   # INDÚSTRIAS EXTRATIVAS
+          (V6471 >= 10000L & V6471 <= 33999L) | # INDÚSTRIAS DE TRANSFORMAÇÃO
+          (V6471 >= 41000L & V6471 <= 43999L)   # CONSTRUÇÃO
         , "Indústria",
-        V6471 >= 35000L & V6471 <= 39999L |   # ELETRICIDADE E GÁS
-          V6471 >= 45000L & V6471 <= 48999L | # COMÉRCIO;REPARAÇÃO DE VEÍCULOS AUTOMOTORES E MOTOCICLETAS
-                                            # COMÉRCIO, EXCETO DE VEICULOS AUTOMOTORES E MOTOCICLETAS
-          V6471 >= 49000L & V6471 <= 53999L | # TRANSPORTE, ARMAZENAGEM E CORREIO
-          V6471 >= 55000L & V6471 <= 56999L | # ALOJAMENTO E ALIMENTAÇÃO
-          V6471 >= 58000L & V6471 <= 75999L | # INFORMAÇÃO E COMUNICAÇÃO|
-                                            # ATIVIDADES IMOBILIÁRIAS |
-                                            # ATIVIDADES PROFISSIONAIS, CIENTÍFICAS E TÉCNICAS
-          V6471 >= 77000L & V6471 <= 88999L | # ATIVIDADES ADMINISTRATIVAS E SERVIÇOS COMPLEMENTARES
-                                            # ADMINISTRAÇÃO PÚBLICA, DEFESA E SEGURIDADE SOCIAL
-                                            # SAÚDE HUMANA E SERVIÇOS SOCIAIS
-          V6471 >= 90000L & V6471 <= 94999L | # ARTES, CULTURA, ESPORTE E RECREAÇÃO
-          V6471 >= 95000L & V6471 <= 99999L   # OUTRAS ATIVIDADES DE SERVIÇOS
-                                            # SERVIÇOS DOMÉSTICOS
-                                            # ORGANISMOS INTERNACIONAIS E OUTRAS INSTITUIÇÕES EXTRATERRITORIAIS
+        (V6471 >= 35000L & V6471 <= 39999L) |   # ELETRICIDADE E GÁS
+          (V6471 >= 45000L & V6471 <= 48999L) | # COMÉRCIO;REPARAÇÃO DE VEÍCULOS AUTOMOTORES E MOTOCICLETAS
+          # COMÉRCIO, EXCETO DE VEICULOS AUTOMOTORES E MOTOCICLETAS
+          (V6471 >= 49000L & V6471 <= 53999L) | # TRANSPORTE, ARMAZENAGEM E CORREIO
+          (V6471 >= 55000L & V6471 <= 56999L) | # ALOJAMENTO E ALIMENTAÇÃO
+          (V6471 >= 58000L & V6471 <= 75999L) | # INFORMAÇÃO E COMUNICAÇÃO|
+          # ATIVIDADES IMOBILIÁRIAS |
+          # ATIVIDADES PROFISSIONAIS, CIENTÍFICAS E TÉCNICAS
+          (V6471 >= 77000L & V6471 <= 88999L) | # ATIVIDADES ADMINISTRATIVAS E SERVIÇOS COMPLEMENTARES
+          # ADMINISTRAÇÃO PÚBLICA, DEFESA E SEGURIDADE SOCIAL
+          # SAÚDE HUMANA E SERVIÇOS SOCIAIS
+          (V6471 >= 90000L & V6471 <= 94999L) | # ARTES, CULTURA, ESPORTE E RECREAÇÃO
+          (V6471 >= 95000L & V6471 <= 99999L)   # OUTRAS ATIVIDADES DE SERVIÇOS
+        # SERVIÇOS DOMÉSTICOS
+        # ORGANISMOS INTERNACIONAIS E OUTRAS INSTITUIÇÕES EXTRATERRITORIAIS
         , "Serviços",
         default = NA_character_
       ),
@@ -477,10 +475,10 @@ f_censo <- function(){
   df_prop_dom <- df_censo_dom[
     ,
     .(
-      prop_dom_urban = sum(V0010[which(V1006 == 1L)], na.rm = T) / sum(V0010, na.rm = T)#,
+      prop_dom_urban = sum(V0010[which(V1006 == 1L)], na.rm = T) / sum(V0010, na.rm = T),
 
-      #prop_motos_dom = sum(V0010[which(V0221 == 1L & V1006 == 1L)], na.rm = T) / sum(V0010[which(V1006 == 1L)], na.rm = T),
-      #prop_autos_dom = sum(V0010[which(V0222 == 1L & V1006 == 1L)], na.rm = T) / sum(V0010[which(V1006 == 1L)], na.rm = T),
+      prop_motos_dom = sum(V0010[which(V0221 == 1L)],na.rm = T) / sum(V0010, na.rm=T),
+      prop_autos_dom = sum(V0010[which(V0222 == 1L)],na.rm = T) / sum(V0010, na.rm=T)#,
 
       #prop_car_or_motorcycle_dom = sum(V0010[which(car_motorcycle == "Carro ou motocicleta" & V1006 == 1L)], na.rm = T) / sum(V0010[which(V1006 == 1L)], na.rm = T),
       #prop_car_dom = sum(V0010[which(car_motorcycle_sep == "Apenas carro" & V1006 == 1L)], na.rm = T) / sum(V0010[which(V1006 == 1L)], na.rm = T),
@@ -592,8 +590,8 @@ f_censo <- function(){
       prop_razao_dep = sum(V0010[which(razao_dep == "Até 14 anos" | razao_dep == "65+ anos")],na.rm = T) / sum(V0010[which(razao_dep == "15-64 anos")], na.rm=T),
 
       # motos e autos
-      prop_motos_pes = sum(V0010[which(V0221 == 1L)],na.rm = T) / sum(V0010, na.rm=T),
-      prop_autos_pes = sum(V0010[which(V0222 == 1L)],na.rm = T) / sum(V0010, na.rm=T),
+      #prop_motos_pes = sum(V0010[which(V0221 == 1L)],na.rm = T) / sum(V0010, na.rm=T),
+      #prop_autos_pes = sum(V0010[which(V0222 == 1L)],na.rm = T) / sum(V0010, na.rm=T),
 
       #prop_car_or_motorcycle_pes = sum(V0010[which(car_motorcycle == "Carro ou motocicleta")],na.rm = T) / sum(V0010, na.rm=T),
       #prop_car_pes = sum(V0010[which(car_motorcycle_sep == "Apenas carro")], na.rm = T) / sum(V0010, na.rm = T),
