@@ -43,10 +43,10 @@ for(i in 1:length(fuel_link)){ # i = 1
   # download
   if(fuel_link[i] %like% "2019"){
     download.file(url = paste0(fixed_link,fuel_link[i]),
-                  destfile = paste0("../../data-raw/ANP/",tmp_destifile))
+                  destfile = paste0("../../data-raw/ANP/",tmp_destifile),mode = "wb")
   }else{
     download.file(url = paste0(fixed_link1,fuel_link[i]),
-                  destfile = paste0("../../data-raw/ANP/",tmp_destifile))
+                  destfile = paste0("../../data-raw/ANP/",tmp_destifile),mode = "wb")
   }
 
 
@@ -90,4 +90,4 @@ xls_all <- lapply(seq_along(xlsx_files),function(i){ # i = 1
 # merge
 dt_all <- rbind(xls_all,xslx_all)
 
-readr::write_rds(x = dt_all,file = "data/fule_cities.rds",compress = "gz")
+readr::write_rds(x = dt_all,file = "../../data/urbanformbr/fuel/fuel_cities.rds",compress = "gz")
