@@ -1,0 +1,348 @@
+---
+title: "Clustering"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r ,echo=FALSE,message = FALSE,warning = FALSE}
+############### 0. load packages --------------------------
+library(data.table)
+library(magrittr)
+library(mapview)
+library(ggplot2)
+library(readr)
+library(factoextra)
+library(patchwork)
+library(NbClust)
+
+
+options(scipen = 999)
+`%nin%` <- Negate(`%in%`)
+
+```
+
+# 1. Prep data
+
+The cols I used was
+```{r ,echo=TRUE,warning=FALSE}
+df_raw <- readr::read_rds("../../../../data/urbanformbr/pca_regression_df/pca_regression_df_ready_to_use.rds")
+# select columns
+df_prep <- data.table::copy(df_raw)[,.SD
+                                    ,.SDcols = c("i_code_urban_concentration"
+                                                 , "i_name_urban_concentration"
+                                                 , "i_name_uca_case"
+                                                 , "x_proportion_largest_patch"
+                                                 , "x_density_pop_05km_total_2014"
+                                                 , "x_avg_cell_distance"
+                                                 , "x_land_use_mix"
+                                                 #,"x_pop_2015"
+                                    )]
+```
+
+The method to normalize was
+\begin{equation}
+x_{norm} = log_{10}\big(x + \sqrt{x^2+1}\big)
+\end{equation}
+
+```{r ,echo=FALSE}
+cols_to_norm1 <-  c("x_proportion_largest_patch"
+                    , "x_density_pop_05km_total_2014"
+                    , "x_avg_cell_distance"
+                    , "x_land_use_mix"
+                    , "x_pop_2015")
+# normalize
+cols_to_norm <- base::setdiff(names(df_prep),c("i_code_urban_concentration",
+                                               "i_name_urban_concentration",
+                                               "i_name_uca_case"))
+
+my_f <- function(i){log10(i + sqrt(i^2 + 1) )}
+df_prep[, (cols_to_norm) := lapply(.SD, as.numeric), .SDcols = cols_to_norm]
+#df_prep[, (cols_to_norm) := lapply(.SD, log10), .SDcols = cols_to_norm]
+df_prep[, (cols_to_norm) := lapply(.SD, my_f), .SDcols = cols_to_norm]
+df_prep <- df_prep[,.SD,.SDcols = cols_to_norm]
+```
+
+# 2. clustering tendency
+
+Initially, let's verify if there's clustering tendency. 
+We can compare with random data
+
+
+```{r ,echo=TRUE}
+# Random data generated from the iris data set
+random_df <- apply(df_prep, 2,
+                   function(x){runif(length(x), min(x), (max(x)))}) %>%
+  as.data.frame()
+# Visual ilustration
+p01 <- factoextra::fviz_pca_ind(prcomp(df_prep), title = "PCA - Urban form data",
+                                #habillage = df_raw$i_code_urban_concentration,
+                                palette = "jco",
+                                geom = "point", ggtheme = theme_classic(),
+                                legend = "bottom")
+# Plot the random df
+p02 <- factoextra::fviz_pca_ind(prcomp(random_df), title = "PCA - Random data",
+                                geom = "point", ggtheme = theme_classic())
+
+p01 | p02
+```
+
+some other visual methods includes and ordered distance matrix
+
+
+```{r ,echo=TRUE}
+p3 <- factoextra::fviz_dist(dist(df_prep), show_labels = FALSE)+
+  labs(title = "Urban form data")
+p4 <- factoextra::fviz_dist(dist(random_df), show_labels = FALSE)+
+  labs(title = "Random data")
+
+p3 | p4
+```
+The dissimilarity matrix image confirms that there is a cluster structure in the 
+iris data set but not in the random one.
+
+
+# 3. optimal number of clustering 
+
+**Elbow_method**
+
+Define clusters such that the total intra-cluster variation (or total
+within-cluster sum of square (WSS)) is minimized. The total WSS measures the
+compactness of the clustering and we want it to be as small as possible
+
+```{r ,echo=TRUE}
+p_31 <- factoextra::fviz_nbclust(df_prep, kmeans, method = "wss") +
+  labs(subtitle = "Elbow method")
+
+p_31
+```
+
+**Silhouette_method**
+
+Briefly, it measures the quality of a clustering. That is, it determines how
+well each object lies within its cluster. A high average silhouette width
+indicates a good clustering. Average silhouette method computes the average
+silhouette of observations for different values of k.
+The optimal number of clusters k is the one that maximize the average
+silhouette over a range of possible values for k (Kaufman and Rousseeuw [1990]).
+```{r ,echo=TRUE}
+p_32 <- factoextra::fviz_nbclust(df_prep, kmeans, method = "silhouette")+
+  labs(subtitle = "Silhouette method")
+```
+
+**Gap_statistic_method**
+
+The gap statistic compares the total within intra-cluster variation for
+different values of k with their expected values under null reference
+distribution of the data. The estimate of the optimal clusters will be
+value that maximize the gap statistic (i.e, that yields the largest gap
+statistic). This means that the clustering structure is far away
+from the random uniform distribution of points.
+
+```{r ,echo=TRUE}
+set.seed(123)
+c_33 <- NbClust::NbClust(df_prep, distance = "euclidean", min.nc = 2,
+                         max.nc = 10, method = "complete",index = "gap")
+p_33 <- factoextra::fviz_nbclust(x = df_prep, kmeans,
+                                 nstart = 25, method = "gap_stat",
+                                 nboot = 50)+
+  labs(subtitle = "Gap statistic method")
+
+p_31 + p_32 / p_33
+```
+
+
+*Some other methods*
+
+```{r ,echo=TRUE}
+
+n_31 <- NbClust::NbClust(data = df_prep,diss = NULL
+                         , distance = "euclidean", min.nc = 2
+                         , max.nc = 10,index = "all", method = "kmeans")
+
+n_31
+```
+
+
+# 4. Viewing clustering 
+
+### 4.1 - K-means clustering
+```{r ,echo=TRUE}
+km.res2 <- factoextra::eclust(x = df_prep
+                              ,FUNcluster =  "kmeans"
+                              , k = 2
+                              , nstart = 25
+                              , graph = FALSE)
+
+factoextra::fviz_cluster(km.res2)
+```
+
+```{r ,echo=TRUE}
+km.res3 <- factoextra::eclust(x = df_prep
+                              ,FUNcluster =  "kmeans"
+                              , k = 3
+                              , nstart = 25
+                              , graph = FALSE)
+factoextra::fviz_cluster(km.res3)
+```
+
+```{r ,echo=TRUE}
+km.res4 <- factoextra::eclust(x = df_prep
+                              ,FUNcluster =  "kmeans"
+                              , k = 4
+                              , nstart = 25
+                              , graph = TRUE)
+```
+
+### 4.2 - hierarchical 
+
+
+```{r ,echo=TRUE}
+hc.res2 <- factoextra::eclust(x = df_prep
+                              , FUNcluster =  "hclust"
+                              , k = 2
+                              , hc_metric = "euclidean"
+                              , hc_method = "ward.D2",
+                              graph = FALSE)
+factoextra::fviz_dend(hc.res2, show_labels = FALSE,
+                      palette = "jco", as.ggplot = TRUE)
+```
+```{r ,echo=TRUE}
+hc.res3 <- factoextra::eclust(x = df_prep
+                              , FUNcluster =  "hclust"
+                              , k = 3
+                              , hc_metric = "euclidean"
+                              , hc_method = "ward.D2",
+                              graph = FALSE)
+factoextra::fviz_dend(hc.res3, show_labels = FALSE,
+                      palette = "jco", as.ggplot = TRUE)
+
+hc.res4 <- factoextra::eclust(x = df_prep
+                              , FUNcluster =  "hclust"
+                              , k = 4
+                              , hc_metric = "euclidean"
+                              , hc_method = "ward.D2",
+                              graph = FALSE)
+factoextra::fviz_dend(hc.res4, show_labels = FALSE,
+                      palette = "jco", as.ggplot = TRUE)
+```
+
+# 5 analysis
+
+```{r ,echo=FALSE}
+
+df_raw[,cluster2 := hc.res2$cluster]
+df_raw[,cluster3 := hc.res3$cluster]
+df_raw[,cluster4 := hc.res4$cluster]
+
+df_plot <- data.table::melt(data = df_raw
+                            ,id.vars = c('i_code_urban_concentration',
+                                         cols_to_norm1,
+                                         "y_fuel_consumption_per_capita_2010",      
+                                         "y_wghtd_mean_commute_time" 
+                            )
+                            ,measure = list(c("cluster2","cluster3",
+                                              "cluster4")),
+                            ,variable.name = c("tipo_cluster")
+                            ,value.name = c("cluster_num")) %>% 
+  data.table::melt(data = .
+                   ,id.vars = c('i_code_urban_concentration'
+                                ,"tipo_cluster","cluster_num"
+                   )
+                   ,measure = list(c(cols_to_norm1,
+                                     "y_fuel_consumption_per_capita_2010",      
+                                     "y_wghtd_mean_commute_time")),
+                   ,variable.name = c("urb_form_names")
+                   ,value.name = c("urb_form_vars"))
+
+
+df_plot %>% 
+  .[tipo_cluster == "cluster2",] %>% 
+  ggplot()+
+  geom_boxplot(aes(x = as.character(cluster_num)
+                   , y = urb_form_vars))+
+  facet_wrap(~urb_form_names
+             ,scales = "free",ncol = 3)
+df_plot %>% 
+  .[tipo_cluster == "cluster3",] %>% 
+  ggplot()+
+  geom_boxplot(aes(x = as.character(cluster_num)
+                   , y = urb_form_vars))+
+  facet_wrap(~urb_form_names
+             ,scales = "free",ncol = 3)
+df_plot %>% 
+  .[tipo_cluster == "cluster4",] %>% 
+  ggplot()+
+  geom_boxplot(aes(x = as.character(cluster_num)
+                   , y = urb_form_vars))+
+  facet_wrap(~urb_form_names
+             ,scales = "free",ncol = 3)
+
+```
+```{r ,echo=TRUE}
+
+df_raw[cluster3==3]$i_name_urban_concentration
+df_raw[cluster4==4]$i_name_urban_concentration
+
+df_raw[cluster4==1]$i_name_urban_concentration
+```
+
+## density vs espraiamento
+```{r ,echo=FALSE}
+df_raw %>% 
+  ggplot()+
+  geom_jitter(aes(x = x_avg_cell_distance
+                  , y = x_density_pop_05km_total_2014
+                  , color = as.character(cluster2)
+                  , size = x_pop_2015))+
+  scale_x_log10() +
+  scale_y_log10() + 
+  labs(x = "avg_cell_distance: espraiamento"
+       , y = "exp. density (5m)"
+       , size = "population"
+       , color = "Cluster")
+
+```
+
+```{r ,echo=FALSE}
+df_raw %>% 
+  ggplot()+
+  geom_jitter(aes(x = x_avg_cell_distance
+                  , y = x_density_pop_05km_total_2014
+                  , color = as.character(cluster3)
+                  , size = x_pop_2015))+
+  scale_x_log10() +
+  scale_y_log10() + 
+  labs(x = "avg_cell_distance: espraiamento"
+       , y = "exp. density (5km)"
+       , size = "population"
+       , color = "Cluster")
+
+```
+
+```{r ,echo=FALSE}
+df_raw %>% 
+  ggplot()+
+  geom_jitter(aes(x = x_avg_cell_distance
+                  , y = x_density_pop_05km_total_2014
+                  , color = as.character(cluster4)
+                  , size = x_pop_2015))+
+  scale_x_log10() +
+  scale_y_log10() + 
+  labs(x = "avg_cell_distance: espraiamento"
+       , y = "exp. density (05km)"
+       , size = "population"
+       , color = "Cluster")
+
+```
+
+
+# 6 saving
+
+```{r ,echo=TRUE}
+data.table::fwrite(x = df_raw
+                   , file = "../../../../data/urbanformbr/pca_regression_df/cluster_output/cluster_1.csv")
+
+```
