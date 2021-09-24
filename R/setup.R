@@ -1,57 +1,80 @@
 Sys.setenv(TZ='UTC') # Fuso horario local
 
 # carregar bibliotecas
-library(ggplot2)      # visualizacao de dados
-library(ggthemes)     # temas para visualizacao de dados
-library(sf)           # leitura e manipulacao de dados espaciais
-library(data.table)   # manipulacao de dados
-library(geobr)        # dados espaciais do brasil
-library(pbapply)      # progress bar
-library(readr)        # rapida leitura de dados
-library(tidyr)        # manipulacao de dados
-library(stringr)      # operacoes em strings
-library(lubridate)    # dados em data/horario
-library(mapview)      # visualizacao interativa dos dados
-library(RColorBrewer) # paleta de cores
-library(extrafont)    # fontes de texto
-#loadfonts()
+list.of.packages <- c('ggplot2'      # visualizacao de dados
+                      ,'ggthemes'     # temas para visualizacao de dados
+                      ,'sf'           # leitura e manipulacao de dados espaciais
+                      ,'data.table'   # manipulacao de dados
+                      ,'geobr'        # dados espaciais do brasil
+                      ,'pbapply'      # progress bar
+                      ,'readr'        # rapida leitura de dados
+                      ,'tidyr'        # manipulacao de dados
+                      ,'stringr'      # operacoes em strings
+                      ,'lubridate'    # dados em data/horario
+                      ,'mapview'      # visualizacao interativa dos dados
+                      ,'RColorBrewer' # paleta de cores
+                      ,'extrafont'    # fontes de texto
+                      #loadfonts(
 
-library(gganimate)  # install.packages("gganimate")
-library(ggrepel)
+                      ,'gganimate'  # install.packages("gganimate"
+                      ,'ggrepel'
+                      ,'ggforce'
 
-library(future)
-library(furrr)
-library(purrr)
-library(dplyr)
-library(hrbrthemes)
-library(beepr)
-library(datapasta)
-library(patchwork)
-library(sidrar)
-library(devtools)
-library(janitor)
-library(lemon)
-library(rio)
-library(scales)
-library(rlist)
-library(survey)
-library(srvyr)
-# devtools::install_github("lucasmation/microdadosBrasil")
-#library(microdadosBrasil)
-library(Hmisc)
-library(forcats)
-library(gridExtra)
-library(ggplotify)
-library(grid)
-library(PNADcIBGE)
-library(ggtext)
-library(cowplot)
-library(gganimate)  # install.packages("gganimate")
-library(ggrepel)
-library(ggnewscale)
-library(magrittr)
-library(XLConnect)
-library(geodist)
+                      ,'stars'
+                      ,'raster'
+                      ,'rgdal'
+                      ,'exactextractr'
+
+                      ,'future'
+                      ,'furrr'
+                      ,'purrr'
+                      ,'dplyr'
+                      ,'hrbrthemes'
+                      ,'beepr'
+                      ,'datapasta'
+                      ,'patchwork'
+                      ,'sidrar'
+                      ,'devtools'
+                      ,'janitor'
+                      ,'lemon'
+                      ,'rio'
+                      ,'scales'
+                      ,'rlist'
+                      ,'survey'
+                      ,'srvyr'
+                      # devtools::install_github(""
+                      #microdadosBrasil
+                      ,'Hmisc'
+                      ,'forcats'
+                      ,'gridExtra'
+                      ,'ggplotify'
+                      ,'grid'
+                      ,'PNADcIBGE'
+                      ,'ggtext'
+                      ,'cowplot'
+                      ,'gganimate'  # install.packages("gganimate"
+                      ,'ggrepel'
+                      ,'ggnewscale'
+                      ,'magrittr'
+                      ,'maptools'
+                      ,'rgeos'
+                      ,'XLConnect'
+                      ,'geodist'
+                      ,'httr')
+
+
+# install packages----
+new_packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+
+if(length(new_packages)>1){install.packages(new_packages) }
+
+# load libraries ----
+lapply(list.of.packages, require, character.only = TRUE)
+
+# ceramic
+devtools::install_github("lucasmation/microdadosBrasil",force = FALSE)
+library(microdadosBrasil)
+
 
 # options
 mapviewOptions(platform = 'mapdeck')
@@ -75,3 +98,10 @@ data.table::setDTthreads(percent = 100)
 `%nlike%` = Negate(`%like%`)
 
 
+# remove vectors
+rm(list.of.packages)
+rm(new_packages)
+
+# Clean environment and memory
+
+gc(reset = TRUE)

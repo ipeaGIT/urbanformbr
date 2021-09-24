@@ -3,34 +3,26 @@
 # this script
 # i. reads data from GHS-BUILT (1km resolution)
 # ii. filter data from Brazil polygon
-# iii. saves data as .rds for future cleaning an manipulation
+# iii. saves brasil raster .tif for for future cleaning and manipulation
 
 # TO DO LIST:
+## FIX OR ERASE STARS FUNCTION
 ## CHECK THE NEED TO STACK RASTER/STARS FILES ON TOP OF EACH OTHER
 ## EXPAND THE FUNCTION TO OTHER RESOLUTIONS?
 
 # setup -------------------------------------------------------------------
 
 source('R/setup.R')
-library(stars)
-library(raster)
-library(rgdal)
-#library(terra)
 
 # directory ---------------------------------------------------------------
 
-ghsl_dir <- "//storage6/usuarios/Proj_acess_oport/data-raw/ghsl"
+ghsl_dir <- "../../data-raw/ghsl"
 
-
-# 1 read data -------------------------------------------------------------
-
-# * 1.1 read br polygon ---------------------------------------------------
+# 1 read polygon data -----------------------------------------------------
 
 br <- geobr::read_country()
 
-
-# 2 function and files ------------------------------------------------------
-
+# 2 function and files ----------------------------------------------------
 
 # * 2.1 files -------------------------------------------------------------
 
@@ -38,11 +30,17 @@ files_input <- dir(paste0(ghsl_dir,'/BUILT'), pattern = "1K_V2_0.tif$")
 
 files_output <- gsub('GLOBE','BRASIL', files_input)
 
-files_output_stars <- gsub('.tif','_stars.rds', files_output)
-files_output_raster <- gsub('.tif','_raster.rds', files_output)
+files_output_raster <- gsub('.tif','_raster.tif', files_output)
+files_output_stars <- gsub('.tif','_stars.tif', files_output)
+
+
+#files_output_stars <- gsub('.tif','_stars.rds', files_output)
+#files_output_raster <- gsub('.tif','_raster.rds', files_output)
 #files_output_terra <- gsub('.tif','_terra.rds', files_output)
 
-# * 2.2 function stars ---------------------------------------------------
+
+
+# * 2.2 function stars CORRIGIR SALVAR TIF ---------------------------------------------------
 
 f_save_brasil_stars <- function(input, output){
 
@@ -58,21 +56,21 @@ f_save_brasil_stars <- function(input, output){
   bua_crop <- sf::st_crop(bua, br)
 
   # create directory
-  if (!dir.exists("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl")){
-    dir.create("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl")
+  if (!dir.exists("../../data/urbanformbr/ghsl")){
+    dir.create("../../data/urbanformbr/ghsl")
   }
 
-  # save .rds data
-  #readr::write_rds(
+  ## ATTENTION don't uses save raster files as .rds.
+  ## See https://stackoverflow.com/a/48512398 for details
+  #saveRDS(
   #  bua_crop,
-  #  paste0("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/", output),
-  #  compress = 'gz'
-  #  )
+  #  paste0("../../data/urbanformbr/ghsl/", output),
+  #  compress = 'xz'
+  #)
 
-  saveRDS(
-    bua_crop,
-    paste0("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/", output),
-    compress = 'xz'
+  raster::writeRaster(
+    x = bua_crop,
+    filename = paste0('../../data/urbanformbr/ghsl/', output)
   )
 
 }
@@ -103,22 +101,31 @@ f_save_brasil_raster <- function(input, output){
   # crop raster data using br polygon
   bua_crop <- raster::crop(bua, br)
 
+  # mask raster data
+  bua_mask <- raster::mask(bua_crop, br)
+
+  # code below not run, but can be used to check
+  # according to ghsl data documentation, nodata value = -200
+  # check if there is any negative value (which would compromise area calc)
+  ## any(bua_mask[bua_mask<0])
+
   # create directory
-  if (!dir.exists("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl")){
-    dir.create("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl")
+  if (!dir.exists("../../data/urbanformbr/ghsl/BUILT/BRASIL")){
+    dir.create("../../data/urbanformbr/ghsl/BUILT/BRASIL")
   }
 
-  # save .rds data
-  #readr::write_rds(
+  # don't uses save raster files as .rds.
+  # See https://stackoverflow.com/a/48512398 for details
+  #saveRDS(
   #  bua_crop,
-  #  paste0("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/", output),
-  #  compress = 'gz'
-  #)
+  #  paste0('../../data/urbanformbr/ghsl/',output),
+  #  compress = 'xz'
+  #  )
 
-  saveRDS(
-    bua_crop,
-    paste0('//storage6/usuarios/Proj_acess_oport/data/urbanformbr/ghsl/',output),
-    compress = 'xz'
+  raster::writeRaster(
+    x = bua_mask,
+    filename = paste0('../../data/urbanformbr/ghsl/BUILT/BRASIL/', output),
+    overwrite = T
     )
 
 }

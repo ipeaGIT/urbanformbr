@@ -25,13 +25,13 @@ filter_savebr <- function(){
 
 # * 1.1 fua ---------------------------------------------------------------
 
-fua <- sf::read_sf('//storage6/usuarios/Proj_acess_oport/data-raw/ghsl/fua/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0.gpkg')
+fua <- sf::read_sf('../../data-raw/ghsl/fua/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0.gpkg')
 
 #dplyr::glimpse(fua)
 
 # * 1.2 ucdb --------------------------------------------------------------
 
-ucdb <- sf::read_sf("//storage6/usuarios/Proj_acess_oport/data-raw/ghsl/ucdb/GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_2.gpkg")
+ucdb <- sf::read_sf("../../data-raw/ghsl/ucdb/GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_2.gpkg")
 
 #dplyr::glimpse(ucdb)
 
@@ -56,13 +56,13 @@ ucdb <- ucdb %>% dplyr::filter(CTR_MN_ISO == "BRA")
 
 readr::write_rds(
   x = fua,
-  file = "//storage6/usuarios/Proj_acess_oport/data-raw/ghsl/fua/fua_br_2015_1k_v1.rds",
+  file = "../../data-raw/ghsl/fua/fua_br_2015_1k_v1.rds",
   compress = 'gz'
 )
 
 readr::write_rds(
   x = ucdb,
-  file = "//storage6/usuarios/Proj_acess_oport/data-raw/ghsl/ucdb/ucdb_br_2015_v1_2.rds",
+  file = "../../data-raw/ghsl/ucdb/ucdb_br_2015_v1_2.rds",
   compress = 'gz'
 )
 
