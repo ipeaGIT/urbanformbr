@@ -1,6 +1,4 @@
 #' https://tanthiamhuat.files.wordpress.com/2019/06/penalized-regression-essentials.pdf
-#'
-#'
 
 
 library(data.table)
@@ -11,6 +9,10 @@ library(caret)
 library(glmnet)
 library(mctest)
 library(doParallel)
+library(foreach)
+library(jtools)
+library(interactions)
+
 options(scipen = 999)
 `%nin%` <- Negate(`%in%`)
 
@@ -22,7 +24,6 @@ options(scipen = 999)
 ############### 1.1 read data
 df_raw <- readr::read_rds("../../data/urbanformbr/pca_regression_df/pca_regression_df_ready_to_use.rds")
 head(df_raw)
-
 
 
 
@@ -39,6 +40,7 @@ id_cols <- c('i_code_urban_concentration', 'i_name_urban_concentration', 'i_name
 # cols no to log because of non-positive values
 cols_not_to_log <- c( 'd_large_uca_pop',
                       'd_tma',
+                      'x_dissimilarity',
                       'x_pop_growth_15_00',
                       'x_prop_work_from_home_res_not_nucleo',
                       'x_prop_work_other_muni_res_nucleo',
@@ -53,61 +55,61 @@ df_log[, (cols_to_log) := lapply(.SD, function(x){ log(x) } ), .SDcols=cols_to_l
 
 
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-cor(df_raw$x_built_total_total_2014, df_raw$x_avg_cell_distance)
 
 ############### 1.3 select variables to drop
 # dropping built area vars because we measure 'compactness / sprawl' with the x_avg_cell_distance var already
-drop1 <- c('x_built_total_total_2014', 'x_urban_extent_size_2014', 'x_prop_built_consolidated_area_2014')
+drop1 <- c( # 'x_built_total_total_2014'
+            'x_urban_extent_size_2014'
+           , 'x_prop_built_consolidated_area_2014'
+           )
 
-# we already use x_circuity_avg
-drop2 <- c('x_sd_elevation', 'x_mean_slope')
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+drop2 <- c('x_sd_elevation', 'x_mean_slope' # we already use x_circuity_avg
+           , 'x_n_large_patches'            # we already use x_proportion_largest_patch
+           , 'd_large_uca_pop'              # we control for pop continuous
+           , 'x_rooms_per_household'        # we control for experienced density
+           , 'x_residents_per_household'    # we control for experienced density
+           , 'x_prop_black'                 # no strong theoretical justification
+           )
+
+
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # drop on radius in experimented measures
 drop3 <- c('x_density_pop_05km_total_2014',
            'x_density_built_05km_total_2014', 'x_density_built_10km_total_2014',
-           'x_dissimilarity_5km', 'x_dissimilarity_15km'
+           'x_dissimilarity_5km', 'x_dissimilarity_10km', 'x_dissimilarity_15km'
            )
 
 
 # other multicolinear variables
-drop4 <- c('x_prop_services', # colinear with x_prop_industry
-           'x_prop_employed' # colinear with x_wghtd_mean_household_income_per_capita
-           )
+drop4 <- c('x_prop_services',  # colinear with x_prop_industry
+           'x_prop_employed',  # colinear with x_wghtd_mean_household_income_per_capita
+           'x_prop_high_educ', # colinear with x_wghtd_mean_household_income_per_capita
+           'x_prop_formal',    # colinear with x_wghtd_mean_household_income_per_capita
+           'x_k_avg'           # colinear with x_wghtd_mean_household_income_per_capita
+)
 
-cor(df_raw$x_prop_autos_pes, df_raw$x_prop_employed)
+# work from home
+drop5 <- c(   'x_prop_work_from_home_res_nucleo'
+            , 'x_prop_work_from_home_res_not_nucleo'
+            , 'x_prop_work_other_muni_res_nucleo'
+            , 'x_prop_work_other_muni_res_not_nucleo')
 
-# !!!!!!!!!!!!!!
-x_prop_autos_pes
-x_prop_high_educ
-x_wghtd_mean_household_income_per_capita
-
-cor(df_raw$x_prop_autos_pes, df_raw$x_wghtd_mean_household_income_per_capita)
-cor(df_raw$x_prop_autos_pes, df_raw$x_prop_high_educ)
-
-
-cor(df_raw$x_built_total_total_2014, df_raw$x_avg_cell_distance)
-
-
-sprawl >> car dependence >> fleet >> longer trips >> fuel
-
-escolaridade << >> income >> fleet
-
-
-fuel << >> income
 
 
 
 ### drop vars
-df_fuel <- dplyr::select(df_log, - c('y_wghtd_mean_commute_time', all_of(c(id_cols, drop1, drop2, drop3, drop4)) ))
-# df_fuel <- copy(df_log)
+df_fuel <- dplyr::select(df_log, - c('y_wghtd_mean_commute_time', all_of(c(id_cols, drop1, drop2, drop3, drop4, drop5)) ))
+df_time <- dplyr::select(df_log, - c('y_fuel_consumption_per_capita_2010', all_of(c(id_cols, drop1, drop2, drop3, drop4, drop5)) ))
+head(df_fuel)
+# df_fuel <- dplyr::select(df_log, - all_of(c('y_wghtd_mean_commute_time',id_cols)))
 
 
 
 
 
-############### Fuel - Train model --------------------------
+############### Fuel - Train model ---------------------------------------------
+
 
 
 ### Split the data into training and test set
@@ -115,7 +117,7 @@ set.seed(42)
 
 # train with 60% to find alpha and lambda
 training.samples <- createDataPartition(df_fuel$y_fuel_consumption_per_capita_2010
-                                        , p = 0.6
+                                        , p = 0.70
                                         , list = FALSE)
 
 # split
@@ -125,15 +127,20 @@ test_data <- df_fuel[-training.samples, ]
 # Outcome and Predictor variables
 x_train <- model.matrix(y_fuel_consumption_per_capita_2010~., train_data)[,-1] # without intercept
 x_test <- model.matrix(y_fuel_consumption_per_capita_2010~., test_data)[,-1] # without intercept
-x <- model.matrix(y_fuel_consumption_per_capita_2010~., df_fuel)[,-1] # without intercept
+x_full <- model.matrix(y_fuel_consumption_per_capita_2010~., df_fuel)[,-1] # without intercept
 
 y_test <- test_data$y_fuel_consumption_per_capita_2010
 y_train <- train_data$y_fuel_consumption_per_capita_2010
-y <- df_fuel$y_fuel_consumption_per_capita_2010
+y_full <- df_fuel$y_fuel_consumption_per_capita_2010
 
 
 
 
+# trainning in parallel
+library(doParallel)
+library(foreach )
+cl <- parallel::makePSOCKcluster(20)
+doParallel::registerDoParallel(cl)
 
 
 ###### ridge regression (alpha = 0) ----------------
@@ -141,7 +148,7 @@ y <- df_fuel$y_fuel_consumption_per_capita_2010
   # Find the best lambda using cross-validation (the one that minimizes the cross-validation prediction error rate)
   set.seed(42)
 
-  cv <- cv.glmnet(x_train, y_train, alpha = 0)
+  cv <- cv.glmnet(x = x_train, y = y_train, alpha = 0, nfolds = 30, parallel = T)
 
   # Display the best lambda value to adjust the intensity of coefficient shrinkage
   cv$lambda.min
@@ -161,8 +168,7 @@ y <- df_fuel$y_fuel_consumption_per_capita_2010
     Rsquare = R2(predictions_ridge, test_data$y_fuel_consumption_per_capita_2010)
   )
   ## RMSE Rsquare
-  ## 1 0.2181782 0.8218827
-
+  ## 1 0.1810904 0.8641129
 
 
 
@@ -171,7 +177,7 @@ y <- df_fuel$y_fuel_consumption_per_capita_2010
 
   # Find the best lambda using cross-validation
   set.seed(42)
-  cv <- cv.glmnet(x_train, y_train, alpha = 1)
+  cv <- cv.glmnet(x_train, y_train, alpha = 1, nfolds = 30, parallel = T)
 
   # Display the best lambda value
   cv$lambda.min
@@ -247,33 +253,33 @@ y <- df_fuel$y_fuel_consumption_per_capita_2010
 # the best model is the one that minimizes the prediction error RMSE (lowest median RMSE - Root Mean Square Error)
 
 
-# Setup a grid range of lambda values:
-lambda <- 10^seq(-3, 3, length = 100)
-alpha <- seq(0.1, 0.9, length = 100)
+# # Setup a grid range of lambda values:
+# lambda <- 10^seq(-3, 3, length = 100)
+# alpha <- seq(0.1, 0.9, length = 100)
 
 # ridge model
 set.seed(42)
-ridge <- train(
+ridge <- caret::train(
                 y_fuel_consumption_per_capita_2010 ~., data = train_data, method = "glmnet",
-                trControl = trainControl("cv", number = 10),
+                trControl = trainControl("cv", number = 100),
                 tuneGrid = expand.grid(alpha = 0, lambda = lambda)
                 )
 
 # lasso model
 set.seed(42)
-lasso <- train(
+lasso <- caret::train(
                 y_fuel_consumption_per_capita_2010 ~., data = train_data, method = "glmnet",
-                trControl = trainControl("cv", number = 10),
+                trControl = trainControl("cv", number = 100),
                 tuneGrid = expand.grid(alpha = 1, lambda = lambda)
                 )
 
 # elastic model
 set.seed(42)
-elastic <- train(
-                y_fuel_consumption_per_capita_2010 ~., data = train_data, method = "glmnet",
-                trControl = trainControl("cv", number = 10),
-                tuneLength = 10
-              )
+elastic <- caret::train(
+                        y_fuel_consumption_per_capita_2010 ~., data = train_data, method = "glmnet",
+                        trControl = trainControl("cv", number = 100),
+                        tuneLength = 100 #  test the combination of 10 different values for alpha and lambda.
+                      )
 
 
 # linear model
@@ -291,8 +297,8 @@ elastic <- train(
 
 
 ### Comparing models performance:
-# use the one with the lowest median RMSE
-models <- list(ridge = ridge, lasso = lasso, elastic = elastic, elastic2=elastic2)
+# use the one with the lowest (min and median) RMSE
+models <- list(ridge = ridge, lasso = lasso, elastic = elastic)
 resamples(models) %>% summary( metric = "RMSE")
 
 
@@ -339,12 +345,13 @@ qgraph::qgraph( cor( dplyr::select(df_fuel, - 'y_fuel_consumption_per_capita_201
 
 
 
-### elastic for good -------------
+############### Elastic for good ---------------------------------------------
 
 ### train the model using the training set
 set.seed(42)
 
 library(doParallel)
+library(foreach)
 # library(mboost)
 # library(randomForest)
 
@@ -352,13 +359,13 @@ cl <- parallel::makePSOCKcluster(20)
 doParallel::registerDoParallel(cl)
 
 system.time(
-            model <- caret::train(
+ elastic_model_train <- caret::train(
             y_fuel_consumption_per_capita_2010 ~., data = train_data
             , method = "glmnet"
             #, method = "glmboost"
             #, method = "rf"
-            , trControl = trainControl("cv", number = 20)
-            ,  tuneLength = 20  #  test the combination of 20 different values for alpha and lambda.
+            , trControl = trainControl("cv", number = 10)
+            ,  tuneLength = 10  #  test the combination of 20 different values for alpha and lambda.
             )
           )
 
@@ -369,18 +376,15 @@ rm(list=ls(name=env), pos=env)
 
 # Best tuning parameter
 # The best alpha and lambda values are those values that minimize the cross-validation error
-model$bestTune
-#         alpha     lambda
-# 252 0.6684211 0.01917282
+elastic_model_train$bestTune
 
 # Coefficient of the final model using the best alpha and lambda values
-my_coefs <- coef(model$finalModel, alpha=model$bestTune$alpha, lambda=model$bestTune$lambda)
-my_coefs
-
-
+elastic_coefs_train <- coef(object = elastic_model_train$finalModel,
+                            alpha  = elastic_model_train$bestTune$alpha,
+                            lambda = elastic_model_train$bestTune$lambda)
 
 # Make predictions on the test data
-predictions <- model %>% predict(x_test)
+predictions <- elastic_model_train %>% predict(x_test)
 
   # plot
   plot(predictions, y_test)
@@ -393,51 +397,58 @@ data.frame(
 )
 
 
-# apply model
-model_elastic <- glmnet(x=x,
-                        y=y,
-                        alpha = model$bestTune$alpha,
-                        lambda = model$bestTune$lambda)
-coef(model_elastic)
+
+
+### apply model
+elastic_model_full <- glmnet(x=x_full,
+                             y=y_full,
+                             alpha = elastic_model_train$bestTune$alpha,
+                             lambda = elastic_model_train$bestTune$lambda)
 
 
 
 
-############### Fuel - Apply model --------------------------
 
-# Outcome and Predictor variables
-xvector <- model.matrix(y_fuel_consumption_per_capita_2010~., df_fuel)[,-1] # without intercept
-yvector <- df_fuel$y_fuel_consumption_per_capita_2010
-
-
-model_elastic <- glmnet(x=x_test, y=y_test, alpha = model$bestTune$alpha, lambda = model$bestTune$lambda)
-coef(model_elastic)
-
-
-# Make predictions on the test data
-predictions <- model_elastic %>% predict(x_test)
-
-# Model performance metrics
-data.frame(
-  RMSE = RMSE(predictions, df_fuel$y_fuel_consumption_per_capita_2010),
-  Rsquare = R2(predictions, df_fuel$y_fuel_consumption_per_capita_2010)
-)
 
 
 
 #### OLS dropping weak variables
 
 # identify vars to drop, according to elastic net results
-my_coefs <- coef(model_elastic)
-vars_to_drop <- my_coefs[,1] %>% abs() == 0
-my_coefs[vars_to_drop,]
-cols_to_remove <- rownames(my_coefs)[vars_to_drop ]
+elastic_coefs_full <- coef(elastic_model_full)
+vars_to_drop <- elastic_coefs_full[,1] %>% abs() == 0
+elastic_coefs_full[vars_to_drop,]
+cols_to_remove <- rownames(elastic_coefs_full)[vars_to_drop ]
+
+# rn OLS with vars suggested by Elastic net
 temp_df <- dplyr::select(df_fuel, - all_of(cols_to_remove))
-model_raw <- lm(y_fuel_consumption_per_capita_2010~., temp_df)
+model_raw <- lm(y_fuel_consumption_per_capita_2010~.,
+
+
+                temp_df)
+
+
+temp_df <- dplyr::select(temp_df, - c('x_prop_autos_pes','x_prop_motos_pes'))
+
+summary(model_raw)
+# RMSE
+sqrt(mean(model_raw$residuals^2))
+0.1677349
+0.1871099
+
+AIC(model_raw)
+-98.84701
+-62.62047
+
+R-squared:  0.8739
+R-squared:  0.845
 
 
 
+# identify which variable present multicollinearity (VIF values above 10 are a bad sign)
+mctest::imcdiag(model_raw, method ='VIF')
 
+summary(model_raw)
 
 
 
@@ -455,17 +466,6 @@ interact_plot(fiti, pred = x_avg_cell_distance   , modx = x_pop_2015, plot.point
 ######################################################################################################
 
 
-# Outcome and Predictor variables
-xvector <- model.matrix(y_fuel_consumption_per_capita_2010~., df_fuel)[,-1] # without intercept
-yvector <- df_fuel$y_fuel_consumption_per_capita_2010
-
-
-model_elastic <- glmnet(xvector, yvector, alpha = model$bestTune$alpha, lambda = model$bestTune$lambda)
-coef(model_elastic)
-
-
-tmp_coeffs <- coef(model_elastic, s = "lambda.min")
-data.frame(name = tmp_coeffs@Dimnames[[1]][tmp_coeffs@i + 1], coefficient = tmp_coeffs@x)
 
 
 model_lm <- lm(y_fuel_consumption_per_capita_2010~., df_fuel)
@@ -483,7 +483,7 @@ pcor(Boston, method = "pearson")
 
 
 ######## duvidas ---------------------------------------------------------
-1. elastic net não dá significancia estatistica? p-value ou t-statistic?
+
 
 
 sensibilidade para testar raios
