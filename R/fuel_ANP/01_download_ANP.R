@@ -3,6 +3,10 @@ rm(list=ls())
 library(magrittr)
 library(data.table)
 
+
+#### 1. Donwload raw data ---------------------------------------------------------------
+
+
 fixed_link <- "https://www.gov.br/anp/pt-br/centrais-de-conteudo/dados-estatisticos/de/arquivos-vendas-de-derivados-de-petroleo-e-biocombustiveis/"
 fixed_link1 <- "http://www.anp.gov.br/arquivos/dados-estatisticos/vendas-combustiveis/"
 `%nin%` <- Negate(`%in%`)
@@ -53,6 +57,9 @@ for(i in 1:length(fuel_link)){ # i = 1
 }
 
 
+
+#### 2. Pile up data of all years and types of fuel ---------------------------------------------------------------
+
 xlsx_files <- list.files(path = "../../data-raw/ANP/",pattern = ".xlsx",full.names = TRUE)
 xslx_all <- lapply(seq_along(xlsx_files),function(i){ # i = 1
   message(i)
@@ -90,4 +97,6 @@ xls_all <- lapply(seq_along(xlsx_files),function(i){ # i = 1
 # merge
 dt_all <- rbind(xls_all,xslx_all)
 
+
+# save data
 readr::write_rds(x = dt_all,file = "../../data/urbanformbr/fuel/fuel_cities.rds",compress = "gz")
