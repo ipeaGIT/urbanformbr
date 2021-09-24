@@ -163,6 +163,19 @@ source('R/setup.R')
     dplyr::select(-c(name_uca_case,theil_h,entropy)) %>%
     dplyr::rename(code_urban_concentration = code_muni)
 
+  df_landuse[
+    ,
+    `:=`(
+      land_use_mix = 1 - dissimilarity,
+      land_use_mix_5km = 1 - dissimilarity_5km,
+      land_use_mix_10km = 1 - dissimilarity_10km,
+      land_use_mix_15km = 1 - dissimilarity_15km
+    )
+  ]
+
+  df_landuse <- df_landuse %>%
+    select(-starts_with("dissimilarity"))
+
 
   # * street metrics --------------------------------------------------------
   df_street <- data.table::fread("../../data/urbanformbr/pca_regression_df/streets_metrics.csv") %>%
