@@ -46,9 +46,9 @@ sf_object <- suppressWarnings(sf::st_transform(sf_object, 3857))
 
 ### calculate distance matrix
   coords <- suppressWarnings(st_coordinates( st_centroid(sf_object) ))
-  distance <- fields::rdist(coords)
-  # distance <- as.matrix(distance)
-  plot(coords)
+  distance <- parallelDist::parDist(coords)
+  distance <- as.matrix(distance)
+  #plot(coords)
 
   # # which is faster?
   # system.time( distance <- geodist::geodist(coords, measure = "cheap") )
@@ -103,8 +103,8 @@ sf_object <- suppressWarnings(sf::st_transform(sf_object, 3857))
 
   #return(UCI[1])
   output_df <- data.frame(
-                    UCI = UCI,
-                    location_coef = LC,
+                     UCI = UCI,
+                     location_coef = LC,
                     spatial_separation = v,
                     spatial_separation_max = v_max
                     )
