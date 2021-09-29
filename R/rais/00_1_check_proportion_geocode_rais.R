@@ -1,5 +1,7 @@
 # description -------------------------------------------------------------
 
+# from # https://github.com/ipeaGIT/acesso_oport/blob/master/R/fun/empregos/empregos_geo.R
+
 # this script reads geocoded employment data from RAIS; filters for the 184 ucas in
 # the study; estimates the percentage of good quality geocoding, according
 # to the criteria used in the AOP; saves geocoded employment data to estimate
@@ -74,8 +76,6 @@ df_classify_uca_large <- subset(
 
 
 # read and clean rais estabs raw ------------------------------------------
-
-# function from # https://github.com/ipeaGIT/acesso_oport/blob/master/R/fun/empregos/empregos_geo.R
 
 #CHANGE FOR 2010 WHEN GEOCODING IS COMPLETE
 # ano <- 2017

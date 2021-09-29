@@ -16,16 +16,14 @@
 # uf: state abbreviation
 # cep: postal code
 
-
-# all firms from will be geocoded
-
 # setup -------------------------------------------------------------------
 
 source('R/setup.R')
 
+options(scipen = 99999)
+
 # define function ---------------------------------------------------------
 
-# FAZER PRIMEIRO 2010-2016
 # DEPOIS, FAZER 1986-2009 E VERIFICAR DIFERENCA ENTRE ANOS
 
 # ano <- 2010
@@ -35,36 +33,48 @@ f_rais_input_streetmap <- function(ano) {
   col_names <- fread(
     sprintf('//storage6/bases/DADOS/RESTRITO/RAIS/csv/estab%s.csv', ano),
     nrows = 100,
-    #select = c("id_estab", "qt_vinc_ativos", 'nat_jur2018',  "logradouro", "bairro", "codemun", "uf", "cep"),
     colClasses = "character") %>%
     colnames()
 
   # * not 2010 ------------------------------------------------------------------
-  666666666666666 COMPLETAR PARA 2011 EM DIANTE; RODAR TUDO EM PARALELO DEPOIS
-  if (ano != 2010) {######## COMPLETAR ELSE 2011 PRA FRENTE
-    columns <- c("id_estab", "qt_vinc_ativos", col_names[col_names %like% "nat_jur"],
-                 "logradouro", "bairro", "codemun", "uf", "cep")
+  if (ano != 2010) {
+    columns <- c("id_estab", "logradouro", "bairro", "codemun",
+                 "uf", "cep")
+
+    # abrir dados
+    rais_estabs <- data.table::fread(
+      sprintf('//storage6/bases/DADOS/RESTRITO/RAIS/csv/estab%s.csv', ano)
+      #, nrows = 5
+      , colClasses='character'
+      , select = columns
+      , encoding = "UTF-8"
+      )
+
+    # renomear colunas
+    colnames(rais_estabs) <- c("id_estab","logradouro","bairro","codemun","uf","cep")
 
 
   # * 2010 ------------------------------------------------------------------
-
   } else {
 
     # 1) dados dos estabelecimentos
 
     # selecionar colunas
-    columns <- c("id_estab", "qt_vinc_ativos", col_names[col_names %like% "nat_jur"],
-                 "logradouro", "codemun", "uf", "cep")
+    columns <- c("id_estab","logradouro", "codemun", "uf", "cep")
 
     # abrir dados
-    rais_estabs <- data.table::fread(sprintf('//storage6/bases/DADOS/RESTRITO/RAIS/csv/estab%s.csv', ano)
-                         #, nrows = 5
-                         , colClasses='character'
-                         , select = columns)
+    rais_estabs <- data.table::fread(
+      sprintf('//storage6/bases/DADOS/RESTRITO/RAIS/csv/estab%s.csv', ano)
+      #, nrows = 5
+      , colClasses='character'
+      , select = columns
+      , encoding = "UTF-8"
+      )
 
     # renomear colunas
-    colnames(rais_estabs) <- c("id_estab", "qt_vinc_ativos", "nat_jur", "logradouro",
-                               "codemun", "uf", "cep")
+    colnames(rais_estabs) <- c("id_estab","logradouro","codemun","uf","cep")
+
+  }
 
     # trazer todos estab id para 14 caracteres
     rais_estabs[, id_estab := stringr::str_pad(id_estab, width = 14, pad = 0)]
@@ -75,6 +85,8 @@ f_rais_input_streetmap <- function(ano) {
     muni_lookup <- muni_lookup %>%
       dplyr::select(codemun = code_muni, name_muni, abrev_state) %>%
       dplyr::mutate(codemun = substr(codemun, 1, 6))
+
+    data.table::setDT(muni_lookup)
 
     rais_estabs[
       muni_lookup,
@@ -134,12 +146,20 @@ f_rais_input_streetmap <- function(ano) {
       sprintf("../../data/geocode/rais/%s/rais_%s_input_geocode.csv", ano, ano)
     )
 
-  }
-
-
-
 }
 
+
+
+
+
 # run function ------------------------------------------------------------
+anos <- 2010:2016
+
+future::plan(future::multisession)
+
+furrr::future_walk(
+  anos,
+  ~f_rais_input_streetmap(.)
+)
 
 
