@@ -28,10 +28,11 @@ formula_elasticNet <- y_fuel_consumption_per_capita_2010 ~. +
 
 
 
+temp_df <- dplyr::select(df_fuel, -'y_fuel_consumption_total_2010')
 
 
 elastic_net_model <- train(formula_elasticNet,
-                           data       = df_fuel,
+                           data       = temp_df,
                            method     = "glmnet",
                            preProcess = c("center", "scale"),
                            tuneLength = 100,

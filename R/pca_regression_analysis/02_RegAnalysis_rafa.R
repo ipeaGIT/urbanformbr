@@ -13,7 +13,7 @@ library(foreach)
 library(jtools)
 library(interactions)
 
-options(scipen = 999)
+options(scipen = 99)
 `%nin%` <- Negate(`%in%`)
 
 
@@ -40,7 +40,7 @@ id_cols <- c('i_code_urban_concentration', 'i_name_urban_concentration', 'i_name
 # cols no to log because of non-positive values
 cols_not_to_log <- c( 'd_large_uca_pop',
                       'd_tma',
-                      'x_dissimilarity',
+                    #  'x_land_use_mix',
                       'x_pop_growth_15_00',
                       'x_prop_work_from_home_res_not_nucleo',
                       'x_prop_work_other_muni_res_nucleo',
@@ -58,10 +58,11 @@ df_log[, (cols_to_log) := lapply(.SD, function(x){ log(x) } ), .SDcols=cols_to_l
 
 ############### 1.3 select variables to drop
 # dropping built area vars because we measure 'compactness / sprawl' with the x_avg_cell_distance var already
-drop1 <- c( # 'x_built_total_total_2014'
-            'x_urban_extent_size_2014'
+drop1 <- c(  'x_built_total_total_2014'
+            # 'x_urban_extent_size_2014'
            , 'x_prop_built_consolidated_area_2014'
            )
+
 
 
 drop2 <- c('x_sd_elevation', 'x_mean_slope' # we already use x_circuity_avg
@@ -77,7 +78,7 @@ drop2 <- c('x_sd_elevation', 'x_mean_slope' # we already use x_circuity_avg
 # drop on radius in experimented measures
 drop3 <- c('x_density_pop_05km_total_2014',
            'x_density_built_05km_total_2014', 'x_density_built_10km_total_2014',
-           'x_dissimilarity_5km', 'x_dissimilarity_10km', 'x_dissimilarity_15km'
+           'x_land_use_mix_5km', 'x_land_use_mix_10km', 'x_land_use_mix_15km'
            )
 
 
@@ -314,7 +315,19 @@ model_raw <- lm(y_fuel_consumption_per_capita_2010~., df_fuel)
 summary(model_raw)
 
 # identify which variable present multicollinearity (VIF values above 10 are a bad sign)
-mctest::imcdiag(model_raw, method ='VIF')
+vif_test <- mctest::imcdiag(model_raw, method ='VIF')
+
+# identify multicolinear variables
+colinear_varnames <- subset(as.data.frame(vif_test$alldiag), VIF   ==T) %>% rownames()
+colinear_varnames <- names(temp_df)[names(temp_df) %in% colinear_varnames]
+qgraph::qgraph( cor( dplyr::select(temp_df, colinear_varnames) ) ,
+                #theme='gray',
+                vsize=10,
+                label.cex=4,
+                labels=names(dplyr::select(temp_df, colinear_varnames)),
+                edge.labels = TRUE,
+                layout='spring')
+
 
 # check partial correlations
 library(ppcor)
@@ -322,9 +335,13 @@ pcor(df_fuel, method = "pearson")
 
 
 library(qgraph)
-qgraph::qgraph( cor( dplyr::select(df_fuel, - 'y_fuel_consumption_per_capita_2010') ) , theme='gray', layout='spring')
-
-
+qgraph::qgraph( cor( dplyr::select(df_fuel, - 'y_fuel_consumption_per_capita_2010') ) ) ,
+                #theme='gray',
+                vsize=10,
+                label.cex=4,
+                labels=names(dplyr::select(df_fuel, - 'y_fuel_consumption_per_capita_2010') )),
+                edge.labels = TRUE,
+                layout='spring')
 
 # update regression model and check multicollinearity (VIF values above 10 are a bad sign)
   model_raw2 <- lm(y_fuel_consumption_per_capita_2010 ~., df_fuel)
