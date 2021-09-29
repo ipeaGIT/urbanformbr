@@ -12,6 +12,21 @@ pop2015 <- sidrar::get_sidra(x = 6579
 )
 
 
+### census pop 2010 ----
+sidrar::info_sidra(x = 1702)
+
+pop2010 <- sidrar::get_sidra(x = 1702
+                             , variable = 134
+                             , classific  = c('c455')
+                             , category = list(0)
+                             , period = as.character("2010")
+                             , geo = "City"
+)
+
+sum(pop2010$Valor)
+#> 190072903
+
+
 # fix names
 
 data.table::setDT(pop2015)
