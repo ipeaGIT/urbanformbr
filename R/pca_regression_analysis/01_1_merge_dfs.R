@@ -280,12 +280,13 @@ source('R/setup.R')
   df_merge <- df_merge %>%
     mutate(fuel_consumption_per_capita_2010 = fuel_consumption_total_2010 / pop_2015)
 
+  df_merge$fuel_energy_per_capita
 
 
   # * reorder columns -------------------------------------------------------
   df_merge <- df_merge %>%
     dplyr::relocate(
-      c(fuel_consumption_per_capita_2010, fuel_consumption_total_2010, wghtd_mean_commute_time),
+      c(fuel_consumption_per_capita_2010, fuel_consumption_total_2010, fuel_energy_per_capita, wghtd_mean_commute_time),
       .after = name_uca_case
       )
 
