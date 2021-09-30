@@ -15,22 +15,6 @@ source('R/setup.R')
     dplyr::select(-c(code_muni_uca))
 
 
-  # * fleet -----------------------------------------------------------------
-  #df_fleet <- readr::read_rds("../../data/urbanformbr/pca_regression_df/fleet_and_pop.rds") %>%
-  #  janitor::clean_names() %>%
-  #  dplyr::select(-c(uf,total_autos,total_motos,pop))
-
-  # filter only 184 from our df
-  #df_fleet <- subset(df_fleet, code_urban_concentration %in% df_prep$code_urban_concentration)
-
-  #df_fleet <- df_fleet %>%
-  # tidyr::pivot_wider(
-  #   names_from = c("ano"),
-  #  values_from = c('autos_per_pop','motos_per_pop','motorization_rate')
-  # )
-
-  #df_fleet <- df_fleet %>%
-  #  dplyr::select(code_urban_concentration,autos_per_pop_2010,motos_per_pop_2010)
 
   # * pop -------------------------------------------------------------------
 
@@ -113,6 +97,25 @@ source('R/setup.R')
 
   df_fuel <- df_fuel %>%
     dplyr::select(code_urban_concentration, fuel_consumption_total_2010)
+
+
+
+
+  # * energy ------------------------------------------------------------------
+
+  df_energy <- readr::read_rds("../../data/urbanformbr/pca_regression_df/tep_energy_2010.rds") %>%
+    dplyr::select(code_urban_concentration, tep )
+
+  # filter only 184 from our df
+  df_energy <- subset(df_energy, code_urban_concentration %in% df_prep$code_urban_concentration)
+
+  df_energy[, tep := as.numeric(tep)]
+  # df_energy[ tep ==0]
+
+  # rename
+  setnames(df_energy, 'tep', 'fuel_energy_per_capita')
+
+
 
   # * pib -------------------------------------------------------------------
   #df_pib <- readr::read_rds("../../data/urbanformbr/pca_regression_df/pib.rds") %>%
@@ -230,6 +233,9 @@ source('R/setup.R')
     dplyr::left_join(
       df_fuel
     ) %>%
+    dplyr::left_join(
+      df_energy
+    ) %>%
     #dplyr::left_join(
     #  df_pib
     #) %>%
@@ -274,7 +280,9 @@ source('R/setup.R')
   df_merge <- df_merge %>%
     mutate(fuel_consumption_per_capita_2010 = fuel_consumption_total_2010 / pop_2015)
 
-    # * reorder columns -------------------------------------------------------
+
+
+  # * reorder columns -------------------------------------------------------
   df_merge <- df_merge %>%
     dplyr::relocate(
       c(fuel_consumption_per_capita_2010, fuel_consumption_total_2010, wghtd_mean_commute_time),
