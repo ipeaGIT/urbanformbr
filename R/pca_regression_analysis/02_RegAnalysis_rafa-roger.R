@@ -13,29 +13,17 @@ doParallel::registerDoParallel(cl)
 # K fold cross validation
 train_control <- trainControl(method = "repeatedcv",
                               number = 3,
-                              repeats = 100,
+                              repeats = 10,
                               search = "random",
                               verboseIter = TRUE)
 
-formula_elasticNet <- y_fuel_consumption_per_capita_2010 ~. +
-  # x_pop_2015 * x_prop_pop_consolidated_area_2014 +
-  x_pop_2015 * x_density_pop_10km_total_2014 +
-  x_pop_2015 * x_dissimilarity +
-  # x_pop_2015 * x_intersection_density_km +
-  # x_pop_2015 * x_circuity_avg +
-  # x_pop_2015 * x_proportion_largest_patch +
-  x_pop_2015 * x_avg_cell_distance
+formula_elasticNet <- y_fuel_consumption_per_capita_2010 ~. + x_pop_2015 * x_density_pop_10km_total_2014
 
-
-
-temp_df <- dplyr::select(df_fuel, -'y_fuel_consumption_total_2010')
-
-
-elastic_net_model <- train(formula_elasticNet,
-                           data       = temp_df,
+elastic_net_model <- train(as.formula(model),
+                           data       = df_fuel,
                            method     = "glmnet",
                            preProcess = c("center", "scale"),
-                           tuneLength = 100,
+                           tuneLength = 10,
                            trControl  = train_control
                            )
 

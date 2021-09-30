@@ -1,6 +1,7 @@
 #' https://tanthiamhuat.files.wordpress.com/2019/06/penalized-regression-essentials.pdf
 
 
+library(pbapply)
 library(data.table)
 library(stargazer)
 library(readr)
@@ -100,7 +101,7 @@ drop5 <- c(   'x_prop_work_from_home_res_nucleo'
 
 
 ### drop vars
-df_fuel <- dplyr::select(df_log, - c('y_wghtd_mean_commute_time', all_of(c(id_cols, drop1, drop2, drop3, drop4, drop5)) ))
+df_fuel <- dplyr::select(df_log, - c('y_wghtd_mean_commute_time', 'y_fuel_consumption_total_2010', all_of(c(id_cols, drop1, drop2, drop3, drop4, drop5)) ))
 df_time <- dplyr::select(df_log, - c('y_fuel_consumption_per_capita_2010', all_of(c(id_cols, drop1, drop2, drop3, drop4, drop5)) ))
 head(df_fuel)
 # df_fuel <- dplyr::select(df_log, - all_of(c('y_wghtd_mean_commute_time',id_cols)))
