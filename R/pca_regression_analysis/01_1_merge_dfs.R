@@ -213,6 +213,16 @@ source('R/setup.R')
     code_urban_concentration %in% df_prep$code_urban_concentration
     )
 
+
+
+  # * urban form cluster -------------------------------------------------------------------
+  df_cluster <- fread('../../data/urbanformbr/pca_regression_df/cluster_output/cluster_1.csv')
+  head(df_cluster)
+
+   # select and rename columns
+  df_cluster <- dplyr::select(df_cluster, c('i_code_urban_concentration', 'cluster4'))
+  setnames(df_cluster, 'i_code_urban_concentration', 'code_urban_concentration')
+
   # * * isolated uca --------------------------------------------------------
   #df_classify_isolated <- readr::read_rds('../../data/urbanformbr/pca_regression_df/classify_uca_isolated.rds')
 
@@ -250,7 +260,11 @@ source('R/setup.R')
     ) %>%
     dplyr::left_join(
       df_landuse
+    ) %>%
+    dplyr::left_join(
+      df_cluster
     )
+
 
   df_merge <- dplyr::left_join(
     df_merge,

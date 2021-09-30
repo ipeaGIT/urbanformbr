@@ -3,7 +3,7 @@
 # 11.Models
 
 #########  organize model components ---------------------------------------
-vars_dep <- 'y_fuel_consumption_per_capita_2010'
+vars_dep <- 'y_fuel_energy_per_capita'
 vars_forma <- '~ x_avg_cell_distance + x_density_pop_10km_total_2014 + x_land_use_mix + x_proportion_largest_patch + x_intersection_density_km + x_circuity_avg' #  + x_prop_pop_consolidated_area_2014
 vars_controls <-'+ x_prop_dom_urban + x_wghtd_mean_household_income_per_capita + x_prop_razao_dep + x_prop_industry' # x_prop_autos_dom + x_prop_motos_dom
 vars_interactions <- '+ I(x_density_pop_10km_total_2014^2)'
@@ -29,7 +29,7 @@ elastic_model <- function(model){ # model <- all_models[[3]]
   # K fold cross validation
   train_control <- trainControl(method = "repeatedcv",
                                 number = 3,
-                                repeats = 50,
+                                repeats = 100,
                                 search = "random",
                                 verboseIter = TRUE)
 
@@ -37,7 +37,7 @@ elastic_model <- function(model){ # model <- all_models[[3]]
                              data       = df_fuel,
                              method     = "glmnet",
                              # preProcess = c("center", "scale"), # rogerio. Ja esta em log, precisa disso? isso muda o tunning
-                             tuneLength = 50,
+                             tuneLength = 100,
                              trControl  = train_control)
 
   # # stop parallel
@@ -61,7 +61,7 @@ elastic_model <- function(model){ # model <- all_models[[3]]
   vars_to_keep <- stringr::str_replace(vars_to_keep, ':', '*') # fix interaction terms
 
   # write model specification
-  specification = paste0('y_fuel_consumption_per_capita_2010 ~ ',  # y
+  specification = paste0('y_fuel_energy_per_capita ~ ',  # y
                          paste(vars_to_keep, collapse  = ' + ')) # x
 
   # run OLS with vars suggested by Elastic net
@@ -106,7 +106,7 @@ stargazer(all_models_output,
           #column.labels= c('a', 'b', 'c', 'd', 'e', 'f'),
           #column.labels= models_names,
           out.header=F,
-          out = "fuel_all_models_noveic.html",
+          out = "energy_all_models_noveic.html",
           p.auto=F,
           add.lines = list(c('AIC', paste0(aic_list)))
           )
@@ -139,7 +139,7 @@ cor(df_fuel$x_wghtd_mean_household_income_per_capita, df_fuel$x_prop_autos_dom)
 
 
 
- cor(df_fuel$x_prop_pop_consolidated_area_2014, df_fuel)
+ cor(df_fuel$x_density_pop_10km_total_2014, df_fuel)
 
 
 temp_spec <- paste(vars_dep, vars_forma)

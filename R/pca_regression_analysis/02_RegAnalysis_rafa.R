@@ -53,9 +53,9 @@ df_log <- copy(df_raw)
 df_log[, (cols_to_log) := lapply(.SD, function(x){ log(x) } ), .SDcols=cols_to_log]
 # df_log[, (cols_to_log) := lapply(.SD, function(x){ log(x + sqrt(x^2 + 1) ) } ), .SDcols=cols_to_log]
 
-
-
-
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+df_log[ y_fuel_energy_per_capita == -Inf]$y_fuel_energy_per_capita <- -3.2624
+summary(df_log$y_fuel_energy_per_capita)
 
 ############### 1.3 select variables to drop
 # dropping built area vars because we measure 'compactness / sprawl' with the x_avg_cell_distance var already
@@ -101,7 +101,7 @@ drop5 <- c(   'x_prop_work_from_home_res_nucleo'
 
 
 ### drop vars
-df_fuel <- dplyr::select(df_log, - c('y_wghtd_mean_commute_time', 'y_fuel_consumption_total_2010', all_of(c(id_cols, drop1, drop2, drop3, drop4, drop5)) ))
+df_fuel <- dplyr::select(df_log, - c('y_wghtd_mean_commute_time', 'y_fuel_consumption_total_2010', 'y_fuel_consumption_per_capita_2010', all_of(c(id_cols, drop1, drop2, drop3, drop4, drop5)) ))
 df_time <- dplyr::select(df_log, - c('y_fuel_consumption_per_capita_2010', all_of(c(id_cols, drop1, drop2, drop3, drop4, drop5)) ))
 head(df_fuel)
 # df_fuel <- dplyr::select(df_log, - all_of(c('y_wghtd_mean_commute_time',id_cols)))
