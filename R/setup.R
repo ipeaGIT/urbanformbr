@@ -60,7 +60,10 @@ list.of.packages <- c('ggplot2'      # visualizacao de dados
                       ,'rgeos'
                       ,'XLConnect'
                       ,'geodist'
-                      ,'httr')
+                      ,'httr'
+                      , "FactoMineR"
+                      , "factoextra"
+                      )
 
 
 # install packages----
