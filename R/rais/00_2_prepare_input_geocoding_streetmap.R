@@ -51,7 +51,7 @@ f_rais_input_streetmap <- function(ano) {
       )
 
     # renomear colunas
-    colnames(rais_estabs) <- c("id_estab","logradouro","bairro","codemun","uf","cep")
+    #colnames(rais_estabs) <- c("id_estab","logradouro","bairro","codemun","uf","cep")
 
 
   # * 2010 ------------------------------------------------------------------
@@ -72,18 +72,21 @@ f_rais_input_streetmap <- function(ano) {
       )
 
     # renomear colunas
-    colnames(rais_estabs) <- c("id_estab","logradouro","codemun","uf","cep")
+    #colnames(rais_estabs) <- c("id_estab","logradouro","codemun","uf","cep")
 
   }
 
-    # trazer todos estab id para 14 caracteres
+    # todos id_estab para 14 caracteres
     rais_estabs[, id_estab := stringr::str_pad(id_estab, width = 14, pad = 0)]
+
+    # todos CEPS para 8 caracteres
+    rais_estabs[, cep := stringr::str_pad(cep, width = 8, pad = 0)]
 
     # pegar nome do municipio
     muni_lookup <- geobr::lookup_muni(code_muni = "all")
 
     muni_lookup <- muni_lookup %>%
-      dplyr::select(codemun = code_muni, name_muni, abrev_state) %>%
+      dplyr::select(codemun = code_muni, name_muni) %>%
       dplyr::mutate(codemun = substr(codemun, 1, 6))
 
     data.table::setDT(muni_lookup)
@@ -91,14 +94,10 @@ f_rais_input_streetmap <- function(ano) {
     rais_estabs[
       muni_lookup,
       `:=`(
-        name_muni = i.name_muni,
-        abrev_state = i.abrev_state
+        name_muni = i.name_muni
       ),
       on = c("codemun" = "codemun")
     ]
-
-    # todo os CEPS para 8 caracteres
-    rais_estabs[, cep := stringr::str_pad(cep, width = 8, pad = 0)]
 
     # correcao de logradouro, retirar '999999' e semelhantes
     rais_estabs[ , logradouro := stringr::str_replace(string = logradouro,
@@ -128,8 +127,8 @@ f_rais_input_streetmap <- function(ano) {
     # renomear colunas
     data.table::setnames(
       x = rais_estabs,
-      old = c("codemun","abrev_state"),
-      new = c("code_muni","uf")
+      old = c("codemun"),
+      new = c("code_muni")
     )
 
     # informar numero de estabelecimentos que serao geocodificados
