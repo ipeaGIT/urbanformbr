@@ -28,7 +28,7 @@ options(scipen = 999)
 
 The cols I used was
 ```{r ,echo=TRUE,warning=FALSE}
-df_raw <- readr::read_rds("../../../../data/urbanformbr/pca_regression_df/pca_regression_df_ready_to_use.rds")
+df_raw <- readr::read_rds('../../../../data/urbanformbr/pca_regression_df/pca_regression_df_ready_to_use.rds')
 # select columns
 df_prep <- data.table::copy(df_raw)[,.SD
                                     ,.SDcols = c("i_code_urban_concentration"
@@ -240,7 +240,7 @@ df_raw[,cluster4 := hc.res4$cluster]
 df_plot <- data.table::melt(data = df_raw
                             ,id.vars = c('i_code_urban_concentration',
                                          cols_to_norm1,
-                                         "y_fuel_consumption_per_capita_2010",      
+                                         "y_energy_per_capita",      
                                          "y_wghtd_mean_commute_time" 
                             )
                             ,measure = list(c("cluster2","cluster3",
@@ -252,7 +252,7 @@ df_plot <- data.table::melt(data = df_raw
                                 ,"tipo_cluster","cluster_num"
                    )
                    ,measure = list(c(cols_to_norm1,
-                                     "y_fuel_consumption_per_capita_2010",      
+                                     "y_energy_per_capita",      
                                      "y_wghtd_mean_commute_time")),
                    ,variable.name = c("urb_form_names")
                    ,value.name = c("urb_form_vars"))
