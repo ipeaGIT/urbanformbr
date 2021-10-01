@@ -34,6 +34,7 @@ diesel_link <- c(paste0("oleo-diesel-municipio-",
                         ".xls"))
 
 fuel_link <- c(etanol_link,gasolina_link,diesel_link)
+fuel_link <- fuel_link[fuel_link %like% "2010"]
 
 for(i in 1:length(fuel_link)){ # i = 1
 

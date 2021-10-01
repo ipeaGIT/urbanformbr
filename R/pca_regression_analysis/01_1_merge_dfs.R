@@ -77,43 +77,19 @@ source('R/setup.R')
   # a pop growth variable estimated at experienced density dataset
 
 
-  # * fuel ------------------------------------------------------------------
-
-  df_fuel <- readr::read_rds("../../data/urbanformbr/pca_regression_df/fuel.rds") %>%
-    dplyr::select(code_urban_concentration,year,fuel_consumption_total)
-
-  # filter only 184 from our df
-  df_fuel <- subset(df_fuel, code_urban_concentration %in% df_prep$code_urban_concentration)
-
-  df_fuel <- df_fuel %>%
-    dplyr::arrange(year)
-
-  df_fuel <- df_fuel %>%
-    tidyr::pivot_wider(
-    names_from = c("year"),
-    values_from = c("fuel_consumption_total"),
-    names_prefix = "fuel_consumption_total_"
-  )
-
-  df_fuel <- df_fuel %>%
-    dplyr::select(code_urban_concentration, fuel_consumption_total_2010)
-
-
-
-
   # * energy ------------------------------------------------------------------
 
-  df_energy <- readr::read_rds("../../data/urbanformbr/pca_regression_df/tep_energy_2010.rds") %>%
-    dplyr::select(code_urban_concentration, tep )
+  df_energy <- readr::read_rds("../../data/urbanformbr/pca_regression_df/energy_per_capita_2010.rds") %>%
+    dplyr::select(code_urban_concentration,tep)
 
   # filter only 184 from our df
   df_energy <- subset(df_energy, code_urban_concentration %in% df_prep$code_urban_concentration)
 
   df_energy[, tep := as.numeric(tep)]
-  # df_energy[ tep ==0]
-
   # rename
-  setnames(df_energy, 'tep', 'fuel_energy_per_capita')
+  setnames(x = df_energy
+           ,old = 'tep'
+           ,new = 'energy_per_capita')
 
 
 
@@ -240,9 +216,9 @@ source('R/setup.R')
     #dplyr::left_join(
     #  df_fleet
     #) %>%
-    dplyr::left_join(
-      df_fuel
-    ) %>%
+    # dplyr::left_join(
+    #   df_fuel
+    # ) %>%
     dplyr::left_join(
       df_energy
     ) %>%
@@ -291,16 +267,13 @@ source('R/setup.R')
     dplyr::left_join(df_classify_tma)
 
   # calculate fuel consumption per capita
-  df_merge <- df_merge %>%
-    mutate(fuel_consumption_per_capita_2010 = fuel_consumption_total_2010 / pop_2015)
-
-  df_merge$fuel_energy_per_capita
-
+  # df_merge <- df_merge %>%
+  #   mutate(fuel_consumption_per_capita_2010 = fuel_consumption_total_2010 / pop_2015)
 
   # * reorder columns -------------------------------------------------------
   df_merge <- df_merge %>%
     dplyr::relocate(
-      c(fuel_consumption_per_capita_2010, fuel_consumption_total_2010, fuel_energy_per_capita, wghtd_mean_commute_time),
+      c(energy_per_capita, wghtd_mean_commute_time),
       .after = name_uca_case
       )
 
@@ -325,7 +298,7 @@ source('R/setup.R')
     ) %>%
     # dependent variables (y)
     dplyr::rename_with(
-      .cols = fuel_consumption_per_capita_2010:wghtd_mean_commute_time,
+      .cols = energy_per_capita:wghtd_mean_commute_time,
       function(x){paste0("y_", x)}
     ) %>%
     # independent variables (x)
