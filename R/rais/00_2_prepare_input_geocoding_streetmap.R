@@ -39,7 +39,7 @@ f_rais_input_streetmap <- function(ano) {
   # * not 2010 ------------------------------------------------------------------
   if (ano != 2010) {
     columns <- c("id_estab", "logradouro", "bairro", "codemun",
-                 "uf", "cep")
+                 "cep")
 
     # abrir dados
     rais_estabs <- data.table::fread(
@@ -60,7 +60,7 @@ f_rais_input_streetmap <- function(ano) {
     # 1) dados dos estabelecimentos
 
     # selecionar colunas
-    columns <- c("id_estab","logradouro", "codemun", "uf", "cep")
+    columns <- c("id_estab","logradouro", "codemun","cep")
 
     # abrir dados
     rais_estabs <- data.table::fread(
@@ -86,15 +86,22 @@ f_rais_input_streetmap <- function(ano) {
     muni_lookup <- geobr::lookup_muni(code_muni = "all")
 
     muni_lookup <- muni_lookup %>%
-      dplyr::select(codemun = code_muni, name_muni) %>%
+      dplyr::select(codemun = code_muni, name_muni, abrev_state) %>%
       dplyr::mutate(codemun = substr(codemun, 1, 6))
 
     data.table::setDT(muni_lookup)
 
+    data.table::setnames(
+      x = muni_lookup,
+      old = c("abrev_state"),
+      new = c("uf")
+    )
+
     rais_estabs[
       muni_lookup,
       `:=`(
-        name_muni = i.name_muni
+        name_muni = i.name_muni,
+        uf = i.uf
       ),
       on = c("codemun" = "codemun")
     ]
@@ -122,7 +129,7 @@ f_rais_input_streetmap <- function(ano) {
                                              replacement = '')]
 
     # criar coluna ano
-    rais_estabs[, c("ano") := ano]
+    rais_estabs[, c("ano") := as.character(ano)]
 
     # renomear colunas
     data.table::setnames(
