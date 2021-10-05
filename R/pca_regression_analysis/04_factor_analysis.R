@@ -29,14 +29,14 @@ df_select <- df_raw %>%
   )
 
 df_area <- readr::read_rds("../../data/urbanformbr/pca_regression_df/area.rds") %>%
-  dplyr::select(code_muni,saturation_total_area_fixed_2014 ) %>%
+  dplyr::select(code_muni, saturation_total_area_fixed_2014) %>%
   dplyr::rename(
     i_code_urban_concentration = code_muni,
     x_coverage = saturation_total_area_fixed_2014
     )
 
 df_select <- data.table::merge.data.table(
-  df_select,df_area, by = "i_code_urban_concentration")
+  df_select, df_area, by = "i_code_urban_concentration")
 
 # change variable class
 df_select[
@@ -44,7 +44,7 @@ df_select[
   x_urban_extent_size_2014 := as.numeric(x_urban_extent_size_2014)
   ]
 
-# factor analysis ---------------------------------------------------------
+# MULTIPLE factor analysis ---------------------------------------------------------
 
 
 # * prep data for factanal ------------------------------------------------
@@ -65,7 +65,7 @@ df_select[
 # x_avg_cell_distance
 # x_coverage
 
-## g2: urban network infrastructure -> 4 VARS
+## g2: urban network infrastructure -> 3 VARS
 # x_k_avg
 # x_intersection_density_km
 # x_circuity_avg
@@ -84,43 +84,98 @@ df_select <- df_select %>%
   relocate(x_coverage, .after = x_avg_cell_distance) %>%
   relocate(d_tma, .after = x_mean_slope)
 
-#### change datatable to tibble for converting one id column to row.names
+#### change datatable to dataframe for converting one id column to row.names
 df_select <- df_select %>%
   select(-c(i_code_urban_concentration, i_name_uca_case))
 
-666666666 CONTINUAR
+#df_select_df <- df_select %>%
+#  tibble::column_to_rownames("i_name_urban_concentration")
 
-a <- data.frame(df_select)
+df_select_df <- data.frame(df_select)
 
-a <- data.frame(
-  a[,-1],
-  row.names = a[,1]
+df_select_df <- data.frame(
+  df_select_df[,-1],
+  row.names = df_select_df[,1]
   )
+
+# make d_tma factor for classifying as a categorical variable at MFA
 
 
 
 # define R objects for factor analysis package
-
+df_select_df <- df_select_df %>%
+  dplyr::mutate(
+    d_tma = factor(
+      d_tma, levels = c(0,1), labels = c("Não TMA", "TMA")
+    )
+  )
 
 # groups
-grupo <- c(3,6,3,2,1)
-nome_grupo <- c("id","form","network","physical","cat")
-tipo <- c("n","s","s","s","n")
+grupo <- c(6,3,2,1)
+nome_grupo <- c("form","network","physical","cat")
+tipo <- c("s","s","s","n")
 
 
 # run factor analysis -----------------------------------------------------
 
 res.mfa <- FactoMineR::MFA(
-  base = df_select,
+  base = df_select_df,
   group = grupo,
   name.group = nome_grupo,
   type = tipo,
-  excl = c(1,2,3),
   graph = F
 )
 
 
+# results --------------------------------------------------------------------
+eig.val <- factoextra::get_eigenvalue(res.mfa)
+head(eig.val)
 
-# save plots --------------------------------------------------------------
+group <- factoextra::get_mfa_var(res.mfa, "group")
+head(group$coord)
+head(group$contrib)
 
 
+# * plots -----------------------------------------------------------------
+
+factoextra::fviz_screeplot(res.mfa)
+
+factoextra::fviz_mfa(res.mfa, "group")
+
+factoextra::fviz_contrib(res.mfa, "group", axes = 1) +
+factoextra::fviz_contrib(res.mfa, "group", axes = 2)
+
+factoextra::fviz_mfa_var(
+  X = res.mfa, choice = "quanti.var", palette = "jco",
+  repel = T, legend = "bottom", geom = c("arrow","text")
+)
+
+
+factoextra::fviz_contrib(
+  res.mfa, choice = "quanti.var", axes = 1, top = 10, palette = "jco"
+    ) +
+  factoextra::fviz_contrib(
+    res.mfa, choice = "quanti.var", axes = 2, top = 10, palette = "jco"
+  )
+
+
+factoextra::fviz_mfa_var(
+  X = res.mfa, choice = "quanti.var", col.var = "contrib",
+  gradient.cols = c("#00AFBB","#E7B800","#FC4E07"),
+  repel = T, legend = "bottom", geom = c("point","text")
+)
+
+factoextra::fviz_mfa_var(
+  X = res.mfa, choice = "quanti.var", col.var = "cos2",
+  gradient.cols = c("#00AFBB","#E7B800","#FC4E07"),
+  repel = T, legend = "bottom", geom = c("point","text")
+)
+fviz_cos2(res.mfa,choice = "quanti.var",axes = 1)
+
+
+
+# individuals
+fviz_mfa_ind(res.mfa, partial = "all")
+
+
+fviz_mfa_axes(res.mfa)
