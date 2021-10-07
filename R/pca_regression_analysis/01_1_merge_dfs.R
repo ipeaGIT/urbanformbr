@@ -15,7 +15,6 @@ source('R/setup.R')
     dplyr::select(-c(code_muni_uca))
 
 
-
   # * pop -------------------------------------------------------------------
 
   # * * pop growth -----------------------------------------------------------
@@ -28,20 +27,20 @@ source('R/setup.R')
 
   # * * pop censo -----------------------------------------------------------
 
-  df_pop_censo <- readr::read_rds("../../data/urbanformbr/pca_regression_df/1970-2015_pop.rds")
+  #df_pop_censo <- readr::read_rds("../../data/urbanformbr/pca_regression_df/1970-2015_pop.rds")
 
   # filter only 184 from our df
-  df_pop_censo <- subset(df_pop_censo, code_urban_concentration %in% df_prep$code_urban_concentration)
+  #df_pop_censo <- subset(df_pop_censo, code_urban_concentration %in% df_prep$code_urban_concentration)
 
-  df_pop_censo <- df_pop_censo %>%
-    tidyr::pivot_wider(
-      names_from = c("ano"),
-      values_from = c("pop"),
-      names_prefix = "pop_"
-    )
+  #df_pop_censo <- df_pop_censo %>%
+  #  tidyr::pivot_wider(
+  #    names_from = c("ano"),
+  #    values_from = c("pop"),
+  #    names_prefix = "pop_"
+  #  )
 
-  df_pop_censo <- df_pop_censo %>%
-    dplyr::select(-pop_1970)
+  #df_pop_censo <- df_pop_censo %>%
+  #  dplyr::select(-pop_1970)
 
 
 # * * pop ghsl ------------------------------------------------------------
@@ -158,14 +157,13 @@ source('R/setup.R')
 
   # * street metrics --------------------------------------------------------
   df_street <- data.table::fread("../../data/urbanformbr/pca_regression_df/streets_metrics.csv") %>%
-    dplyr::select(-intersection_count)
+    dplyr::select(-c(intersection_count,k_avg))
 
   df_street <- subset(df_street, name_urban_concentration %in% df_prep$name_urban_concentration)
 
   # * fragmentation compacity -----------------------------------------------
   df_frag_comp <- data.table::fread("../../data/urbanformbr/pca_regression_df/fragmentation_compacity.csv") %>%
-    select(-c(name_uca_case,n_patches,avg_cell_distance_w_pop,
-              ratio_circle,ratio_circle_large)) %>%
+    select(c(code_muni,compacity,proportion_largest_patch)) %>%
     dplyr::rename(code_urban_concentration = code_muni)
 
   # * topography ------------------------------------------------------------
@@ -208,11 +206,11 @@ source('R/setup.R')
 
   df_merge <- dplyr::left_join(
     df_prep,
-    df_pop_censo
+    df_pop_growth
   ) %>%
-    dplyr::left_join(
-      df_pop_growth
-      ) %>%
+    #dplyr::left_join(
+    #  df_pop_censo
+    #  ) %>%
     #dplyr::left_join(
     #  df_fleet
     #) %>%
@@ -291,19 +289,19 @@ source('R/setup.R')
       .cols = code_urban_concentration:name_uca_case,
       function(x){paste0("i_", x)}
     ) %>%
-    # dummy variables
-    dplyr::rename_with(
-      .cols = large_uca_pop:tma,
-      function(x){paste0("d_", x)}
-    ) %>%
     # dependent variables (y)
     dplyr::rename_with(
       .cols = energy_per_capita:wghtd_mean_commute_time,
       function(x){paste0("y_", x)}
     ) %>%
+    # dummy variables
+    dplyr::rename_with(
+      .cols = large_uca_pop:tma,
+      function(x){paste0("d_", x)}
+    ) %>%
     # independent variables (x)
     dplyr::rename_with(
-      .cols = pop_2015:length(.),
+      .cols = pop_growth_15_00:length(.),
       function(x){paste0("x_", x)}
     )
 

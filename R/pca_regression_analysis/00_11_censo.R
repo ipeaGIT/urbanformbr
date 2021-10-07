@@ -113,6 +113,7 @@ f_censo <- function(){
     on = c("code_muni" = "code_muni_uca")
   ]
 
+
   # * filter data -----------------------------------------------------------
   # filter households/individuals from uca belonging to df_codes
 
@@ -507,6 +508,15 @@ f_censo <- function(){
 
 
   # * vars pessoas (individuals) --------------------------------------------
+
+  ## total population
+  ## estimate total population for each uca
+  #df_pop_pes <- df_censo_pes[
+  #  ,
+  #  .(pop_2010 = sum(V0010, na.rm = T)),
+  #  by = .(code_urban_concentration)
+  #]
+
   ## prorportion
   # V1006: % pessoas em domicilios em situacao urbana
   # estimar proporcao 1 at V1006
@@ -626,34 +636,6 @@ f_censo <- function(){
   df_prop_pes <- df_prop_pes %>%
     mutate_all(~replace(.,is.nan(.),0))
 
-  #REMOVER -> GERAR INTERACAO SOMENTE AO RODAR O MODELO
-  #df_vars_pes_interaction <- df_censo_pes[
-  #  V1006 == 1L, # filter only individuals from urban areas,
-  #  .(
-      # interaction large uca pop & sector
-  #    prop_industry_large = sum(V0010[which(sector == "Indústria" & age != "Até 15 anos" & V6920 == 1L & large_uca_pop == 1L)],na.rm = T) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & large_uca_pop == 1L)], na.rm=T),
-  #    prop_industry_medium = sum(V0010[which(sector == "Indústria" & age != "Até 15 anos" & V6920 == 1L & large_uca_pop == 0L)],na.rm = T) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & large_uca_pop == 0L)], na.rm=T),
-
-  #    prop_services_large = sum(V0010[which(sector == "Serviços" & age != "Até 15 anos" & V6920 == 1L & large_uca_pop == 1L)],na.rm = T) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & large_uca_pop == 1L)], na.rm=T),
-  #    prop_services_medium = sum(V0010[which(sector == "Serviços" & age != "Até 15 anos" & V6920 == 1L & large_uca_pop == 0L)],na.rm = T) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & large_uca_pop == 0L)], na.rm=T),
-
-      # interaction nucleo/isolated & work place
-  #    prop_work_other_muni_isolated = sum(V0010[which(work_muni == "Outro ou mais municípios/país" & age != "Até 15 anos" & V6920 == 1L & isolated_muni == 1L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & isolated_muni == 1L)], na.rm = T),
-  #    prop_work_from_home_isolated = sum(V0010[which(work_muni == "Próprio domicílio" & age != "Até 15 anos" & V6920 == 1L & isolated_muni == 1L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & isolated_muni == 1L)], na.rm = T),
-  #    prop_work_same_muni_not_from_home_isolated = sum(V0010[which(work_muni == "Mesmo município, mas não no domicílio" & age != "Até 15 anos" & V6920 == 1L & isolated_muni == 1L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & isolated_muni == 1L)], na.rm = T),
-
-  #    prop_work_other_muni_not_isolated = sum(V0010[which(work_muni == "Outro ou mais municípios/país" & age != "Até 15 anos" & V6920 == 1L & isolated_muni == 0L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & isolated_muni == 0L)], na.rm = T),
-  #    prop_work_from_home_not_isolated = sum(V0010[which(work_muni == "Próprio domicílio" & age != "Até 15 anos" & V6920 == 1L & isolated_muni == 0L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & isolated_muni == 0L)], na.rm = T),
-  #    prop_work_same_muni_not_from_home_not_isolated = sum(V0010[which(work_muni == "Mesmo município, mas não no domicílio" & age != "Até 15 anos" & V6920 == 1L & isolated_muni == 0L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & isolated_muni == 0L)], na.rm = T)
-
-  #  ),
-  #  by = .(code_urban_concentration)
-  #]
-
-  # REMOVE NAN FROM INTERACTION VARIABLES -> DEVO REMOVER?
-  #df_vars_pes_interaction <- df_vars_pes_interaction %>%
-  #  mutate_all(~replace(.,is.nan(.),0))
-
 
   #df_vars_pes <- data.table::merge.data.table(x = df_wghtd_mean_pes
   #                                            ,y = df_prop_pes_urban
@@ -664,11 +646,11 @@ f_censo <- function(){
     ,by = "code_urban_concentration"
     )
 
-  #df_vars_pes <- data.table::merge.data.table(
-  #  x = df_vars_pes
-  #  ,y = df_vars_pes_interaction
-  #  ,by = "code_urban_concentration"
-   # )
+  df_vars_pes <- data.table::merge.data.table(
+    x = df_vars_pes
+    ,y = df_pop_pes
+    ,by = "code_urban_concentration"
+   )
 
 
   # * merge dom pes vars ----------------------------------------------------
