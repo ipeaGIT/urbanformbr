@@ -1,7 +1,6 @@
 # description -------------------------------------------------------------
 
 # this script estimates multiple factor analysis for all variables of urbanform
-# FAZER SO COM URBANFORM?
 
 # setup -------------------------------------------------------------------
 
@@ -11,34 +10,38 @@ source('R/setup.R')
 df_raw <- readr::read_rds('../../data/urbanformbr/pca_regression_df/pca_regression_df_ready_to_use.rds')
 
 # select variables --------------------------------------------------------
-df_select <- df_raw %>%
+
+df_dens <- df_raw %>%
+  mutate(x_densidade_total = x_pop_2010 / as.numeric(x_urban_extent_size_2014))
+
+df_select <- df_dens %>%
   dplyr::select(
-    dplyr::matches("^(i)"),
-    #d_tma, # conferir especificidade variavel binaria
-    #x_urban_extent_size_2014, #built total total -> substituir?
-    x_built_total_total_2014,
-    #x_prop_built_consolidated_area_2014, # proxy para compacidade
-    x_density_pop_05km_total_2014,
-    x_land_use_mix,
-    x_proportion_largest_patch,
-    #x_n_large_patches,
-    x_compacity,
-    #x_k_avg,
-    x_intersection_density_km,
-    x_circuity_avg#,
-    #x_sd_elevation, # excluir vars forma fisica
-    #x_mean_slope
+    dplyr::matches("^(i)")
+    , x_urban_extent_size_2014
+    #, x_pop_2010
+    #x_built_total_total_2014,
+    , dplyr::matches("01km_total")
+    #, x_density_built_01km_total_2014
+    #, x_density_pop_01km_total_2014
+    #, x_densidade_total
+    , x_land_use_mix
+    , x_proportion_largest_patch
+    , x_compacity
+    #, x_prop_built_consolidated_area_2014
+    , x_intersection_density_km
+    , x_circuity_avg
+    #, x_coverage
   )
 
-df_area <- readr::read_rds("../../data/urbanformbr/pca_regression_df/area.rds") %>%
-  dplyr::select(code_muni, saturation_total_area_fixed_2014) %>%
-  dplyr::rename(
-    i_code_urban_concentration = code_muni,
-    x_coverage = saturation_total_area_fixed_2014
-    )
+#df_area <- readr::read_rds("../../data/urbanformbr/pca_regression_df/area.rds") %>%
+#  dplyr::select(code_muni, saturation_total_area_fixed_2014) %>%
+#  dplyr::rename(
+#    i_code_urban_concentration = code_muni,
+#    x_coverage = saturation_total_area_fixed_2014
+#  )
 
-df_select <- data.table::merge.data.table(
-  df_select, df_area, by = "i_code_urban_concentration")
+#df_select <- data.table::merge.data.table(
+#  df_select, df_area, by = "i_code_urban_concentration")
 
 
 # prep data ---------------------------------------------------------------
@@ -52,9 +55,9 @@ df_select[
 # after properly classifying each group, reorder columns so that each group is ordered
 #..in the dataset
 # reorder
-df_select <- df_select %>%
-  relocate(x_coverage, .after = x_compacity)# %>%
-  #relocate(d_tma, .after = x_mean_slope)
+#df_select <- df_select %>%
+#  relocate(x_coverage, .after = x_compacity)# %>%
+#relocate(d_tma, .after = x_mean_slope)
 
 #### change datatable to dataframe for converting one id column to row.names
 df_select <- df_select %>%
@@ -74,29 +77,30 @@ df_select_df <- data.frame(
 
 # * PCA -------------------------------------------------------------------
 r_pca <- FactoMineR::PCA(
-  X = df_select_df, scale.unit = T, ncp = 8, graph = F
+  X = df_select_df, scale.unit = T, ncp = ncol(df_select_df), graph = F
 )
 
 # determine number of factors: eigenvalues
-r_eigenvalue <- factoextra::get_eigenvalue(r_pca)
+(r_eigenvalue <- factoextra::get_eigenvalue(r_pca))
 # 3 eigenvalues greater than unity -> 3 factors considered
 factoextra::fviz_eig(r_pca, addlabels = T, )
 
 # check communalities and factor loadings ---------------------------------
-r_factor <- psych::principal(
-  r = df_select_df, nfactors = 3, rotate = "none"
-)
+#r_factor <- psych::principal(
+#  r = df_select_df, nfactors = 3, rotate = "none"
+#)
 
-r_factor_varimax <- psych::principal(
-  r = df_select_df, nfactors = 3, rotate = "varimax"
-)
+#r_factor_varimax <- psych::principal(
+#  r = df_select_df, nfactors = 3, rotate = "varimax"
+#)
 
-r_factor_none_8 <- psych::principal(
-  r = df_select_df, nfactors = 8, rotate = "none"
-)
+#r_factor_none_8 <- psych::principal(
+#  r = df_select_df, nfactors = 8, rotate = "none"
+#)
 
-r_factor_varimax_8 <- psych::principal(
-  r = df_select_df, nfactors = 8, rotate = "varimax"
+(r_factor_varimax <- psych::principal(
+  r = df_select_df, nfactors = ncol(df_select_df), rotate = "varimax"
+)
 )
 
 # * factor rotation (if necessary) ----------------------------------------
@@ -184,7 +188,7 @@ factoextra::fviz_screeplot(res.mfa)
 factoextra::fviz_mfa(res.mfa, "group")
 
 factoextra::fviz_contrib(res.mfa, "group", axes = 1) +
-factoextra::fviz_contrib(res.mfa, "group", axes = 2)
+  factoextra::fviz_contrib(res.mfa, "group", axes = 2)
 
 factoextra::fviz_mfa_var(
   X = res.mfa, choice = "quanti.var", palette = "jco",
@@ -194,7 +198,7 @@ factoextra::fviz_mfa_var(
 
 factoextra::fviz_contrib(
   res.mfa, choice = "quanti.var", axes = 1, top = 10, palette = "jco"
-    ) +
+) +
   factoextra::fviz_contrib(
     res.mfa, choice = "quanti.var", axes = 2, top = 10, palette = "jco"
   )

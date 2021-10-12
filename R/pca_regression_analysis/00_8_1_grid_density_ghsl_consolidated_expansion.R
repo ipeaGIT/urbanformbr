@@ -43,6 +43,36 @@ f_get_density_matrix <- function(df_urban_areas){
   #..da celula)
   built_vector <- df_urban_areas$built / 100
 
+
+  # * * matrices ------------------------------------------------------------
+
+  ### 1 kilometer
+  distance_matrix_01km <- distance_matrix
+  distance_matrix_01km[distance_matrix <= 1000] <- 1
+  distance_matrix_01km[distance_matrix >  1000] <- 0
+
+  pop_01km <- distance_matrix_01km %*% pop_vector
+  built_01km <- distance_matrix_01km %*% built_vector
+  rm(distance_matrix_01km)
+
+  ### 2 kilometers
+  distance_matrix_02km <- distance_matrix
+  distance_matrix_02km[distance_matrix <= 2000] <- 1
+  distance_matrix_02km[distance_matrix >  2000] <- 0
+
+  pop_02km <- distance_matrix_02km %*% pop_vector
+  built_02km <- distance_matrix_02km %*% built_vector
+  rm(distance_matrix_02km)
+
+  ### 3 kilometers
+  distance_matrix_03km <- distance_matrix
+  distance_matrix_03km[distance_matrix <= 3000] <- 1
+  distance_matrix_03km[distance_matrix >  3000] <- 0
+
+  pop_03km <- distance_matrix_03km %*% pop_vector
+  built_03km <- distance_matrix_03km %*% built_vector
+  rm(distance_matrix_03km)
+
   ### 5 kilometers
   distance_matrix_05km <- distance_matrix
   distance_matrix_05km[distance_matrix <= 5000] <- 1
@@ -61,13 +91,22 @@ f_get_density_matrix <- function(df_urban_areas){
   built_10km <- distance_matrix_10km %*% built_vector
   rm(distance_matrix_10km)
 
+
+  # * * temp output ---------------------------------------------------------
+
   temp_output <- data.table('code_muni' = df_urban_areas$code_muni,
                             'name_uca_case' = df_urban_areas$name_uca_case,
                             'cell' = df_urban_areas$cell,
                             'pop' = df_urban_areas$pop,
                             'built' = df_urban_areas$built / 100,
+                            'pop_01km' = pop_01km,
+                            'pop_02km' = pop_02km,
+                            'pop_03km' = pop_03km,
                             'pop_05km' = pop_05km,
                             'pop_10km' = pop_10km,
+                            'built_01km' = built_01km,
+                            'built_02km' = built_02km,
+                            'built_03km' = built_03km,
                             'built_05km' = built_05km,
                             'built_10km' = built_10km,
                             'consolidada' = df_urban_areas$consolidada
@@ -75,8 +114,14 @@ f_get_density_matrix <- function(df_urban_areas){
 
   setnames(
     x = temp_output,
-    old = c("pop_05km.V1","pop_10km.V1","built_05km.V1","built_10km.V1"),
-    new = c("pop_05km","pop_10km","built_05km","built_10km")
+    old = c(
+      "pop_01km.V1","pop_02km.V1","pop_03km.V1","pop_05km.V1","pop_10km.V1",
+      "built_01km.V1","built_02km.V1","built_03km.V1","built_05km.V1","built_10km.V1"
+      ),
+    new = c(
+      "pop_01km","pop_02km","pop_03km","pop_05km","pop_10km",
+      "built_01km","built_02km","built_03km","built_05km","built_10km"
+      )
   )
 
   return(temp_output)
@@ -109,14 +154,24 @@ f_density_uca <- function(ano){
       #output_df <- temp_output
 
       # calculate area of buffers
-      output_df$area10km2 <- pi * 10^2
-      output_df$area05km2 <- pi *  5^2
+      output_df$area01km <- pi *  1^2
+      output_df$area02km <- pi *  2^2
+      output_df$area03km <- pi *  3^2
+      output_df$area05km <- pi *  5^2
+      output_df$area10km <- pi * 10^2
+
 
       # calculate pop density
-      output_df$pop_density05km2 <- output_df$pop_05km / output_df$area05km2
-      output_df$pop_density10km2 <- output_df$pop_10km / output_df$area10km2
-      output_df$built_density05km2 <- output_df$built_05km / output_df$area05km2
-      output_df$built_density10km2 <- output_df$built_10km / output_df$area10km2
+      output_df$pop_density01km <- output_df$pop_01km / output_df$area01km
+      output_df$pop_density02km <- output_df$pop_02km / output_df$area02km
+      output_df$pop_density03km <- output_df$pop_03km / output_df$area03km
+      output_df$pop_density05km <- output_df$pop_05km / output_df$area05km
+      output_df$pop_density10km <- output_df$pop_10km / output_df$area10km
+      output_df$built_density01km <- output_df$built_01km / output_df$area01km
+      output_df$built_density02km <- output_df$built_02km / output_df$area02km
+      output_df$built_density03km <- output_df$built_03km / output_df$area03km
+      output_df$built_density05km <- output_df$built_05km / output_df$area05km
+      output_df$built_density10km <- output_df$built_10km / output_df$area10km
 
 
       # save
@@ -124,23 +179,45 @@ f_density_uca <- function(ano){
 
       # total Pop vs avg Density
       # df total area
-      df1 <- output_df[, .(ano = ano, pop_total = sum(pop), built_total = sum(built),
-                           density_pop_05km2 = weighted.mean(x=pop_density05km2, w=pop),
-                           density_pop_10km2 = weighted.mean(x=pop_density10km2, w=pop),
-                           density_built_05km2 = weighted.mean(x=built_density05km2, w=built),
-                           density_built_10km2 = weighted.mean(x=built_density10km2, w=built)),
-                       by=.(code_muni,name_uca_case) ]
+      df1 <- output_df[
+        ,
+        .(
+          ano = ano, pop_total = sum(pop), built_total = sum(built),
+          density_pop_01km = weighted.mean(x=pop_density01km, w=pop),
+          density_pop_02km = weighted.mean(x=pop_density02km, w=pop),
+          density_pop_03km = weighted.mean(x=pop_density03km, w=pop),
+          density_pop_05km = weighted.mean(x=pop_density05km, w=pop),
+          density_pop_10km = weighted.mean(x=pop_density10km, w=pop),
+          density_built_01km = weighted.mean(x=built_density01km, w=built),
+          density_built_02km = weighted.mean(x=built_density02km, w=built),
+          density_built_03km = weighted.mean(x=built_density03km, w=built),
+          density_built_05km = weighted.mean(x=built_density05km, w=built),
+          density_built_10km = weighted.mean(x=built_density10km, w=built)
+          ),
+        by = .(code_muni,name_uca_case)
+        ]
 
       df1 <- df1 %>%
         mutate(area_type = "total")
 
       # df group by consolidated (consolidada==1) or expansion area (consolidada==0)
-      df2 <- output_df[, .(ano = ano, pop_total = sum(pop), built_total = sum(built),
-                           density_pop_05km2 = weighted.mean(x=pop_density05km2, w=pop),
-                           density_pop_10km2 = weighted.mean(x=pop_density10km2, w=pop),
-                           density_built_05km2 = weighted.mean(x=built_density05km2, w=built),
-                           density_built_10km2 = weighted.mean(x=built_density10km2, w=built)),
-                       by=.(code_muni,name_uca_case, consolidada) ]
+      df2 <- output_df[
+        ,
+        .(
+          ano = ano, pop_total = sum(pop), built_total = sum(built),
+          density_pop_01km = weighted.mean(x=pop_density01km, w=pop),
+          density_pop_02km = weighted.mean(x=pop_density02km, w=pop),
+          density_pop_03km = weighted.mean(x=pop_density03km, w=pop),
+          density_pop_05km = weighted.mean(x=pop_density05km, w=pop),
+          density_pop_10km = weighted.mean(x=pop_density10km, w=pop),
+          density_built_01km = weighted.mean(x=built_density01km, w=built),
+          density_built_02km = weighted.mean(x=built_density02km, w=built),
+          density_built_03km = weighted.mean(x=built_density03km, w=built),
+          density_built_05km = weighted.mean(x=built_density05km, w=built),
+          density_built_10km = weighted.mean(x=built_density10km, w=built)
+          ),
+        by = .(code_muni,name_uca_case, consolidada)
+        ]
 
       df2 <- df2 %>%
         dplyr::mutate(area_type = case_when(
@@ -177,10 +254,16 @@ df_final[
     #pop_total_rel_diff = (pop_total - c(pop_total[1], head(pop_total, -1)) ) / c(pop_total[1], head(pop_total, -1)),
     pop_total_geom_growth_1975_2015 = ( ( pop_total / c(pop_total[1], head(pop_total, -1)) ) ^ (1/40) ) - 1 ,
     built_total_geom_growth_1975_2014 = ( ( built_total / c(built_total[1], head(built_total, -1)) ) ^ (1/39) ) - 1 ,
-    density_pop_05km2_abs_diff = ( density_pop_05km2 - c(density_pop_05km2[1], head(density_pop_05km2, -1)) ),
-    density_pop_10km2_abs_diff = ( density_pop_10km2 - c(density_pop_10km2[1], head(density_pop_10km2, -1)) ),
-    density_built_05km2_abs_diff = ( density_built_05km2 - c(density_built_05km2[1], head(density_built_05km2, -1)) ),
-    density_built_10km2_abs_diff = ( density_built_10km2 - c(density_built_10km2[1], head(density_built_10km2, -1)) )
+    density_pop_01km_abs_diff = ( density_pop_01km - c(density_pop_01km[1], head(density_pop_01km, -1)) ),
+    density_pop_02km_abs_diff = ( density_pop_02km - c(density_pop_02km[1], head(density_pop_02km, -1)) ),
+    density_pop_03km_abs_diff = ( density_pop_03km - c(density_pop_03km[1], head(density_pop_03km, -1)) ),
+    density_pop_05km_abs_diff = ( density_pop_05km - c(density_pop_05km[1], head(density_pop_05km, -1)) ),
+    density_pop_10km_abs_diff = ( density_pop_10km - c(density_pop_10km[1], head(density_pop_10km, -1)) ),
+    density_built_01km_abs_diff = ( density_built_01km - c(density_built_01km[1], head(density_built_01km, -1)) ),
+    density_built_02km_abs_diff = ( density_built_02km - c(density_built_02km[1], head(density_built_02km, -1)) ),
+    density_built_03km_abs_diff = ( density_built_03km - c(density_built_03km[1], head(density_built_03km, -1)) ),
+    density_built_05km_abs_diff = ( density_built_05km - c(density_built_05km[1], head(density_built_05km, -1)) ),
+    density_built_10km_abs_diff = ( density_built_10km - c(density_built_10km[1], head(density_built_10km, -1)) )
   ),
   by = .(code_muni, name_uca_case, area_type)
 ]
@@ -190,11 +273,23 @@ df_final_wide <- tidyr::pivot_wider(
   df_final,
   names_from = c("area_type","ano"),
   values_from = c(
-    "pop_total","built_total","density_pop_05km2", "density_pop_10km2",
-    "density_built_05km2","density_built_10km2","pop_total_geom_growth_1975_2015",
-    "built_total_geom_growth_1975_2014","density_pop_05km2_abs_diff",
-    "density_pop_10km2_abs_diff","density_built_05km2_abs_diff",
-    "density_built_10km2_abs_diff"
+    "pop_total","built_total",
+    "density_pop_01km", "density_pop_02km","density_pop_03km",
+    "density_pop_05km", "density_pop_10km",
+    "density_built_01km","density_built_02km","density_built_03km",
+    "density_built_05km","density_built_10km",
+    "pop_total_geom_growth_1975_2015",
+    "built_total_geom_growth_1975_2014",
+    "density_pop_01km_abs_diff",
+    "density_pop_02km_abs_diff",
+    "density_pop_03km_abs_diff",
+    "density_pop_05km_abs_diff",
+    "density_pop_10km_abs_diff",
+    "density_built_01km_abs_diff",
+    "density_built_02km_abs_diff",
+    "density_built_03km_abs_diff",
+    "density_built_05km_abs_diff",
+    "density_built_10km_abs_diff"
     )
   ) %>%
   # exclude vars relative to 1975 containing abs_difference/change
@@ -204,7 +299,7 @@ df_final_wide <- tidyr::pivot_wider(
     ) %>%
   # rename abs_diff variables
   dplyr::rename_with(
-    .cols = c(pop_total_geom_growth_1975_2015_total_2014:density_built_10km2_abs_diff_expansao_2014),
+    .cols = c(pop_total_geom_growth_1975_2015_total_2014:density_built_10km_abs_diff_expansao_2014),
     .fn = ~sub("_2014$","",.)
   )
 
@@ -242,15 +337,15 @@ saveRDS(
 # plot data ---------------------------------------------------------------
 
 
-ggplot(data=df_1975) +
-  geom_point(aes(x=density_pop_10km2, y=density_built_10km2), alpha=.4) +
-  scale_x_continuous(trans='log10')+
-  scale_y_continuous(trans='log10')
+#ggplot(data=df_1975) +
+#  geom_point(aes(x=density_pop_10km, y=density_built_10km), alpha=.4) +
+#  scale_x_continuous(trans='log10')+
+#  scale_y_continuous(trans='log10')
 
-ggplot(data=df_2014) +
-  geom_point(aes(x=density_pop_10km2, y=density_built_10km2), alpha=.4) +
-  scale_x_continuous(trans='log10')+
-  scale_y_continuous(trans='log10')
+#ggplot(data=df_2014) +
+#  geom_point(aes(x=density_pop_10km, y=density_built_10km), alpha=.4) +
+#  scale_x_continuous(trans='log10')+
+#  scale_y_continuous(trans='log10')
 
 
 

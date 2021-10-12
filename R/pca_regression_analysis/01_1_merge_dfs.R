@@ -112,8 +112,12 @@ source('R/setup.R')
 
   # * area coverage ---------------------------------------------------------
   df_area <- readr::read_rds("../../data/urbanformbr/pca_regression_df/area.rds") %>%
-    dplyr::select(code_muni,urban_extent_size_2014) %>%
-    dplyr::rename(code_urban_concentration = code_muni)
+    dplyr::select(
+      code_muni,urban_extent_size_2014,saturation_total_area_fixed_2014) %>%
+    dplyr::rename(
+      code_urban_concentration = code_muni,
+      coverage = saturation_total_area_fixed_2014
+      )
 
   # * censo -----------------------------------------------------------------
   df_censo <- readr::read_rds("../../data/urbanformbr/pca_regression_df/censo.rds") %>%
@@ -129,11 +133,7 @@ source('R/setup.R')
       -dplyr::matches("growth")
       ) %>%
     dplyr::rename(
-      code_urban_concentration = code_muni,
-      density_pop_05km_total_2014 = density_pop_05km2_total_2014,
-      density_pop_10km_total_2014 = density_pop_10km2_total_2014,
-      density_built_05km_total_2014 = density_built_05km2_total_2014,
-      density_built_10km_total_2014 = density_built_10km2_total_2014
+      code_urban_concentration = code_muni
       )
 
   # * landuse metrics -------------------------------------------------------
@@ -190,12 +190,12 @@ source('R/setup.R')
 
 
   # * urban form cluster -------------------------------------------------------------------
-  df_cluster <- fread('../../data/urbanformbr/pca_regression_df/cluster_output/cluster_1.csv')
-  head(df_cluster)
+  #df_cluster <- fread('../../data/urbanformbr/pca_regression_df/cluster_output/cluster_1.csv')
+  #head(df_cluster)
 
    # select and rename columns
-  df_cluster <- dplyr::select(df_cluster, c('i_code_urban_concentration', 'cluster4'))
-  setnames(df_cluster, 'i_code_urban_concentration', 'code_urban_concentration')
+  #df_cluster <- dplyr::select(df_cluster, c('i_code_urban_concentration', 'cluster4'))
+  #setnames(df_cluster, 'i_code_urban_concentration', 'code_urban_concentration')
 
   # * * isolated uca --------------------------------------------------------
   #df_classify_isolated <- readr::read_rds('../../data/urbanformbr/pca_regression_df/classify_uca_isolated.rds')
@@ -234,10 +234,10 @@ source('R/setup.R')
     ) %>%
     dplyr::left_join(
       df_landuse
-    ) %>%
-    dplyr::left_join(
-      df_cluster
-    )
+    ) #%>%
+    #dplyr::left_join(
+    #  df_cluster
+    #)
 
 
   df_merge <- dplyr::left_join(
