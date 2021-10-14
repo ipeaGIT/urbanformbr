@@ -156,7 +156,7 @@ source('R/setup.R')
 
 
   # * street metrics --------------------------------------------------------
-  df_street <- data.table::fread("../../data/urbanformbr/pca_regression_df/streets_metrics.csv") %>%
+  df_street <- data.table::fread("../../data/urbanformbr/pca_regression_df/streets_metrics_new.csv") %>%
     dplyr::select(-c(intersection_count,k_avg))
 
   df_street <- subset(df_street, name_urban_concentration %in% df_prep$name_urban_concentration)

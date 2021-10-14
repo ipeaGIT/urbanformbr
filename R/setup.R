@@ -64,6 +64,7 @@ list.of.packages <- c('ggplot2'      # visualizacao de dados
                       , "FactoMineR"
                       , "factoextra"
                       , "psych"
+                      , "GGally"
                       )
 
 

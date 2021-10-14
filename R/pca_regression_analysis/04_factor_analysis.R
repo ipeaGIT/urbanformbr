@@ -30,8 +30,14 @@ df_select <- df_dens %>%
     #, x_prop_built_consolidated_area_2014
     , x_intersection_density_km
     , x_circuity_avg
+    #, x_entropy
+    #, x_betweenness_centrality_avg
+    #, x_closeness_centrality_avg
+    #, x_street_length
     #, x_coverage
   )
+
+#kms <- colnames(df_select_df) %>% str_extract("\\d{2}(?=km_total)")
 
 #df_area <- readr::read_rds("../../data/urbanformbr/pca_regression_df/area.rds") %>%
 #  dplyr::select(code_muni, saturation_total_area_fixed_2014) %>%
@@ -224,3 +230,19 @@ fviz_mfa_ind(res.mfa, partial = "all")
 
 
 fviz_mfa_axes(res.mfa)
+
+
+
+# correlogram -------------------------------------------------------------
+
+GGally::ggpairs(
+  df_select_df,
+  columnLabels = c(
+    "Urban size", "Density pop 01km", "Density built 01km", "Land use mix",
+    "Prop largest patch", "Compacity", "Intersection dens", "Circuity avg"
+  )
+  )
+
+GGally::ggcorr(df_select_df)
+
+
