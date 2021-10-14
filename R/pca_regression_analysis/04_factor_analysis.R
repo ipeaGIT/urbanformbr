@@ -1,7 +1,6 @@
 # description -------------------------------------------------------------
 
 # this script estimates multiple factor analysis for all variables of urbanform
-# FAZER SO COM URBANFORM?
 
 # setup -------------------------------------------------------------------
 
@@ -11,43 +10,144 @@ source('R/setup.R')
 df_raw <- readr::read_rds('../../data/urbanformbr/pca_regression_df/pca_regression_df_ready_to_use.rds')
 
 # select variables --------------------------------------------------------
-df_select <- df_raw %>%
+
+df_dens <- df_raw %>%
+  mutate(x_densidade_total = x_pop_2010 / as.numeric(x_urban_extent_size_2014))
+
+df_select <- df_dens %>%
   dplyr::select(
-    dplyr::matches("^(i)"),
-    d_tma,
-    x_urban_extent_size_2014,
-    x_prop_built_consolidated_area_2014, # building coverage?
-    x_density_pop_05km_total_2014,
-    x_land_use_mix,
-    #x_n_large_patches,
-    x_avg_cell_distance,
-    x_k_avg,
-    x_intersection_density_km,
-    x_circuity_avg,
-    x_sd_elevation,
-    x_mean_slope
+    dplyr::matches("^(i)")
+    #,dplyr::matches("^(y)")
+    , x_urban_extent_size_2014
+    #, x_pop_2010
+    #x_built_total_total_2014,
+    , dplyr::matches("01km_total")
+    #, x_density_built_01km_total_2014
+    #, x_density_pop_01km_total_2014
+    #, x_densidade_total
+    , x_land_use_mix
+    , x_proportion_largest_patch
+    , x_compacity
+    #, x_prop_built_consolidated_area_2014
+    , x_intersection_density_km
+    , x_circuity_avg
+    , x_entropy
+    , x_betweenness_centrality_avg
+    , x_closeness_centrality_avg
+    , x_degree_centrality_avg
+    , x_street_length
+    #, x_coverage
   )
 
-df_area <- readr::read_rds("../../data/urbanformbr/pca_regression_df/area.rds") %>%
-  dplyr::select(code_muni,saturation_total_area_fixed_2014 ) %>%
-  dplyr::rename(
-    i_code_urban_concentration = code_muni,
-    x_coverage = saturation_total_area_fixed_2014
-    )
+#kms <- colnames(df_select_df) %>% str_extract("\\d{2}(?=km_total)")
 
-df_select <- data.table::merge.data.table(
-  df_select,df_area, by = "i_code_urban_concentration")
+#df_area <- readr::read_rds("../../data/urbanformbr/pca_regression_df/area.rds") %>%
+#  dplyr::select(code_muni, saturation_total_area_fixed_2014) %>%
+#  dplyr::rename(
+#    i_code_urban_concentration = code_muni,
+#    x_coverage = saturation_total_area_fixed_2014
+#  )
+
+#df_select <- data.table::merge.data.table(
+#  df_select, df_area, by = "i_code_urban_concentration")
+
+
+# prep data ---------------------------------------------------------------
 
 # change variable class
 df_select[
   ,
   x_urban_extent_size_2014 := as.numeric(x_urban_extent_size_2014)
-  ]
+]
+
+# after properly classifying each group, reorder columns so that each group is ordered
+#..in the dataset
+# reorder
+#df_select <- df_select %>%
+#  relocate(x_coverage, .after = x_compacity)# %>%
+#relocate(d_tma, .after = x_mean_slope)
+
+#### change datatable to dataframe for converting one id column to row.names
+df_select <- df_select %>%
+  select(-c(i_code_urban_concentration, i_name_urban_concentration))
+
+#df_select_df <- df_select %>%
+#  tibble::column_to_rownames("i_name_urban_concentration")
+
+df_select_df <- data.frame(df_select)
+
+df_select_df <- data.frame(
+  df_select_df[,-1],
+  row.names = df_select_df[,1]
+)
 
 # factor analysis ---------------------------------------------------------
 
+# * PCA -------------------------------------------------------------------
+r_pca <- FactoMineR::PCA(
+  X = df_select_df, scale.unit = T, ncp = ncol(df_select_df), graph = F
+)
 
-# * prep data for factanal ------------------------------------------------
+# determine number of factors: eigenvalues
+(r_eigenvalue <- factoextra::get_eigenvalue(r_pca))
+# 3 eigenvalues greater than unity -> 3 factors considered
+factoextra::fviz_eig(r_pca, addlabels = T, )
+
+# check communalities and factor loadings ---------------------------------
+#r_factor <- psych::principal(
+#  r = df_select_df, nfactors = 3, rotate = "none"
+#)
+
+#r_factor_varimax <- psych::principal(
+#  r = df_select_df, nfactors = 3, rotate = "varimax"
+#)
+
+#r_factor_none_8 <- psych::principal(
+#  r = df_select_df, nfactors = 8, rotate = "none"
+#)
+
+#(r_factor_none <- psych::principal(
+#  r = df_select_df, nfactors = ncol(df_select_df), rotate = "none"
+#)
+#)
+
+(r_factor_varimax <- psych::principal(
+  r = df_select_df, nfactors = ncol(df_select_df), rotate = "varimax"
+)
+)
+
+
+# exportar fatores --------------------------------------------------------
+
+df_factors <- as.data.frame(r_factor_varimax$scores)
+
+data.table::setDT(df_factors,keep.rownames = T)
+
+setnames(
+  df_factors,
+  old = c("rn","RC1","RC2","RC3"),
+  new = c("name_uca_case","road_centrality","compact_contig",
+          "area_road_size")
+  )
+df_factors <- df_factors[, c(1:4)]
+
+readr::write_rds(
+  df_factors,
+  "../../data/urbanformbr/pca_regression_df/factors_morphology.rds",
+  compress = "gz"
+  )
+
+# * factor rotation (if necessary) ----------------------------------------
+
+
+# factor labelling --------------------------------------------------------
+
+
+
+
+
+
+# MULTIPLE factor analysis ---------------------------------------------------------
 
 
 # organize the variables into groups -> ALINHAR GRUPOS
@@ -62,10 +162,10 @@ df_select[
 # x_prop_built_consolidated_area_2014
 # x_density_pop_05km_total_2014
 # x_land_use_mix
-# x_avg_cell_distance
+# x_compacity
 # x_coverage
 
-## g2: urban network infrastructure -> 4 VARS
+## g2: urban network infrastructure -> 3 VARS
 # x_k_avg
 # x_intersection_density_km
 # x_circuity_avg
@@ -77,50 +177,102 @@ df_select[
 ## g4: categorial variables -> 1 VAR
 # d_tma
 
-# after properly classifying each group, reorder columns so that each group is ordered
-#..in the dataset
-# reorder
-df_select <- df_select %>%
-  relocate(x_coverage, .after = x_avg_cell_distance) %>%
-  relocate(d_tma, .after = x_mean_slope)
-
-#### change datatable to tibble for converting one id column to row.names
-df_select <- df_select %>%
-  select(-c(i_code_urban_concentration, i_name_uca_case))
-
-666666666 CONTINUAR
-
-a <- data.frame(df_select)
-
-a <- data.frame(
-  a[,-1],
-  row.names = a[,1]
-  )
+# make d_tma factor for classifying as a categorical variable at MFA
 
 
 
 # define R objects for factor analysis package
-
+df_select_df <- df_select_df %>%
+  dplyr::mutate(
+    d_tma = factor(
+      d_tma, levels = c(0,1), labels = c("Não TMA", "TMA")
+    )
+  )
 
 # groups
-grupo <- c(3,6,3,2,1)
-nome_grupo <- c("id","form","network","physical","cat")
-tipo <- c("n","s","s","s","n")
+grupo <- c(6,3,2,1)
+nome_grupo <- c("form","network","physical","cat")
+tipo <- c("s","s","s","n")
 
 
 # run factor analysis -----------------------------------------------------
 
 res.mfa <- FactoMineR::MFA(
-  base = df_select,
+  base = df_select_df,
   group = grupo,
   name.group = nome_grupo,
   type = tipo,
-  excl = c(1,2,3),
   graph = F
 )
 
 
+# results --------------------------------------------------------------------
+eig.val <- factoextra::get_eigenvalue(res.mfa)
+head(eig.val)
 
-# save plots --------------------------------------------------------------
+group <- factoextra::get_mfa_var(res.mfa, "group")
+head(group$coord)
+head(group$contrib)
+
+
+# * plots -----------------------------------------------------------------
+
+factoextra::fviz_screeplot(res.mfa)
+
+factoextra::fviz_mfa(res.mfa, "group")
+
+factoextra::fviz_contrib(res.mfa, "group", axes = 1) +
+  factoextra::fviz_contrib(res.mfa, "group", axes = 2)
+
+factoextra::fviz_mfa_var(
+  X = res.mfa, choice = "quanti.var", palette = "jco",
+  repel = T, legend = "bottom", geom = c("arrow","text")
+)
+
+
+factoextra::fviz_contrib(
+  res.mfa, choice = "quanti.var", axes = 1, top = 10, palette = "jco"
+) +
+  factoextra::fviz_contrib(
+    res.mfa, choice = "quanti.var", axes = 2, top = 10, palette = "jco"
+  )
+
+
+factoextra::fviz_mfa_var(
+  X = res.mfa, choice = "quanti.var", col.var = "contrib",
+  gradient.cols = c("#00AFBB","#E7B800","#FC4E07"),
+  repel = T, legend = "bottom", geom = c("point","text")
+)
+
+factoextra::fviz_mfa_var(
+  X = res.mfa, choice = "quanti.var", col.var = "cos2",
+  gradient.cols = c("#00AFBB","#E7B800","#FC4E07"),
+  repel = T, legend = "bottom", geom = c("point","text")
+)
+fviz_cos2(res.mfa,choice = "quanti.var",axes = 1)
+
+
+
+# individuals
+fviz_mfa_ind(res.mfa, partial = "all")
+
+
+fviz_mfa_axes(res.mfa)
+
+
+
+# correlogram -------------------------------------------------------------
+
+GGally::ggpairs(
+  df_select_df,
+  columnLabels = c(
+    #"Y: Energy per capita", "Y: Commute time",
+    "Urban size", "Density pop 01km", "Density built 01km", "Land use mix",
+    "Prop largest patch", "Compacity", "Intersection dens", "Circuity avg",
+    "Entropy","Betweeness centr", "Closeness centr", "Degree centr","Street length"
+  )
+  )
+
+GGally::ggcorr(df_select_df)
 
 
