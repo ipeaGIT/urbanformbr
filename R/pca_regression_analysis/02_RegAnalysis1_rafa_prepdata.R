@@ -26,7 +26,10 @@ options(scipen = 99)
 df_raw <- readr::read_rds("../../data/urbanformbr/pca_regression_df/pca_regression_df_ready_to_use.rds")
 head(df_raw)
 
+summary(df_raw$x_pop_2010)
+summary(df_raw$x_urban_extent_size_2014)
 
+df_raw[ which.min(x_urban_extent_size_2014),]
 
 ############### 1.2 convert values to log
 #' because of non-positive values, we use
@@ -54,9 +57,7 @@ df_log <- copy(df_raw)
 df_log[, (cols_to_log) := lapply(.SD, function(x){ log(x) } ), .SDcols=cols_to_log]
 # df_log[, (cols_to_log) := lapply(.SD, function(x){ log(x + sqrt(x^2 + 1) ) } ), .SDcols=cols_to_log]
 
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-df_log[ y_fuel_energy_per_capita == -Inf]$y_fuel_energy_per_capita <- -3.2624
-summary(df_log$y_fuel_energy_per_capita)
+
 
 
 
@@ -89,13 +90,13 @@ drop3 <- c('x_density_pop_10km_total_2014',
            'x_land_use_mix_5km', 'x_land_use_mix_10km', 'x_land_use_mix_15km'
            )
 
-
+df_log$x_k_av
 # other multicolinear variables
-drop4 <- c('x_prop_services',  # colinear with x_prop_industry
-           'x_prop_employed',  # colinear with x_wghtd_mean_household_income_per_capita
-           'x_prop_high_educ', # colinear with x_wghtd_mean_household_income_per_capita
-           'x_prop_formal',    # colinear with x_wghtd_mean_household_income_per_capita
-           'x_k_avg'           # colinear with x_wghtd_mean_household_income_per_capita
+drop4 <- c( 'x_prop_services'  # colinear with x_prop_industry
+          , 'x_prop_employed'  # colinear with x_wghtd_mean_household_income_per_capita
+          , 'x_prop_high_educ' # colinear with x_wghtd_mean_household_income_per_capita
+          , 'x_prop_formal'    # colinear with x_wghtd_mean_household_income_per_capita
+         # , 'x_k_avg'           # colinear with x_wghtd_mean_household_income_per_capita
 )
 
 # work from home
@@ -106,9 +107,8 @@ drop5 <- c(   'x_prop_work_from_home_res_nucleo'
 
 
 
-
 ### drop vars
-df_fuel <- dplyr::select(df_log, - c('y_wghtd_mean_commute_time', 'y_fuel_consumption_total_2010', 'y_fuel_consumption_per_capita_2010', all_of(c(id_cols, drop1, drop2, drop3, drop4, drop5)) ))
+df_fuel <- dplyr::select(df_log, - c('y_wghtd_mean_commute_time', all_of(c(id_cols, drop1, drop2, drop3, drop4, drop5)) ))
 # df_time <- dplyr::select(df_log, - c('y_fuel_consumption_per_capita_2010', all_of(c(id_cols, drop1, drop2, drop3, drop4, drop5)) ))
 head(df_fuel)
 # df_fuel <- dplyr::select(df_log, - all_of(c('y_wghtd_mean_commute_time',id_cols)))
