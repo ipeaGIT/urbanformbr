@@ -148,7 +148,6 @@ calculate_diversity <- function(uca) {
     output_file_10km <- paste0("../../data/urbanformbr/cnefe/grid_diversity/", uca, "_", uca_name, "_10km.gpkg")
     output_file_15km <- paste0("../../data/urbanformbr/cnefe/grid_diversity/", uca, "_", uca_name, "_15km.gpkg")
 
-    if (!file.exists(output_file)) {
       message(sprintf("Processing urban concentration %s - %s", uca, uca_name))
 
       ## load grid with landuse data
@@ -174,16 +173,19 @@ calculate_diversity <- function(uca) {
         select(code_muni, name_uca_case, bw, cell = id, dissimilarity, entropy, theil_h = h)
       grid_uca_sf <- grid_uca_sf %>% left_join(local_sf)
 
+      avg_entropy <- mean(local_sf$entropy)
+      global_df$avg_entropy <- avg_entropy
 
-      ## save local diversity metrics
-      st_write(grid_uca_sf %>% filter(bw == 0), output_file)
-      st_write(grid_uca_sf %>% filter(bw == 5000), output_file_5km)
-      st_write(grid_uca_sf %>% filter(bw == 10000), output_file_10km)
-      st_write(grid_uca_sf %>% filter(bw == 15000), output_file_15km)
+      if (!file.exists(output_file)) {
+        ## save local diversity metrics
+        st_write(grid_uca_sf %>% filter(bw == 0), output_file)
+        st_write(grid_uca_sf %>% filter(bw == 5000), output_file_5km)
+        st_write(grid_uca_sf %>% filter(bw == 10000), output_file_10km)
+        st_write(grid_uca_sf %>% filter(bw == 15000), output_file_15km)
+      }
 
-      ## return global diversity metricss
+      ## return global diversity metrics
       return(global_df)
-   }
 
   }
 }
