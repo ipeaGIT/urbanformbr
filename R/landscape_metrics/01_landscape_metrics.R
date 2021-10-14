@@ -1,9 +1,14 @@
 source('R/setup.R')
-library(landscapemetrics)
+library("landscapemetrics")
 
 data_folder <- "../../data/urbanformbr/ghsl/BUILT/urban_extent_cutoff_20"
 
 raster_files <- list.files(path = data_folder, full.names = TRUE, pattern = "1K_raster.tif$")
+
+
+
+
+
 
 apply_metrics <- function(file) {
   city_year <- stringr::str_remove(file, pattern = "../../data/urbanformbr/ghsl/BUILT/urban_extent_cutoff_20/GHS_BUILT_LDS")
