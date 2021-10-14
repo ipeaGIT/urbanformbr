@@ -17,6 +17,7 @@ df_dens <- df_raw %>%
 df_select <- df_dens %>%
   dplyr::select(
     dplyr::matches("^(i)")
+    #,dplyr::matches("^(y)")
     , x_urban_extent_size_2014
     #, x_pop_2010
     #x_built_total_total_2014,
@@ -30,10 +31,11 @@ df_select <- df_dens %>%
     #, x_prop_built_consolidated_area_2014
     , x_intersection_density_km
     , x_circuity_avg
-    #, x_entropy
-    #, x_betweenness_centrality_avg
-    #, x_closeness_centrality_avg
-    #, x_street_length
+    , x_entropy
+    , x_betweenness_centrality_avg
+    , x_closeness_centrality_avg
+    , x_degree_centrality_avg
+    , x_street_length
     #, x_coverage
   )
 
@@ -67,7 +69,7 @@ df_select[
 
 #### change datatable to dataframe for converting one id column to row.names
 df_select <- df_select %>%
-  select(-c(i_code_urban_concentration, i_name_uca_case))
+  select(-c(i_code_urban_concentration, i_name_urban_concentration))
 
 #df_select_df <- df_select %>%
 #  tibble::column_to_rownames("i_name_urban_concentration")
@@ -104,10 +106,36 @@ factoextra::fviz_eig(r_pca, addlabels = T, )
 #  r = df_select_df, nfactors = 8, rotate = "none"
 #)
 
+#(r_factor_none <- psych::principal(
+#  r = df_select_df, nfactors = ncol(df_select_df), rotate = "none"
+#)
+#)
+
 (r_factor_varimax <- psych::principal(
   r = df_select_df, nfactors = ncol(df_select_df), rotate = "varimax"
 )
 )
+
+
+# exportar fatores --------------------------------------------------------
+
+df_factors <- as.data.frame(r_factor_varimax$scores)
+
+data.table::setDT(df_factors,keep.rownames = T)
+
+setnames(
+  df_factors,
+  old = c("rn","RC1","RC2","RC3"),
+  new = c("name_uca_case","road_centrality","compact_contig",
+          "area_road_size")
+  )
+df_factors <- df_factors[, c(1:4)]
+
+readr::write_rds(
+  df_factors,
+  "../../data/urbanformbr/pca_regression_df/factors_morphology.rds",
+  compress = "gz"
+  )
 
 # * factor rotation (if necessary) ----------------------------------------
 
@@ -238,8 +266,10 @@ fviz_mfa_axes(res.mfa)
 GGally::ggpairs(
   df_select_df,
   columnLabels = c(
+    #"Y: Energy per capita", "Y: Commute time",
     "Urban size", "Density pop 01km", "Density built 01km", "Land use mix",
-    "Prop largest patch", "Compacity", "Intersection dens", "Circuity avg"
+    "Prop largest patch", "Compacity", "Intersection dens", "Circuity avg",
+    "Entropy","Betweeness centr", "Closeness centr", "Degree centr","Street length"
   )
   )
 

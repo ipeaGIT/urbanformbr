@@ -201,6 +201,11 @@ source('R/setup.R')
   #df_classify_isolated <- readr::read_rds('../../data/urbanformbr/pca_regression_df/classify_uca_isolated.rds')
 
 
+
+  # * factors ---------------------------------------------------------------
+  df_factors <- readr::read_rds("../../data/urbanformbr/pca_regression_df/factors_morphology.rds")
+
+
 # merge data --------------------------------------------------------------
 
 
@@ -264,6 +269,11 @@ source('R/setup.R')
     #dplyr::left_join(df_classify_isolated) %>%
     dplyr::left_join(df_classify_tma)
 
+  df_merge <- dplyr::left_join(
+    df_merge, df_factors,
+    by = c('name_uca_case' = 'name_uca_case')
+  )
+
   # calculate fuel consumption per capita
   # df_merge <- df_merge %>%
   #   mutate(fuel_consumption_per_capita_2010 = fuel_consumption_total_2010 / pop_2015)
@@ -279,6 +289,12 @@ source('R/setup.R')
     dplyr::relocate(
       c(large_uca_pop:tma),
       .after = wghtd_mean_commute_time
+    )
+
+  df_merge <- df_merge %>%
+    dplyr::relocate(
+      c(road_centrality:area_road_size),
+      .after = tma
     )
 
   # * add prefix (dependent & independent variable) -------------------------
@@ -298,6 +314,11 @@ source('R/setup.R')
     dplyr::rename_with(
       .cols = large_uca_pop:tma,
       function(x){paste0("d_", x)}
+    ) %>%
+    # factors
+    dplyr::rename_with(
+      .cols = road_centrality:area_road_size,
+      function(x){paste0("f_", x)}
     ) %>%
     # independent variables (x)
     dplyr::rename_with(
