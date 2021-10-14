@@ -3,6 +3,10 @@ rm(list=ls())
 library(magrittr)
 library(data.table)
 
+
+#### 1. Donwload raw data ---------------------------------------------------------------
+
+
 fixed_link <- "https://www.gov.br/anp/pt-br/centrais-de-conteudo/dados-estatisticos/de/arquivos-vendas-de-derivados-de-petroleo-e-biocombustiveis/"
 fixed_link1 <- "http://www.anp.gov.br/arquivos/dados-estatisticos/vendas-combustiveis/"
 `%nin%` <- Negate(`%in%`)
@@ -30,6 +34,7 @@ diesel_link <- c(paste0("oleo-diesel-municipio-",
                         ".xls"))
 
 fuel_link <- c(etanol_link,gasolina_link,diesel_link)
+fuel_link <- fuel_link[fuel_link %like% "2010"]
 
 for(i in 1:length(fuel_link)){ # i = 1
 
@@ -43,15 +48,18 @@ for(i in 1:length(fuel_link)){ # i = 1
   # download
   if(fuel_link[i] %like% "2019"){
     download.file(url = paste0(fixed_link,fuel_link[i]),
-                  destfile = paste0("../../data-raw/ANP/",tmp_destifile))
+                  destfile = paste0("../../data-raw/ANP/",tmp_destifile),mode = "wb")
   }else{
     download.file(url = paste0(fixed_link1,fuel_link[i]),
-                  destfile = paste0("../../data-raw/ANP/",tmp_destifile))
+                  destfile = paste0("../../data-raw/ANP/",tmp_destifile),mode = "wb")
   }
 
 
 }
 
+
+
+#### 2. Pile up data of all years and types of fuel ---------------------------------------------------------------
 
 xlsx_files <- list.files(path = "../../data-raw/ANP/",pattern = ".xlsx",full.names = TRUE)
 xslx_all <- lapply(seq_along(xlsx_files),function(i){ # i = 1
@@ -90,4 +98,6 @@ xls_all <- lapply(seq_along(xlsx_files),function(i){ # i = 1
 # merge
 dt_all <- rbind(xls_all,xslx_all)
 
-readr::write_rds(x = dt_all,file = "data/fule_cities.rds",compress = "gz")
+
+# save data
+readr::write_rds(x = dt_all,file = "../../data/urbanformbr/fuel/fuel_cities.rds",compress = "gz")

@@ -21,6 +21,9 @@ files <- purrr::map(years, ~dir(ghsl_built_dir, pattern = .))
 #input <- files[[1]]
 
 # define function ---------------------------------------------------------------
+# set up parallel
+future::plan(future::multicore)
+
 f_create_polygon_cutoff <- function(input){
 
   # read all raster files from one year in a list
@@ -130,22 +133,31 @@ f_create_polygon_cutoff <- function(input){
 
   # * save data -------------------------------------------------------------
 
+  ano <- unique(anos)
+
   # save as one df
   saveRDS(
     object = bua_reduce,
-    file = paste0('../../data/urbanformbr/ghsl/results/urban_extent_uca_',unique(anos),'_cutoff20.rds'),
+    file = paste0('../../data/urbanformbr/ghsl/results/urban_extent_uca_',ano,'_cutoff20.rds'),
     compress = 'xz'
   )
 
-  # save each polygon separately ?
+  # save each polygon separately
+  bua_split <- split(bua_reduce, bua_reduce$name_uca_case)
+
+
+  furrr::future_walk2(
+    .x = bua_split, .y = names(bua_split), function(x,y)
+      sf::st_write(
+        obj = x,
+        dsn = paste0("../../data/urbanformbr/ghsl/BUILT/urban_extent_cutoff_20_shape/urban_extent_",ano,"_cutoff_20_",y,".gpkg"),
+        append = F)
+  )
 
 
 }
 
 # run function ------------------------------------------------------------
-
-# set up parallel
-future::plan(future::multicore)
 
 
 # run for multiple years

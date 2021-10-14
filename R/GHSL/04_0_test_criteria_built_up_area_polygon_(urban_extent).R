@@ -36,7 +36,7 @@ ghsl_built_dir <- "../../data/urbanformbr/ghsl/BUILT/UCA/"
 
 files_preliminary <- dir(
   "../../data/urbanformbr/ghsl/BUILT/UCA/",
-  pattern = "(1975|2014).*(sao_paulo|fortaleza|brasilia|curitiba|belo_horizonte|rio_de_janeiro|bage|porto_alegre|vitoria_es).*\\.tif$"
+  pattern = "(1975|2014).*(sao_paulo|fortaleza|brasilia|curitiba|belo_horizonte|rio_de_janeiro|bage|porto_alegre).*\\.tif$"
 )
 
 #input <- files_preliminary
@@ -76,22 +76,16 @@ f_preliminary <- function(input) {
     dplyr::rename(bua_value = 1) %>%
     # create columns classifying area based on cutoff values (0,25,50%)
     dplyr::mutate(
-      cutoff_0 = dplyr::case_when(
-        bua_value > 0 ~ "Construída",
-        T ~ "Não construida"
-      ),
-      cutoff_10 = dplyr::case_when(
-        bua_value >= 10 ~ "Construída",
-        T ~ "Não construida"
-      ),
-      cutoff_25 = dplyr::case_when(
-        bua_value >= 25 ~ "Construída",
-        T ~ "Não construida"
-      ),
-      cutoff_50 = dplyr::case_when(
-        bua_value >= 50 ~ "Construída",
-        T ~ "Não construida"
-        )
+      cutoff_20 = data.table::fcase(
+        bua_value >= 20, "Extensão Urbana (>=20%)",
+        default = "Ext. Não-Urb. (<20%)"
+      )
+    ) %>%
+    dplyr::mutate(
+      cutoff_20 = factor(
+        cutoff_20,
+        levels = c("Extensão Urbana (>=20%)","Ext. Não-Urb. (<20%)")
+          )
     )
 
   }
@@ -112,17 +106,18 @@ f_preliminary <- function(input) {
   }
 
   # create column name vector
-  vetor <- paste0('cutoff_',c(0,10,25,50))
+  vetor <- paste0('cutoff_',c(20))
   # generate converted list of sf df
   #a <- pmap(list(variavel = vetor), f_group_summarise, base = bua_pol$bage_rs_1975)
 
-  bua_convert <- map(bua_pol,
-           ~pmap(list(variavel = vetor), f_group_summarise, base = .)
-           )
+  bua_convert <- map(
+    bua_pol,
+    ~pmap(list(variavel = vetor), f_group_summarise, base = .)
+    )
 
   f_names <- function(base){
 
-    rlang::set_names(base, paste0('cutoff_',c(0,10,25,50)))
+    rlang::set_names(base, paste0('cutoff_',c(20)))
 
   }
 
@@ -150,20 +145,8 @@ f_preliminary <- function(input) {
 
   bua_plots <- purrr::map(
     bua_convert,
-    ~purrr::modify_in(., 1, ~f_plot(., 'cutoff_0'))
+    ~purrr::modify_in(., 1, ~f_plot(., 'cutoff_20'))
     )
-  bua_plots <- purrr::map(
-    bua_plots,
-    ~purrr::modify_in(., 2, ~f_plot(., 'cutoff_10'))
-  )
-  bua_plots <- purrr::map(
-    bua_plots,
-    ~purrr::modify_in(., 3, ~f_plot(., 'cutoff_25'))
-  )
-  bua_plots <- purrr::map(
-    bua_plots,
-    ~purrr::modify_in(., 4, ~f_plot(., 'cutoff_50'))
-  )
 
   bua_reduce <- purrr::map(bua_plots, ~purrr::reduce(., `/`))
 
@@ -199,15 +182,30 @@ f_preliminary <- function(input) {
     plot_grid(pluck(x, 1), pluck(x, 2))
     )
 
+  #a <- bua_compare$bage_rs /
+  #  bua_compare$belo_horizonte_mg /
+  #  bua_compare$brasilia_df /
+  #  bua_compare$curitiba_pr /
+  #  bua_compare$fortaleza_ce /
+  #  bua_compare$porto_alegre_rs /
+  #  bua_compare$rio_de_janeiro_rj /
+  #  bua_compare$sao_paulo_sp
 
   # * save data -------------------------------------------------------------
 
   purrr::walk2(bua_compare, names(bua_compare), function(x,y)
     ggplot2::ggsave(
       filename = paste0('../../data/urbanformbr/ghsl/figures/', y, '.png'),
-      plot = x, dpi = 300, device = 'png'
+      plot = x, dpi = 600, device = 'png'
       )
     )
+
+  purrr::walk2(bua_compare, names(bua_compare), function(x,y)
+    ggplot2::ggsave(
+      filename = paste0('../../data/urbanformbr/ghsl/figures/', y, '.pdf'),
+      plot = x, dpi = 600, device = 'pdf'
+    )
+  )
 
 
 
