@@ -206,6 +206,7 @@ source('R/setup.R')
   df_factors <- readr::read_rds("../../data/urbanformbr/pca_regression_df/factors_morphology.rds")
 
 
+
 # merge data --------------------------------------------------------------
 
 
@@ -293,9 +294,17 @@ source('R/setup.R')
 
   df_merge <- df_merge %>%
     dplyr::relocate(
-      c(road_centrality:area_road_size),
+      c(compact_contig ),
       .after = tma
     )
+
+
+  # * STREET POP ------------------------------------------------------------
+  df_merge <- df_merge %>%
+    dplyr::mutate(street_pop = street_length / pop_2010) %>%
+    dplyr::relocate(street_pop, .after = street_length)# %>%
+    #dplyr::select(-street_length)
+
 
   # * add prefix (dependent & independent variable) -------------------------
 
@@ -317,7 +326,7 @@ source('R/setup.R')
     ) %>%
     # factors
     dplyr::rename_with(
-      .cols = road_centrality:area_road_size,
+      .cols = compact_contig,
       function(x){paste0("f_", x)}
     ) %>%
     # independent variables (x)
