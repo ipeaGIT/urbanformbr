@@ -97,9 +97,12 @@ factoextra::fviz_eig(r_pca, addlabels = T, )
 
 # * psych::fa -------------------------------------------------------------
 psych::principal(df_select_df, rotate = "varimax", nfactors = 11)
+factanal(df_select_df, rotation = "varimax", factors = 11)
+factanal(df_select_df, rotation = "varimax", factors = 4)
+psych::fa(df_select_df,rotate = "varimax", nfactors = 11, fm = "pa")
 psych::fa(df_select_df,rotate = "varimax", nfactors = 11, fm = "pa", SMC = F)
 psych::fa(df_select_df, rotate = "varimax",nfactors = 4, fm = "pa")
-factanal(df_select_df, rotation = "varimax", factors = 4)
+psych::fa(df_select_df, rotate = "varimax",nfactors = 4, fm = "ml")
 
 # export factors ----------------------------------------------------------
 
