@@ -23,7 +23,7 @@ df_select <- df_dens %>%
     #,dplyr::matches("^(y)")
     , x_urban_extent_size_2014
     , dplyr::matches("01km_total")
-    , x_density_built_01km_total_2014
+    #, x_density_built_01km_total_2014
     , x_density_pop_01km_total_2014
     , x_land_use_mix
     , x_proportion_largest_patch
@@ -34,7 +34,7 @@ df_select <- df_dens %>%
     #, x_betweenness_centrality_avg
     , x_closeness_centrality_avg
     #, x_degree_centrality_avg
-    , x_street_pop
+    #, x_street_pop
     #, x_coverage
   )
 
@@ -75,7 +75,7 @@ r_pca <- FactoMineR::PCA(
 
 # determine number of factors: eigenvalues
 (r_eigenvalue <- factoextra::get_eigenvalue(r_pca))
-# 3 eigenvalues greater than unity -> 3 factors considered
+# 4 eigenvalues greater than unity -> 4 factors considered
 factoextra::fviz_eig(r_pca, addlabels = T, )
 
 # check communalities and factor loadings
@@ -86,23 +86,25 @@ factoextra::fviz_eig(r_pca, addlabels = T, )
 #)
 #)
 
-(r_factor_varimax <- psych::principal(
-  r = df_select_df, nfactors = ncol(df_select_df), rotate = "varimax"
-)
-)
+#(r_factor_varimax <- psych::principal(
+#  r = df_select_df, nfactors = ncol(df_select_df), rotate = "varimax"
+#)
+#)
 
 
 # * factanal --------------------------------------------------------------
 
 
 # * psych::fa -------------------------------------------------------------
-psych::principal(df_select_df, rotate = "varimax", nfactors = 11)
-factanal(df_select_df, rotation = "varimax", factors = 11)
-factanal(df_select_df, rotation = "varimax", factors = 4)
-psych::fa(df_select_df,rotate = "varimax", nfactors = 11, fm = "pa")
-psych::fa(df_select_df,rotate = "varimax", nfactors = 11, fm = "pa", SMC = F)
-psych::fa(df_select_df, rotate = "varimax",nfactors = 4, fm = "pa")
-psych::fa(df_select_df, rotate = "varimax",nfactors = 4, fm = "ml")
+
+
+# agoravai
+(r_factor_varimax <- psych::fa(
+  df_select_df, rotate = "varimax",nfactors = ncol(df_select_df), fm = "pa", SMC = F
+  )
+)
+
+
 
 # export factors ----------------------------------------------------------
 
@@ -113,8 +115,8 @@ data.table::setDT(df_factors,keep.rownames = T)
 
 setnames(
   df_factors,
-  old = c("rn","RC1"),
-  new = c("name_uca_case","compact_contig")
+  old = c("rn","PA1"),
+  new = c("name_uca_case","compact_contig_inter_dens")
   )
 
 df_factors <- df_factors[, c(1:2)]

@@ -294,7 +294,7 @@ source('R/setup.R')
 
   df_merge <- df_merge %>%
     dplyr::relocate(
-      c(compact_contig ),
+      c(compact_contig_inter_dens),
       .after = tma
     )
 
@@ -326,7 +326,7 @@ source('R/setup.R')
     ) %>%
     # factors
     dplyr::rename_with(
-      .cols = compact_contig,
+      .cols = compact_contig_inter_dens,
       function(x){paste0("f_", x)}
     ) %>%
     # independent variables (x)
@@ -335,7 +335,7 @@ source('R/setup.R')
       function(x){paste0("x_", x)}
     )
 
-head(df_merge)
+glimpse(df_merge)
 # save data ---------------------------------------------------------------
 
   # check if there is any missing values
