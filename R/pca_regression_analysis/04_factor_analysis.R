@@ -1,6 +1,7 @@
 # description -------------------------------------------------------------
 
-# this script estimates factor analysis for all variables of urbanform
+# this script estimates factor analysis for all urban form and street network
+# variables
 
 # setup -------------------------------------------------------------------
 
@@ -69,17 +70,16 @@ df_select_df <- data.frame(
 
 # ref: Manly, Alberto, 2017: Multivariate Statistics: A Primer
 
-r_pca <- FactoMineR::PCA(
-  X = df_select_df, scale.unit = T, ncp = ncol(df_select_df), graph = F
-)
+#r_pca <- FactoMineR::PCA(
+#  X = df_select_df, scale.unit = T, ncp = ncol(df_select_df), graph = F
+#)
 
 # determine number of factors: eigenvalues
-(r_eigenvalue <- factoextra::get_eigenvalue(r_pca))
+#(r_eigenvalue <- factoextra::get_eigenvalue(r_pca))
 # 4 eigenvalues greater than unity -> 4 factors considered
-factoextra::fviz_eig(r_pca, addlabels = T, )
+#factoextra::fviz_eig(r_pca, addlabels = T, )
 
 # check communalities and factor loadings
-
 
 #(r_factor_none <- psych::principal(
 #  r = df_select_df, nfactors = ncol(df_select_df), rotate = "none"
@@ -91,23 +91,17 @@ factoextra::fviz_eig(r_pca, addlabels = T, )
 #)
 #)
 
-
-# * factanal --------------------------------------------------------------
-
-
 # * psych::fa -------------------------------------------------------------
 
 
-# agoravai
+# comando final utilizado
 (r_factor_varimax <- psych::fa(
   df_select_df, rotate = "varimax",nfactors = ncol(df_select_df), fm = "pa", SMC = F
   )
 )
 
 
-
 # export factors ----------------------------------------------------------
-
 
 df_factors <- as.data.frame(r_factor_varimax$scores)
 
