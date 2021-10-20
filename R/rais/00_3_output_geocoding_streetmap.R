@@ -30,22 +30,34 @@ f_rais_output_streetmap <- function(ano) {
 
   if (ano != 2010) {
 
+    columns <- c("id_estab", "ano", "Status", "Match_addr","Score", "Addr_type",
+                 "lon_output", "lat_output",
+                 "logradouro", "bairro", "name_muni", "code_muni", "uf","cep")
+
 
   # * 2010 ------------------------------------------------------------------
   } else{
 
   columns <- c("id_estab", "ano", "Status", "Match_addr","Score", "Addr_type",
                "lon_output", "lat_output",
-               "logradouro", "name_muni", "code_muni", "uf")
-
-  rais_geocoded <- data.table::fread(
-    sprintf("../../data/geocode/rais/%s/rais_%s_output_geocode_streetmap.csv",ano,ano),
-    encoding = "UTF-8",
-    colClasses = "character",
-    select = columns
-  )
+               "logradouro", "name_muni", "code_muni", "uf","cep")
 
   }
+
+  columns_classes <- list(
+    "double" = "id_estab"
+    , "character" = columns[columns %nlike% "id_estab"]
+  )
+
+  # ler dados
+  rais_geocoded <- data.table::fread(
+    sprintf("../../data/geocode/rais/%s/rais_%s_output_geocode_streetmap.csv",ano,ano)
+    , encoding = "UTF-8"
+    , colClasses = columns_classes
+    , select = columns
+    #, nrows = 100
+  )
+
 
   # limpar nome colunas
   rais_geocoded <- janitor::clean_names(rais_geocoded)
@@ -57,9 +69,21 @@ f_rais_output_streetmap <- function(ano) {
     new = c("matched_address","lon","lat")
   )
 
-  # id_estab para 14 caracteres
-  rais_geocoded[, id_estab := stringr::str_pad(id_estab, width = 14, pad = 0)]
 
+  # id_estab para 14 caracteres & cep para 8 caracteres
+  rais_geocoded[
+    ,
+    `:=`(
+      id_estab = stringr::str_pad(as.character(id_estab), width = 14, pad = 0)
+      , cep = stringr::str_pad(cep, width = 8, pad = 0)
+    )
+  ]
+
+
+  # * merge and save --------------------------------------------------------
+
+
+  # salvar dados
   fwrite(
     rais_geocoded,
     sprintf("../../data/geocode/rais/%s/rais_%s_raw_geocoded.csv", ano, ano)

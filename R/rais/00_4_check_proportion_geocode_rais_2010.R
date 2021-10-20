@@ -2,8 +2,8 @@
 
 # from # https://github.com/ipeaGIT/acesso_oport/blob/master/R/fun/empregos/empregos_geo.R
 
-# this script reads geocoded employment data from RAIS; filters for the 184 ucas in
-# the study; estimates the percentage of good quality geocoding, according
+# this script reads geocoded employment data from RAIS 2010; filters for the 184
+# ucas in the study; estimates the percentage of good quality geocoding, according
 # to the criteria used in the AOP; saves geocoded employment data to estimate
 # policentrality metrics
 
@@ -77,22 +77,52 @@ df_classify_uca_large <- subset(
 
 # read and clean rais estabs raw ------------------------------------------
 
-#CHANGE FOR 2010 WHEN GEOCODING IS COMPLETE
-# ano <- 2017
-f_rais_clean_estabs_raw <- function(ano) {
+ano <- 2010
+f_rais_clean_estabs_geocoded <- function(ano) {
 
-  # 1) Dados dos estabelecimentos
+  # 1) dados dos estabelecimentos
 
-  # 1.2) Abrir dados e selecionar as colunas
-  rais_estabs_raw <- fread(sprintf("../../data/geocode/rais/%s/rais_%s_raw_geocoded.csv", ano, ano),
-                           # select = columns,
-                           colClasses = "character",
-                           encoding = "UTF-8")
+  # * rais geocode -----------------------------------------------------------
+  rais_geocode <- fread(
+    file = sprintf("../../data/geocode/rais/%s/rais_%s_raw_geocoded.csv", ano, ano)
+    #, select = columns
+    , colClasses = "character"
+    , encoding = "UTF-8"
+    #, nrows = 100
+  )
 
+  # * rais raw ----------------------------------------------------------------
+  col_names_raw <- fread(
+    sprintf('//storage6/bases/DADOS/RESTRITO/RAIS/csv/estab%s.csv', ano)
+    , nrows = 100
+    , colClasses = "character"
+    ) %>%
+    colnames()
 
+  columns_raw <- c("id_estab", "qt_vinc_ativos",
+                   col_names_raw[col_names_raw %like% "nat_jur"])
 
-  # 2) Filtrar somente empresas com vinculos ativos
-  rais_filtro <- rais_estabs_raw[as.numeric(qt_vinc_ativos) > 0]
+  rais_raw <- fread(
+    sprintf('//storage6/bases/DADOS/RESTRITO/RAIS/csv/estab%s.csv', ano)
+    , select = columns_raw
+    , colClasses = "character"
+    , encoding = "UTF-8"
+    #, nrows = 100
+  )
+
+  # * merge -----------------------------------------------------------------
+  rais_geocode[
+    rais_raw,
+    `:=`(
+      qt_vinc_ativos = i.qt_vinc_ativos,
+      nat_jur = i.nat_jur2009
+    ),
+    on = c("id_estab")
+  ]
+
+  6666666666666 MUDAR CODEMUN OU CODEMUNI -> MUDAR NO 00_3 TAMBEM
+  # 2) filtrar somente empresas com vinculos ativos
+  rais_filtro <- rais_geocode[as.numeric(qt_vinc_ativos) > 0]
 
   # filtrar 184 ucas
   ## adicionar coluna codigo concentracao urbana
@@ -110,7 +140,7 @@ f_rais_clean_estabs_raw <- function(ano) {
   data.table::setkey(rais_filtro, code_urban_concentration)
   rais_filtro <- rais_filtro[.(unique(df_prep$code_urban_concentration))]
 
-  #rais_estabs_raw <- rais_estabs_raw[codemun %in% substr(df_codes$code_muni_uca, 1, 6)]
+  #rais_geocode <- rais_geocode[codemun %in% substr(df_codes$code_muni_uca, 1, 6)]
 
   # 3) Filtro 2: deletar todas as intituicoes com Natureza Juridica 'publica'
   # (ver ../data-raw/rais/ManualRAIS2018.pdf) pagina 19
@@ -226,3 +256,22 @@ vinc <- data.table::merge.data.table(
   df_classify_uca_large,
   by = "code_urban_concentration"
 )
+
+
+
+
+
+
+
+
+
+# * rais raw --------------------------------------------------------------
+columns_raw <- c("id_estab", "qt_vinc_ativos", 'nat_jur')
+columns_raw <-
+
+  rais_raw <- fread(
+    sprintf('//storage6/bases/DADOS/RESTRITO/RAIS/csv/estab%s.csv', ano)
+    , nrows = 100
+    , select = c("id_estab", "qt_vinc_ativos", 'nat_jur2018')
+    ,
+    colClasses = "character")
