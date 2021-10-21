@@ -161,7 +161,7 @@ f_density_uca <- function(ano){
       output_df$area10km <- pi * 10^2
 
 
-      # calculate pop density
+      # calculate density
       output_df$pop_density01km <- output_df$pop_01km / output_df$area01km
       output_df$pop_density02km <- output_df$pop_02km / output_df$area02km
       output_df$pop_density03km <- output_df$pop_03km / output_df$area03km

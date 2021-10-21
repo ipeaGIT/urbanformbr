@@ -36,7 +36,6 @@ df_select <- df_dens %>%
     , x_closeness_centrality_avg
     #, x_degree_centrality_avg
     #, x_street_pop
-    #, x_coverage
   )
 
 
