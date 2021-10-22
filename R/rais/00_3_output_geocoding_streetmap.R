@@ -58,7 +58,6 @@ f_rais_output_streetmap <- function(ano) {
     #, nrows = 100
   )
 
-
   # limpar nome colunas
   rais_geocoded <- janitor::clean_names(rais_geocoded)
 
@@ -79,6 +78,11 @@ f_rais_output_streetmap <- function(ano) {
     )
   ]
 
+  data.table::setnames(
+    x = rais_geocoded
+    , old = "code_muni"
+    , new = "codemun"
+    )
 
   # * merge and save --------------------------------------------------------
 

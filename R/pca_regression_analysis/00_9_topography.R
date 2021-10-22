@@ -172,8 +172,10 @@ f_download_srtm <- function(code_uca) {
     `:=`(
       # elevation
       sd_elevation = raster::cellStats(rst_layer_mask, sd, na.rm = T),
-      # slope
+      # mean slope
       mean_slope = raster::cellStats(rst_lasyer_terrain, mean, na.rm = T)["slope"],
+      # sd slope
+      sd_slope = raster::cellStats(rst_lasyer_terrain, sd, na.rm = T)["slope"],
       # tri (indice de rugosidade) extensao urbana
       mean_ruggedness = raster::cellStats(rst_lasyer_terrain, mean, na.rm = T)["tri"]
     )

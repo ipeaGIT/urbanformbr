@@ -91,6 +91,12 @@ f_rais_clean_estabs_geocoded <- function(ano) {
     #, nrows = 100
   )
 
+  data.table::setnames(
+    x = rais_geocode
+    , old = "codemun"
+    , new = "code_muni"
+    )
+
   # * rais raw ----------------------------------------------------------------
   col_names_raw <- fread(
     sprintf('//storage6/bases/DADOS/RESTRITO/RAIS/csv/estab%s.csv', ano)
