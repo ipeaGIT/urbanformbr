@@ -20,11 +20,12 @@ f_rais_output_streetmap <- function(ano) {
 
 
   # checar colunas
-  col_names <- fread(
+  (col_names <- fread(
     sprintf("../../data/geocode/rais/%s/rais_%s_output_geocode_streetmap.csv",ano,ano),
     nrows = 100,
     colClasses = "character") %>%
     colnames()
+  )
 
   # * not 2010 --------------------------------------------------------------
 
@@ -63,9 +64,9 @@ f_rais_output_streetmap <- function(ano) {
 
   # renomear colunas
   data.table::setnames(
-    rais_geocoded,
-    old = c("match_addr","lon_output","lat_output"),
-    new = c("matched_address","lon","lat")
+    x = rais_geocoded
+    , old = c("match_addr","lon_output","lat_output", "code_muni")
+    , new = c("matched_address","lon","lat", "codemun")
   )
 
 
@@ -78,14 +79,8 @@ f_rais_output_streetmap <- function(ano) {
     )
   ]
 
-  data.table::setnames(
-    x = rais_geocoded
-    , old = "code_muni"
-    , new = "codemun"
-    )
 
   # * merge and save --------------------------------------------------------
-
 
   # salvar dados
   fwrite(

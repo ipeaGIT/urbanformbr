@@ -83,19 +83,13 @@ f_rais_clean_estabs_geocoded <- function(ano) {
   # 1) dados dos estabelecimentos
 
   # * rais geocode -----------------------------------------------------------
-  rais_geocode <- fread(
+  rais_geocoded <- fread(
     file = sprintf("../../data/geocode/rais/%s/rais_%s_raw_geocoded.csv", ano, ano)
     #, select = columns
     , colClasses = "character"
     , encoding = "UTF-8"
     #, nrows = 100
   )
-
-  data.table::setnames(
-    x = rais_geocode
-    , old = "codemun"
-    , new = "code_muni"
-    )
 
   # * rais raw ----------------------------------------------------------------
   col_names_raw <- fread(
@@ -117,7 +111,7 @@ f_rais_clean_estabs_geocoded <- function(ano) {
   )
 
   # * merge -----------------------------------------------------------------
-  rais_geocode[
+  rais_geocoded[
     rais_raw,
     `:=`(
       qt_vinc_ativos = i.qt_vinc_ativos,
@@ -126,9 +120,8 @@ f_rais_clean_estabs_geocoded <- function(ano) {
     on = c("id_estab")
   ]
 
-  6666666666666 MUDAR CODEMUN OU CODEMUNI -> MUDAR NO 00_3 TAMBEM
   # 2) filtrar somente empresas com vinculos ativos
-  rais_filtro <- rais_geocode[as.numeric(qt_vinc_ativos) > 0]
+  rais_filtro <- rais_geocoded[as.numeric(qt_vinc_ativos) > 0]
 
   # filtrar 184 ucas
   ## adicionar coluna codigo concentracao urbana
@@ -142,11 +135,12 @@ f_rais_clean_estabs_geocoded <- function(ano) {
     ),
     on = c("codemun" = "codemun")
   ]
+
   ## filtrar 184 ucas
   data.table::setkey(rais_filtro, code_urban_concentration)
   rais_filtro <- rais_filtro[.(unique(df_prep$code_urban_concentration))]
 
-  #rais_geocode <- rais_geocode[codemun %in% substr(df_codes$code_muni_uca, 1, 6)]
+  #rais_geocoded <- rais_geocoded[codemun %in% substr(df_codes$code_muni_uca, 1, 6)]
 
   # 3) Filtro 2: deletar todas as intituicoes com Natureza Juridica 'publica'
   # (ver ../data-raw/rais/ManualRAIS2018.pdf) pagina 19
@@ -167,17 +161,31 @@ f_rais_clean_estabs_geocoded <- function(ano) {
   #message("Total number of private active estabs: ", unique(rais_filtro$id_estab) %>% length())
 
   # todo os estabs para 14 characetrs
-  rais_filtro[, id_estab := str_pad(id_estab, width = 14, pad = 0)]
+  #rais_filtro[, id_estab := str_pad(id_estab, width = 14, pad = 0)]
 
   # garantir que os cnpjs sao unicos
   rais_filtro <- rais_filtro %>% distinct(id_estab, .keep_all = TRUE)
 
+  data.table::setnames(
+    x = rais_filtro
+    , old = "codemun"
+    , new = "code_muni"
+  )
+
+  if (!dir.exists(sprintf("../../data/urbanformbr/rais/%s",ano))){
+    dir.create(sprintf("../../data/urbanformbr/rais/%s",ano))
+  }
+
+  666666666666 VER QUAIS COLUNAS SALVSAR -> EXCLUIR COLUNAS ISOLATED, NUCLEO, ETC?
   # 5) Selecionar colunas e salvar
   rais_filtro %>%
     # fix uf and codemun
-    select(id_estab, qt_vinc_ativos, logradouro, bairro, codemun, name_muni, uf, cep,
-           lon, lat,
-           Addr_type, Score, Status, matched_address, type_year_input) %>%
+    select(
+      -c(adm_pub,nat_jur)
+    #  id_estab, qt_vinc_ativos, logradouro, bairro, codemun, name_muni, uf, cep,
+    #       lon, lat,
+    #       Addr_type, Score, Status, matched_address, type_year_input
+    ) %>%
     # save it
     #fwrite(sprintf("../../data/urbanformbr/rais/%s/rais_%s_filter_geocoded.csv", ano, ano))
     saveRDS(
@@ -198,7 +206,7 @@ f_filter_good_geocode <- function(ano){
 
   rais_filtro_good_geo <- rais_filtro
 
-  data.table::setkey(rais_filtro_good_geo, Addr_type)
+  data.table::setkey(rais_filtro_good_geo, addr_type)
   rais_filtro_good_geo <- rais_filtro_good_geo[
     .(c('PointAddress', "StreetAddress", "StreetAddressExt", "StreetName",
         'street_number', 'route', 'airport', 'amusement_park', 'intersection',

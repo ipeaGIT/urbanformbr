@@ -14,7 +14,7 @@ df_raw <- readr::read_rds('../../data/urbanformbr/pca_regression_df/pca_regressi
 
 df_dens <- df_raw %>%
   mutate(
-    #x_densidade_total = x_pop_2010 / as.numeric(x_urban_extent_size_2014),
+    x_densidade_pop_bruta = x_pop_2010 / as.numeric(x_urban_extent_size_2014),
     x_street_pop = x_street_length / x_pop_2010
     )
 
@@ -24,14 +24,15 @@ df_select <- df_dens %>%
     #,dplyr::matches("^(y)")
     , x_urban_extent_size_2014
     , dplyr::matches("01km_total")
-    #, x_density_built_01km_total_2014
-    , x_density_pop_01km_total_2014
+    #, x_built_area_coverage_01km_2014
+    #, x_densidade_pop_bruta
+    , x_density_pop_01km_2015
     , x_land_use_mix
-    , x_proportion_largest_patch
+    , x_contiguity
     , x_compacity
     , x_intersection_density_km
     , x_circuity_avg
-    , x_entropy
+    , x_street_orientation_irregularity
     #, x_betweenness_centrality_avg
     , x_closeness_centrality_avg
     #, x_degree_centrality_avg
