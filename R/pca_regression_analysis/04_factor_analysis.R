@@ -26,6 +26,7 @@ df_select <- df_dens %>%
     , dplyr::matches("01km_total")
     #, x_built_area_coverage_01km_2014
     #, x_densidade_pop_bruta
+    , x_built_area_coverage_01km_2014
     , x_density_pop_01km_2015
     , x_land_use_mix
     , x_contiguity
@@ -37,6 +38,8 @@ df_select <- df_dens %>%
     , x_closeness_centrality_avg
     #, x_degree_centrality_avg
     #, x_street_pop
+    , x_rooms_per_household
+    , x_residents_per_household
   )
 
 
