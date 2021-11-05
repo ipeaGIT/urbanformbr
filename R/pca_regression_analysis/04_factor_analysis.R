@@ -22,34 +22,33 @@ df_select <- df_dens %>%
   dplyr::select(
     dplyr::matches("^(i)")
     #,dplyr::matches("^(y)")
-    , x_urban_extent_size_2014
+    #, x_urban_extent_size_2014
     , dplyr::matches("01km_total")
     #, x_built_area_coverage_01km_2014
     #, x_densidade_pop_bruta
-    , x_built_area_coverage_01km_2014
     , x_density_pop_01km_2015
     , x_land_use_mix
     , x_contiguity
     , x_compacity
     , x_intersection_density_km
     , x_circuity_avg
-    , x_street_orientation_irregularity
+    #, x_street_orientation_irregularity
     #, x_betweenness_centrality_avg
     , x_closeness_centrality_avg
     #, x_degree_centrality_avg
     #, x_street_pop
-    , x_rooms_per_household
-    , x_residents_per_household
+    #, x_rooms_per_household
+    #, x_residents_per_household
   )
 
 
 # prep data ---------------------------------------------------------------
 
 # change variable class
-df_select[
-  ,
-  x_urban_extent_size_2014 := as.numeric(x_urban_extent_size_2014)
-]
+#df_select[
+#  ,
+#  x_urban_extent_size_2014 := as.numeric(x_urban_extent_size_2014)
+#]
 
 
 #### change datatable to dataframe for converting one id column to row.names
