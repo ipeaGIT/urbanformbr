@@ -1,46 +1,126 @@
-
-
-
+library(caret)
+library(margins)
 
 # 11.Models
 
 #########  organize model components ---------------------------------------
-vars_dep <- 'y_fuel_energy_per_capita'
-vars_forma <- '~ x_avg_cell_distance + x_density_pop_10km_total_2014 + x_land_use_mix + x_proportion_largest_patch + x_intersection_density_km + x_circuity_avg' #  + x_prop_pop_consolidated_area_2014
-vars_controls <-'+ x_prop_dom_urban + x_wghtd_mean_household_income_per_capita + x_prop_razao_dep + x_prop_industry' # x_prop_autos_dom + x_prop_motos_dom
-vars_interactions <- '+ I(x_density_pop_10km_total_2014^2)'
-vars_cluster <- '~ x_cluster4_1 + x_cluster4_2 + x_cluster4_3 + x_cluster4_4'
+vars_dep <- 'y_energy_per_capita'  # y_wghtd_mean_commute_time y_energy_per_capita
+vars_forma <- '~ f_compact_contig_inter_dens + x_density_pop_01km_2015 + x_land_use_mix  + x_circuity_avg + x_closeness_centrality_avg' #  + x_built_area_coverage_01km_2014 +x_urban_extent_size_2014 + x_prop_pop_consolidated_area_2015
+vars_controls <-'+ x_pop_2010 + x_prop_dom_urban + x_wghtd_mean_household_income_per_capita + x_prop_razao_dep + x_mean_slope + x_street_pop + x_pop_growth_1975_2015' # x_prop_high_educ
+vars_auto <- '+ x_prop_autos_dom + x_prop_motos_dom'
+vars_interactions <- '+ x_density_pop_01km_2015*x_pop_2010 + f_compact_contig_inter_dens*x_pop_2010'
+
 
 ######### create all model specifications ---------------------------------------
 model_all <- paste(vars_dep, '~.', vars_interactions)
+model_form_inter <- paste(vars_dep, vars_forma, vars_interactions)
 model_cntrl <- paste(vars_dep, vars_forma, vars_controls)
 model_cntrl_inter <- paste(vars_dep, vars_forma, vars_controls, vars_interactions)
-model_cntrl_cluster <- paste(vars_dep, vars_cluster, vars_controls)
+model_cntrl_inter_auto <- paste(vars_dep, vars_forma, vars_controls, vars_interactions, vars_auto)
 
-all_models <- list(model_all, model_cntrl, model_cntrl_inter, model_cntrl_cluster)
-names(all_models) <- list( quote(model_all), quote(model_cntrl), quote(model_cntrl_inter), quote(model_cntrl_cluster))
+all_models <- list(model_all, model_form_inter, model_cntrl, model_cntrl_inter, model_cntrl_inter_auto)
+names(all_models) <- list( quote(model_all), quote(model_form_inter), quote(model_cntrl), quote(model_cntrl_inter), quote(model_cntrl_inter_auto))
+
+
+### Marginal effect ------------------------
+6666666666666666
+
+# library(margins)
+library(marginaleffects)
+
+tem_model <- lm( model_all, data=df_fuel)
+summary(tem_model)
+
+
+tem_modely <- lm( y_energy_per_capita        ~f_compact_contig_inter_dens+x_circuity_avg+x_closeness_centrality_avg +x_land_use_mix+x_mean_slope+ x_pop_2010+ x_pop_growth_1975_2015+ x_prop_dom_urban+ x_prop_high_educ+ x_prop_razao_dep+ x_wghtd_mean_household_income_per_capita, data=df_fuel)
+tem_modelx <- lm( x_density_pop_01km_2015    ~f_compact_contig_inter_dens+x_circuity_avg+x_closeness_centrality_avg+x_land_use_mix+x_mean_slope+ x_pop_2010+ x_pop_growth_1975_2015+ x_prop_dom_urban+ x_prop_high_educ+ x_prop_razao_dep+ x_wghtd_mean_household_income_per_capita,  data=df_fuel)
+
+resy <- residuals(tem_modely)
+resx <- residuals(tem_modelx)
+
+plot(resx, resy)
+
+a <- data.frame(x=resx,y=resy)
+
+ggplot(data=a, aes(x=x, y=y)) +
+  geom_point() +
+  geom_smooth(method = 'lm',  color='black')+
+  geom_smooth(method = 'lm',  formula = y ~ x + I(x^2))+
+geom_smooth(color='red')
 
 
 
+# units::units_options(allow_mixed = TRUE)
+# m <- margins::margins(model = tem_model)
+
+m <- marginaleffects::marginaleffects(model = tem_model)
+
+# average marginal effect
+summary(m)
+tidy(m)
+
+
+
+
+
+
+# ?
+pred <- marginaleffects::predictions(model = tem_model, newdata = df_fuel)
+
+
+# counterfactual /// https://vincentarelbundock.github.io/marginaleffects/articles/mfx.html
+nd <- counterfactual(x_pop_2010 = log(2000000), model = tem_model)
+
+marginaleffects(tem_model, newdata = nd) %>%
+  group_by(term) %>%
+  summarize(across(dydx:std.error, median))
+
+
+df_raw[order(y_energy_per_capita), .(i_name_urban_concentration , y_energy_per_capita)] %>% head()
+df_raw[order(y_energy_per_capita), .(i_name_urban_concentration , y_energy_per_capita)] %>% tail()
+
+df_raw[ i_name_urban_concentration %like% 'Arara']
+summary(df_raw$y_energy_per_capita)
 
 cor(df_fuel$x_urban_extent_size_2014,
-    df_fuel$x_avg_cell_distance)
+    df_fuel$x_circuity_avg)
 
-cor(df_fuel$x_proportion_largest_patch,
-    df_fuel$x_avg_cell_distance)
+plot(df_fuel$x_betweenness_centrality_avg,
+     df_fuel$y_energy_per_capita)
 
-cor(df_fuel$x_density_pop_10km_total_2014,
-    df_fuel$x_avg_cell_distance)
 
-plot(df_fuel$x_density_pop_10km_total_2014,
-    df_fuel$x_urban_extent_size_2014)
+
+
+# interaction ----------------------------------
+6666666666666666
+
+sd(df_raw $x_pop_2010) - mean(df_raw $x_pop_2010)
+
+interactions::interact_plot(tem_model,
+              pred = x_density_pop_01km_2015, # x_density_pop_01km_2015 f_compact_contig_inter_dens
+              modx = x_pop_2010,
+              plot.points = T, jitter = 0.1,
+              #int.width = .9, interval=T,
+              linearity.check = F)
+
+plot_cme(tem_model, effect = "x_density_pop_01km_2015", condition = c("x_pop_2010"))
+plot_cme(tem_model, effect = "f_compact_contig_inter_dens", condition = c("x_pop_2010"))
+
+
+pred <- ggpredict(model = tem_model, terms = c('x_density_pop_01km_2015', 'x_pop_2010'))
+
+ggplot() +
+  geom_line(data=pred, aes(x=exp(x), y=predicted, ymax=conf.high, ymin=conf.low, color=group, fill=group)) +
+  geom_ribbon(data=pred, aes(x=exp(x), y=predicted, ymax=conf.high, ymin=conf.low, color=group, fill=group),alpha=.1, color=NA)
+#  geom_point(data=df_fuel, aes(x=x_pop_2010), y=y_energy_per_capita)
+#  scale_x_continuous(limits = c(100000, 20000000))
 
 
 
 
 
 ######### create function to run ElasticNet model ------------------------------------
-elastic_model <- function(model, ntimes = 10){ # model <- all_models[[4]]
+elastic_model <- function(model, ntimes = 10){ # model <- all_models[[2]]
 
   # cl <- parallel::makePSOCKcluster(30)
   # doParallel::registerDoParallel(cl)
@@ -81,7 +161,7 @@ elastic_model <- function(model, ntimes = 10){ # model <- all_models[[4]]
   vars_to_keep <- stringr::str_replace(vars_to_keep, ':', '*') # fix interaction terms
 
   # write model specification
-  specification = paste0('y_fuel_energy_per_capita ~ ',  # y
+  specification = paste0('y_energy_per_capita ~ ',  # y
                          paste(vars_to_keep, collapse  = ' + ')) # x
 
   # run OLS with vars suggested by Elastic net
@@ -133,43 +213,43 @@ stargazer(all_models_output,
           add.lines = list(c('AIC', paste0(aic_list)))
         #  keep.stat=c('aic')
           )
-# a
-2+2
 
 
-all_models_output[[1]] %>%
+
+
 
 ##### problemas de multicol. --------------------------------------------------
 
-# fragmentacao e tamanho
-cor(df_fuel$x_proportion_largest_patch, df_fuel$x_avg_cell_distance)
 
-# densidade e tamanho
-cor(df_fuel$x_density_pop_10km_total_2014, df_fuel$x_avg_cell_distance)
+ cor(df_log$x_density_pop_01km_2015, df_log$x_pop_2010)
 
+ ggplot(data=df_raw, aes(x=x_density_pop_01km_2015, y=y_energy_per_capita)) +
+   geom_point() +
+   geom_smooth()
 
-# renda e automovel
-cor(df_fuel$x_wghtd_mean_household_income_per_capita, df_fuel$x_prop_autos_dom)
+ df_raw %>% subset(x_pop_2010>200000) %>%
+ ggplot( aes(x=x_density_pop_01km_2015, y=y_energy_per_capita)) +
+   geom_point() +
+   geom_smooth() +
+   scale_x_log10() +
+   scale_y_log10()
 
+ df_raw %>% subset(x_density_pop_01km_2015 == min(df_raw$x_density_pop_01km_2015))
 
-
-
-
-# renda e forma
- cor(df_fuel$x_wghtd_mean_household_income_per_capita, df_fuel$x_density_pop_10km_total_2014)
- cor(df_fuel$x_wghtd_mean_household_income_per_capita, df_fuel$x_proportion_largest_patch)
- cor(df_fuel$x_wghtd_mean_household_income_per_capita, df_fuel$x_avg_cell_distance)
- cor(df_fuel$x_wghtd_mean_household_income_per_capita, df_fuel$x_land_use_mix)
- cor(df_fuel$x_wghtd_mean_household_income_per_capita, df_fuel$x_prop_pop_consolidated_area_2014)
-
-
-
- ### check  multicollinearity-------------
+### check  multicollinearity-------------
  library(mctest)
  library(qgraph)
 
 
-tem_model <- all_models_output[[3]]
+
+
+library(ggeffects)
+library(sjPlot)
+
+ # plot model
+plot_model(tem_model)
+
+
 
 #VIF
 vif_test <- mctest::imcdiag(tem_model, method ='VIF')
@@ -190,4 +270,13 @@ qgraph::qgraph( cor( dplyr::select(df_fuel, colinear_varnames) ) ,
 # check partial correlations
 library(ppcor)
 pcor(df_fuel, method = "pearson")
+
+
+
+# compare models performance ----------------------
+tem_model <- lapply(X=all_models, FUN= lm, data=df_fuel)
+performance::check_model(tem_model[[2]])
+performance::compare_performance(tem_model, rank = T) # %>% plot()
+
+test_bf(tem_model)
 
