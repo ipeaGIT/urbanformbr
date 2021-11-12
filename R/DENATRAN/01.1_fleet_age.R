@@ -7,15 +7,8 @@ library(tabulizer)
 library(Hmisc)
 
 
-filename <- file.path("data-raw/DENATRAN/7quantidadeveiculosufmunicipiomarcamodelo/7QuantidadeVeiculosUFMunicipioMarcaModelo.mdb")
-filepath <- "data-raw/DENATRAN/detran_mdb/"
 
-con <- Hmisc::mdb.get(filename)
-
-
-# read data ------
-
-dt <- data.table::fread("data-raw/DENATRAN/I_Frota_por_UF_Municipio_Marca_e_Modelo_Ano_Fevereiro_2020.txt"
+dt <- data.table::fread("../../data-raw/frota_denatran/I_Frota_por_UF_Municipio_Marca_e_Modelo_Ano_Fevereiro_2020.txt"
                         ,encoding = "Latin-1")
 
 names(dt) <- c("UF","muni","marca_modelo","ano_fabr","qtd")
@@ -28,7 +21,7 @@ tmp_dt <- data.table::copy(dt) %>%
 
 
 
-class_veh <- readr::read_rds("data-raw/DENATRAN/list_cars_motos.rds")
+class_veh <- readr::read_rds("../../data/urbanformbr/denatran/list_cars_motos.rds")
 class_veh <- list(
   data.table::data.table("class" = "moto", "model" = class_veh[[1]])
   ,data.table::data.table("class" = "carro", "model" = class_veh[[2]])) %>%
@@ -125,7 +118,6 @@ tmp_dt2[tmp_muni,on = c("muni" = "name_muni"
                         ,"abbrev_state" = "abbrev_state")
         ,code_muni := i.code_muni]
 
-
 tmp_dt2[is.na(code_muni)]$muni %>% unique()
 
 # [1] "PINTO BANDEIRA"
@@ -159,40 +151,18 @@ tmp_dt2 <- tmp_dt2[!is.na(code_urban_concentration),]
 
 
 tmp_dt3 <- data.table::copy(tmp_dt2) %>%
+  .[!is.na(classe),] %>%
   .[ano_fabr <= 2021,] %>%
-  .[,age := 2021 - ano_fabr]
-
-tmp_dt3 <- tmp_dt3[,lapply(.SD,sum,na.rm = TRUE)
-                   ,by = .(age,classe,code_urban_concentration)
-                   ,.SDcols = "V1"]
-
-tmp_dt4 <- data.table::copy(tmp_dt3) %>%
-  .[!is.na(classe),]
+  .[,age := 2021 - ano_fabr] %>%
+  .[,lapply(.SD,sum,na.rm = TRUE)
+    ,by = .(age,classe,code_urban_concentration)
+    ,.SDcols = "V1"] %>%
+  .[!is.na(classe),] %>%
+  .[,status := fifelse(age > 10,"11+120","0-10")]
 
 
-tmp_dt5 <- list(tmp_dt4,data.table::copy(tmp_dt4)[,classe := "all"]) %>%
-  data.table::rbindlist()
+dir.create("../../data/urbanformbr/denatran")
 
-tmp_dt5
-
-tmp_dt5 <- tmp_dt5 %>%
-  .[,lapply(.SD,weighted.mean,V1)
-    ,by = .(code_urban_concentration,classe),.SDcols = "age"] %>%
-  # .[,weighted.mean(x = age_2020,w = V1)
-  #   ,by = .(code_urban_concentration,classe)] %>%
-  .[order(code_urban_concentration),]
-
-tmp_dt5[,summary(age),by = classe]
-
-tmp_dt4[classe == "moto",]$age %>% summary()
-tmp_dt4[classe == "carro",]$age %>% summary()
-
-
-tmp_dt2 %>%
-  .[muni == "RIO DE JANEIRO" &  UF == "RIO DE JANEIRO",] %>%
-  .[,age := 2020 - ano_fabr] %>%
-  ggplot() +
-  geom_bar(aes(x = age, y = V1,fill = classe),stat = "identity") +
-  labs(x = "ano da frota", y = "numero de veiculos", fill = "tipo")
+readr::write_rds(x = tmp_dt3,file = "../../data/urbanformbr/denatran/fleet_age_by_vehicle.rds")
 
 

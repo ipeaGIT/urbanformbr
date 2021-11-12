@@ -1,6 +1,3 @@
-
-
-
 rm(list=ls())
 library(ggplot2)
 library(magrittr)
@@ -10,12 +7,13 @@ library(tabulizer)
 
 
 
-car <- tabulizer::extract_tables(file = "data-raw/DENATRAN/ServContent(2133)_.pdf"
+car <- tabulizer::extract_tables(file = "../../data-raw/frota_denatran/classificacao_veic_raw.pdf"
                                  ,pages = 1:60)
 
 
 
-tmp_car <- sapply(1:(60),function(i){ # i = 78
+
+tmp_car <- lapply(X = 1:(60),FUN = function(i){ # i = 78
   if(i == 1){
     return(car[[i]][,1])
   }else{
@@ -67,7 +65,7 @@ tmp_car <- gsub("(^[0-9]+ )", "", c(tmp_car,tmp_car_p61))
 
 
 # tmp mptp ---------
-moto <- tabulizer::extract_tables(file = "data-raw/DENATRAN/ServContent(2133)_.pdf"
+moto <- tabulizer::extract_tables(file = "../../data-raw/frota_denatran/classificacao_veic_raw.pdf"
                                   ,pages = 88:119)
 
 
@@ -173,7 +171,6 @@ tmp_moto <- gsub("(^[0-9]+ )", "", tmp_moto)
 
 
 export_list <- list(tmp_moto,tmp_car)
-
-readr::write_rds(x = export_list,file = "data-raw/DENATRAN/list_cars_motos.rds")
+readr::write_rds(x = export_list,file = "../../data/urbanformbr/denatran/list_cars_motos.rds")
 
 
