@@ -182,7 +182,9 @@ f_density_uca <- function(ano){
       df1 <- output_df[
         ,
         .(
-          ano = ano, pop_total = sum(pop), built_total = sum(built),
+          ano = ano,
+          pop_total = sum(pop),
+          built_total = sum(built),
           density_pop_01km = weighted.mean(x=pop_density01km, w=pop),
           density_pop_02km = weighted.mean(x=pop_density02km, w=pop),
           density_pop_03km = weighted.mean(x=pop_density03km, w=pop),

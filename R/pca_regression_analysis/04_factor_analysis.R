@@ -23,10 +23,10 @@ df_select <- df_dens %>%
     dplyr::matches("^(i)")
     #,dplyr::matches("^(y)")
     #, x_urban_extent_size_2014
-    , dplyr::matches("01km_total")
     #, x_built_area_coverage_01km_2014
     #, x_densidade_pop_bruta
-    , x_density_pop_01km_2015
+    #, x_density_pop_01km_2015
+    , x_density_pop_02km_2015
     , x_land_use_mix
     , x_contiguity
     , x_compacity
