@@ -2,10 +2,10 @@ library(ggplot2)
 library(gridExtra)
 library(data.table)
 
-# regression ----------------------------------------------------
-data('mtcars')
+# get the fuel regression model ----------------------------------------------------
 
-m <- lm(hp ~mpg + cyl + carb , data=mtcars)
+pca_regression_df_ready_to_use <- readr::read_rds(
+  "../../git_luiz/urbanformbr/"model_all.rds")
 
 # get regression model output as data.frame  ----------------------------------------------------
 
@@ -15,6 +15,10 @@ modeldf <- broom::tidy(model_all, conf.int = TRUE, conf.level = 0.95)
 setDT(modeldf)
 modeldf[, term := factor(x = term, levels=term)]
 modeldf[, interval := paste0('(', round(conf.low,1), ', ', round(conf.high,1), ')') ]
+
+modeldf <- modeldf %>% mutate(significance=if_else(p.value<=0.1,"*"," "),
+                              significance=if_else(p.value<=0.05,"**",significance),
+                              significance=if_else(p.value<=0.01,"***",significance))
 
 #### subseting for urban form variables
 
