@@ -16,6 +16,16 @@ setDT(modeldf)
 modeldf[, term := factor(x = term, levels=term)]
 modeldf[, interval := paste0('(', round(conf.low,1), ', ', round(conf.high,1), ')') ]
 
+#### subseting for urban form variables
+
+urbanformdf <- modeldf %>% filter(term %in% c("x_land_use_mix","x_density_pop_02km_2015",
+                                "x_closeness_centrality_avg","f_compact_contig_inter_dens",
+                                "x_circuity_avg"))
+
+urbanformdf$color <- c("white","gray95","white","gray95","white")
+
+urbanformdf_2 <- urbanformdf[order(-urbanformdf$estimate),]
+
 ### plot  ----------------------------------------------------
 
 modeldf$color <- c("white","gray95","white","gray95","white","gray95","white","gray95",
