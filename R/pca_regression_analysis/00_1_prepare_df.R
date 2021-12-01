@@ -1,6 +1,6 @@
 # description -------------------------------------------------------------
 
-# this script prepares the dataframe that will be used in PCA & regression analysis
+# this script prepares the dataframe that will be used in PCA
 #..using multiple data (GHSL,census,OSM,etc).
 # the dataframe is based on identifying urban concentration areas (uca) defined by IBGE
 # three variables identifies each urban concentration areas:
