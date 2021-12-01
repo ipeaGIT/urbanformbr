@@ -159,7 +159,7 @@ f_download_srtm <- function(code_uca) {
   # create df
   output_df <- sf::st_drop_geometry(urban_extent_subset)
 
-  rst_lasyer_terrain <- raster::terrain(
+  rst_layer_terrain <- raster::terrain(
     rst_layer_mask,
     opt = c("slope","TRI"),
     neighbours = 8,
@@ -172,13 +172,31 @@ f_download_srtm <- function(code_uca) {
     `:=`(
       # elevation
       sd_elevation = raster::cellStats(rst_layer_mask, sd, na.rm = T),
-      # slope
-      mean_slope = raster::cellStats(rst_lasyer_terrain, mean, na.rm = T)["slope"],
+      # mean slope
+      mean_slope = raster::cellStats(rst_layer_terrain, mean, na.rm = T)["slope"],
+      # sd slope
+      sd_slope = raster::cellStats(rst_layer_terrain, sd, na.rm = T)["slope"],
       # tri (indice de rugosidade) extensao urbana
-      mean_ruggedness = raster::cellStats(rst_lasyer_terrain, mean, na.rm = T)["tri"]
+      mean_ruggedness = raster::cellStats(rst_layer_terrain, mean, na.rm = T)["tri"]
     )
   ]
 
+  ## count number of raster cells above threshold
+
+  # subset only slope raster
+  df_slope <- subset(rst_layer_terrain, "slope") %>%
+    # raster frequency table based on cells' value
+    raster::freq(useNA = "no", merge = T) %>%
+    data.table::as.data.table()
+
+  # proportion of cells according to the their value
+  df_slope[, prop := count / sum(count)]
+
+  # column: proportion of cells with slope above 10
+  output_df[
+    ,
+    prop_slope_above_10 := df_slope[value > 10, sum(prop)]
+  ]
 
   return(output_df)
 

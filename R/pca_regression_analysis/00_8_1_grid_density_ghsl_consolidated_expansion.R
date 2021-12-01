@@ -161,7 +161,7 @@ f_density_uca <- function(ano){
       output_df$area10km <- pi * 10^2
 
 
-      # calculate pop density
+      # calculate density
       output_df$pop_density01km <- output_df$pop_01km / output_df$area01km
       output_df$pop_density02km <- output_df$pop_02km / output_df$area02km
       output_df$pop_density03km <- output_df$pop_03km / output_df$area03km
@@ -182,7 +182,9 @@ f_density_uca <- function(ano){
       df1 <- output_df[
         ,
         .(
-          ano = ano, pop_total = sum(pop), built_total = sum(built),
+          ano = ano,
+          pop_total = sum(pop),
+          built_total = sum(built),
           density_pop_01km = weighted.mean(x=pop_density01km, w=pop),
           density_pop_02km = weighted.mean(x=pop_density02km, w=pop),
           density_pop_03km = weighted.mean(x=pop_density03km, w=pop),
