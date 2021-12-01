@@ -275,15 +275,6 @@ cor(df_fuel$x_land_use_mix , df_fuel$x_density_pop_01km_2015 )
 cor(df_fuel$x_circuity_avg , df_fuel$x_closeness_centrality_avg )
 
 
-cor(df_fuel$x_residents_per_household , df_fuel$x_rooms_per_household )
-
-cor(df_fuel$x_residents_per_household , df_fuel$x_prop_autos_dom )
-cor(df_fuel$x_residents_per_household , df_fuel$y_energy_per_capita )
-
-
-cor(df_fuel$x_prop_black , df_fuel$x_prop_dom_urban )
-cor(df_fuel$x , df_fuel$x_prop_razao_dep )
-
 
 
 # vars mais repetidas
@@ -446,7 +437,7 @@ aic_list <- lapply(all_models_output, FUN = function(i){round(AIC(i),1)})
 
 stargazer(
   all_models_output,
-  out = "energy_dag_lm_sem-fronteira.html",
+  out = "./output/regression_table_energy_dag_lm_sem-fronteira.html",
   column.labels= c('all', 'landuse', 'density', 'fcompact', 'circuity', 'closenes'),
   type = 'text',
   p.auto=F,
@@ -456,7 +447,7 @@ stargazer(
   )
 
 
-jtools::plot_summs(all_models_output, scale = TRUE, plot.distributions = TRUE)
+urbanformdf
 
 ### check  heteroscedasticity-------------
 
@@ -617,3 +608,17 @@ m_v <- lm( formula(m_v)      , data=df_fuel )
 performance::compare_performance(m_f, m_v)
 
 stargazer(m_f, m_v, type = 'text')
+
+
+
+###############   compacitu positive 66666 ----------------
+
+cor(df_fuel$y_energy_per_capita, df_fuel$x_compacity)
+aaa <- y_energy_per_capita ~f_compact_contig_inter_dens+x_circuity_avg+x_closeness_centrality_avg+x_density_pop_02km_2015+x_land_use_mix+x_mean_age_auto+ x_mean_slope+ x_pop_2010+ x_pop_growth_1975_2015+ x_prop_dom_urban+ x_prop_high_educ+ x_prop_razao_dep+ x_state+ x_wghtd_mean_household_income_per_capita
+
+#' x_mean_slope
+#' x_pop_2010
+aaa <- y_energy_per_capita ~f_compact_contig_inter_dens+x_circuity_avg+x_closeness_centrality_avg+x_density_pop_02km_2015+x_land_use_mix + x_mean_age_auto  #+ x_pop_2010 + x_pop_growth_1975_2015+ x_prop_dom_urban+ x_prop_high_educ+ x_prop_razao_dep+ x_state+ x_wghtd_mean_household_income_per_capita
+
+lm( formula(aaa), data=df_fuel ) %>% summary
+

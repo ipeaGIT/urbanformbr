@@ -61,7 +61,7 @@ aic_list <- lapply(all_models_output_nested, FUN = function(i){round(AIC(i),1)})
 # save output table
 stargazer(
   all_models_output_nested,
-  out = "energy_dag_lm_sem-fronteira_cross-validation.html",
+  out = "./output/regression_table_energy_dag_lm_sem-fronteira_cross-validation.html",
   column.labels= c('all', 'landuse', 'density', 'fcompact', 'circuity', 'closeness'),
   type = 'text',
   p.auto=F,
@@ -70,7 +70,8 @@ stargazer(
   add.lines = list(c('AIC', paste0(aic_list)))
 )
 
-
+# save model
+write_rds(all_models_output_nested[[1]], './output/model_energy_dag_lm_sem-fronteira_cross-validation.rds')
 
 
 
