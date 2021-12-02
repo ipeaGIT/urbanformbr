@@ -7,7 +7,7 @@ library(patchwork)
 library(readr)
 
 
-source("R/colours.R")
+# source("R/fun_support/colours.R")
 options(scipen = 99)
 
 
@@ -74,6 +74,7 @@ pop
 1990: 28,515   (IBGE 34,661)
 
 
+subset(df, growth_built==0) %>% View()
 
 
 ### save figures  ----------------------------------------------------

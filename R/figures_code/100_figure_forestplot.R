@@ -21,10 +21,11 @@ modeldf[, term := factor(x = term, levels=term)]
 modeldf[, interval := paste0('(', round(conf.low,2), ', ', round(conf.high,2), ')') ]
 
 
-modeldf[, significance := fcase(p.value>0.1,"",
-                                p.value<=0.1,"*",
-                                p.value<=0.05,"**",
-                                p.value<=0.01,"***") ]
+modeldf[, significance := fcase( p.value>0.1,""
+                                , p.value<0.01,"***"
+                                , p.value<0.05,"**"
+                                , p.value<0.1,"*"
+                                ) ]
 
 
 modeldf[, coef_stars := paste(round(estimate,3),significance)]
