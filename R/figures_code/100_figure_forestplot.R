@@ -32,7 +32,7 @@ modeldf[, coef_stars := paste(round(estimate,3),significance)]
 
 #### subseting for urban form variables
 
-urbanformdf <- modeldf %>% filter(term %in% c("x_land_use_mix","x_density_pop_02km_2015",
+urbanformdf <- subset(modeldf, term %in% c("x_land_use_mix","x_density_pop_02km_2015",
                                 "x_closeness_centrality_avg","f_compact_contig_inter_dens",
                                 "x_circuity_avg"))
 
