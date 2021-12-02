@@ -88,10 +88,17 @@ plot_model(model_all)
 
 
 # interaction plot  -------------
+cor(df_fuel$y_energy_per_capita, df_fuel$x_compacity)
+cor(df_fuel$y_energy_per_capita, df_fuel$x_intersection_density_km)
+cor(df_fuel$y_energy_per_capita, df_fuel$x_contiguity)
+
+cor(df_fuel$y_energy_per_capita, df_fuel$f_compact_contig_inter_dens)
+
+
 
 
 ### problema compacity positivo 666
-aaa <-  lm( y_energy_per_capita ~f_compact_contig_inter_dens*x_urban_extent_size_2014+x_circuity_avg+x_closeness_centrality_avg+x_density_pop_02km_2015+x_land_use_mix+x_mean_age_auto+ x_mean_slope+ x_pop_2010+ x_pop_growth_1975_2015+ x_prop_dom_urban+ x_prop_high_educ+ x_prop_razao_dep+ x_state+ x_wghtd_mean_household_income_per_capita      , data=df_fuel)
+aaa <-  lm( y_energy_per_capita ~x_compacity+x_intersection_density_km+x_contiguity, data=df_fuel)
 summary(aaa)
 
 x_compacity

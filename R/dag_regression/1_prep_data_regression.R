@@ -39,7 +39,7 @@ df_raw[region_labels, on=c('x_state'='code_state'), c('name_state' , 'name_regio
 #### remove areas in the international border ------------
 #' Internacional de Uruguaiana/Brasil (RS) 4322400
 #' Internacional de Foz do Iguaçu/Brasil - Ciudad del Este/Paraguai (PR) 4108304
-#' Internacional de Corumbá/Brasil (MS) 5003207
+#' Internacional de Corumba/Brasil (MS) 5003207
 
 # and Santa Cruz do Sul/RS because of min. urban area in 1975
 #' Santa Cruz do Sul/RS 4316808

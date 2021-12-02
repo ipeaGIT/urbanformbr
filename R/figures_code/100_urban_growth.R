@@ -19,8 +19,9 @@ head(df_raw)
 # calculate totals by UCA
 # df2 <- setDT(df)[, .(code_muni, name_uca_case, period_start, pop_start, built_start )]
 setDT(df_raw)
-df <- df_raw[, .( pop = sum(pop),
-            built = sum(built),
+df <- df_raw[, .(
+            # pop = sum(pop),
+            # built = sum(built),
             pop_start = sum(pop_start),
             pop_end = sum(pop_end),
             built_start = sum(built_start),
@@ -92,8 +93,8 @@ temp_df <- subset(df, period != '1975-2014')
 head(temp_df)
 
 
-temp_df <- temp_df[, .( growth_pop  = mean(growth_pop ),
-                  growth_built  = mean(growth_built )
+temp_df <- temp_df[, .( growth_pop  = weighted.mean(x=growth_pop, w=pop_start ),
+                  growth_built  =  weighted.mean(x=growth_built, w=built_start )
                   ),
              by=.(period)]
 

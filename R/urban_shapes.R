@@ -11,10 +11,10 @@
 # setup -------------------------------------------------------------------
 
 # load libraries
-source('R/setup.R')
+source('R/fun_support/setup.R')
 
 # load functions to dissolve polygons
-source('R/dissolve_polygons.R')
+source('R/fun_support/dissolve_polygons.R')
 
 # define function ---------------------------------------------------------
 

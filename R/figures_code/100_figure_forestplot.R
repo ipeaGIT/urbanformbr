@@ -63,12 +63,13 @@ data_table <- ggplot(data = urbanformdf, aes(y = reorder(term, estimate)) ) +
                 geom_text(aes(x = 7, label = reorder(interval, estimate) ), hjust = '4') +
                 scale_colour_identity() +
                 theme_void() +
-                theme(plot.margin = margin(5, 0, 35, 5))
+                theme(plot.margin = margin(5, 0, 35, 5)) +
+                expand_limits(x=c(0, 8))
 
 temp_figure <- gridExtra::grid.arrange(data_table, p, layout_matrix = rbind(c(1,4)),ncol = 2)
 
 
 
 ggsave(temp_figure, file='./figures/forestplot.png', dpi = 300,
-       width = 20, height = 12, units = 'cm')
+       width = 25, height = 12, units = 'cm')
 

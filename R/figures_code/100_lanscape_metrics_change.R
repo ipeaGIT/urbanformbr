@@ -23,9 +23,10 @@ df_frag[, year := factor(year, levels = c(2014, 2000 , 1990, 1975), ordered=T)]
 ### plots  ----------------------------------------------------
 
 fig_comp <- ggplot(df_comp, aes(x = avg_cell_closeness , y = as.factor(year), fill=as.factor(year))) +
-                stat_density_ridges(quantile_lines = TRUE, quantiles=2, show.legend = FALSE) +
+                stat_density_ridges(quantile_lines = TRUE, quantiles=5, show.legend = FALSE) +
                 scale_fill_brewer(palette = 'Oranges', direction = -1) +
-                labs(y='', x='Compacidade') +
+  geom_point(x=40, y=factor(2014), color='red') +
+  labs(y='', x='Compacidade') +
                 theme_ridges()
 
 fig_frag <- ggplot(df_frag, aes(x = proportion_largest_patch , y = as.factor(year), fill=as.factor(year))) +
