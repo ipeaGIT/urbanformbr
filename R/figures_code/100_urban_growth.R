@@ -47,8 +47,8 @@ head(df)
 df[, period := factor(period, levels = c('1975-1990', '1990-2000' , '2000-2014', '1975-2014'), ordered=T)]
 table(df$period)
 
-
-
+# parga
+subset(df, growth_built==0) %>% View()
 
 
 ### Scatter plot  ----------------------------------------------------
@@ -74,7 +74,6 @@ pop
 1990: 28,515   (IBGE 34,661)
 
 
-subset(df, growth_built==0) %>% View()
 
 
 ### save figures  ----------------------------------------------------
