@@ -9,7 +9,8 @@ mapviewOptions(platform = "leaflet")
 urban_extent_processed <- read_rds(file = "../../data/urbanformbr/urban_growth/grid_uca_growth.rds") %>%
   mutate(growth_type = if_else(status == "consolidated", "upward", status)) %>%
   mutate(growth_type = factor(growth_type,
-                              levels = c("upward", "infill", "extension", "leapfrog"))) %>%
+                              levels = c("upward", "infill", "extension", "leapfrog"),
+                              labels = c("Adensamento", "Preenchimento", "Extensão", "Leapfrog"))) %>%
   filter(name_uca_case == "porto_alegre_rs") %>%
   filter(period_start == 1975, period_end == 2014)
 
@@ -36,7 +37,7 @@ urban_extent_processed %>%
   theme_minimal() +
   theme(panel.border = element_rect(fill = NA, color = "grey80"),
         panel.grid = element_blank()) +
-  labs(fill = "tipo",
+  labs(fill = "",
        title = "Porto Alegre / RS - expansão urbana entre 1974 e 2014")
 
 ggsave(filename = here::here("figures", "types_of_growth.png"),
