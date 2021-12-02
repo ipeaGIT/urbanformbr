@@ -7,6 +7,7 @@
 ## 3.1 all the uca present in the IBGE urban concentration dataset
 ## 3.2 urban concentration areas with population >= 100000
 
+66666666666 EXCLUIR 4 CIDADES
 
 # setup -------------------------------------------------------------------
 
@@ -93,14 +94,21 @@ f_uca_shapes <- function(){
   # change column order
     dplyr::relocate(name_uca_case, .after = name_urban_concentration)
 
+
+
+  # remove 4 cities ---------------------------------------------------------
+  to_be_removed <- c(4322400, 4108304, 5003207, 4316808)
+  dissolved <- subset(dissolved, code_urban_concentration %nin% to_be_removed)
+
+
   # 4 save resulting shape --------------------------------------------------
 
     # * 4.1 full uca dataset --------------------------------------------------
-  saveRDS(
-    object = dissolved,
-    file = '//storage6/usuarios/Proj_acess_oport/data/urbanformbr/urban_area_shapes/urban_area_dissolved.rds',
-    compress = 'xz'
-  )
+  #saveRDS(
+  #  object = dissolved,
+  #  file = '//storage6/usuarios/Proj_acess_oport/data/urbanformbr/urban_area_shapes/urban_area_dissolved.rds',
+  #  compress = 'xz'
+  #)
 
     # * 4.2 filter pop >= 100000 ----------------------------------------------
   saveRDS(
