@@ -21,10 +21,11 @@ modeldf[, term := factor(x = term, levels=term)]
 modeldf[, interval := paste0('(', round(conf.low,2), ', ', round(conf.high,2), ')') ]
 
 
-modeldf[, significance := fcase(p.value>0.1,"",
-                                p.value<0.1,"*",
-                                p.value<0.05,"**",
-                                p.value<0.01,"***") ]
+modeldf[, significance := fcase( p.value>0.1,""
+                                , p.value<0.01,"***"
+                                , p.value<0.05,"**"
+                                , p.value<0.1,"*"
+                                ) ]
 
 
 modeldf[, coef_stars := paste(round(estimate,3),significance)]
@@ -32,7 +33,7 @@ modeldf[, coef_stars := paste(round(estimate,3),significance)]
 
 #### subseting for urban form variables
 
-urbanformdf <- modeldf %>% filter(term %in% c("x_land_use_mix","x_density_pop_02km_2015",
+urbanformdf <- subset(modeldf, term %in% c("x_land_use_mix","x_density_pop_02km_2015",
                                 "x_closeness_centrality_avg","f_compact_contig_inter_dens",
                                 "x_circuity_avg"))
 
@@ -56,21 +57,20 @@ p <- ggplot(data=urbanformdf, aes(x = estimate , y = reorder(term, estimate), xm
         theme(axis.text.y = element_blank(),
               axis.title.y = element_blank())
 
-
 data_table <- ggplot(data = urbanformdf, aes(y = reorder(term, estimate)) ) +
-  geom_hline(aes(yintercept = term, color = color), size = 7) +
-  geom_text(aes(x = 0, label = reorder(term, estimate)), hjust = 0) +
-  geom_text(aes(x = 3, label = reorder(round(estimate,2), estimate) )) +
-  geom_text(aes(x = 4, label = reorder(significance,term), hjust = '3')) +
-  geom_text(aes(x = 7, label = reorder(interval, estimate) ), hjust = '4') +
-  scale_colour_identity() +
-  theme_void() + 
-  theme(plot.margin = margin(5, 10, 35, 5))
+                geom_hline(aes(yintercept = term, color = color), size = 7) +
+                geom_text(aes(x = 0, label = reorder(term, estimate)), hjust = 0) +
+                geom_text(aes(x = 5, label = reorder(coef_stars, estimate) )) +
+                geom_text(aes(x = 7, label = reorder(interval, estimate) ), hjust = '4') +
+                scale_colour_identity() +
+                theme_void() +
+                theme(plot.margin = margin(5, 0, 35, 5)) +
+                expand_limits(x=c(0, 8))
 
 temp_figure <- gridExtra::grid.arrange(data_table, p, layout_matrix = rbind(c(1,4)),ncol = 2)
 
 
 
 ggsave(temp_figure, file='./figures/forestplot.png', dpi = 300,
-       width = 20, height = 12, units = 'cm')
+       width = 25, height = 12, units = 'cm')
 

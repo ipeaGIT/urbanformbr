@@ -7,11 +7,11 @@
 # 1. each 1km x 1km grid cell in each uca's urban extent (saved at R/GHSL/04_3_create_uca_grids)
 # 2. the densities weighted mean for each uca
 
-# experienced densities for 5 and 10 km are estimated for all the above
+# experienced densities for 1, 2, 5 and 10 km are estimated for all the above
 
 # setup -------------------------------------------------------------------
 
-source('R/setup.R')
+source('R/fun_support/setup.R')
 
 # define function ---------------------------------------------------------
 
@@ -29,7 +29,10 @@ f_get_density_matrix <- function(df_urban_areas){
       sf::st_coordinates()
   )
 
+  # ler aquivo raster (area politico administrativo)
+
   # message("Calculating distance matrix")
+  # geodist(latlon_origem, latlon_destino <- <- )
   system.time(distance_matrix <- geodist::geodist(points_latlon, points_latlon, measure = "cheap"))
   # Santa Maria - 11674 points
   # user  system elapsed
@@ -136,6 +139,10 @@ f_get_density_matrix <- function(df_urban_areas){
 #ano <- c(1975,2014)
 
 f_density_uca <- function(ano){
+
+  666666 CONSIDERAR A POPULACAO/BUILT NAS AREAS COM BUILT ABAIXO CUTOFF (20%)
+  # ler poligono da area politico-administrativo inteiro?
+
   areas <- read_rds(sprintf("../../data/urbanformbr/ghsl/results/total_area_grid_uca_consolidada_expansao_%s_cutoff20.rds", ano))
 
   codigos <- unique(areas$code_muni)
