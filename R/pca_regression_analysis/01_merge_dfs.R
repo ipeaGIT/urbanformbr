@@ -3,15 +3,24 @@
 # this script merge all the dfs containing variables to be used at exploratory
 #..and regression analysis, created at R/pca_regression_analysis/00_x_...
 
+6666666666666 conferir se todas as bases fizeram o filtro.
+ caso contrario, adicionar linha analoga abaixo
+ # filter only 184 from our df
+ df_energy <- subset(df_energy, code_urban_concentration %in% df_prep$code_urban_concentration)
+
 # setup -------------------------------------------------------------------
 #rm(list=ls())
-source('R/setup.R')
+source('R/fun_support/setup.R')
 
 # read and clean data ---------------------------------------------------------------
 
 # * prep data -------------------------------------------------------------
 df_prep <- readr::read_rds("../../data/urbanformbr/pca_regression_df/pca_regression_df.rds") %>%
   dplyr::select(-c(code_muni_uca))
+
+# 4316808 already removed at prepare df
+to_be_removed <- c(4322400, 4108304, 5003207)
+df_prep <- subset(df_prep, code_urban_concentration %nin% to_be_removed)
 
 # * pop growth ------------------------------------------------------------
 
