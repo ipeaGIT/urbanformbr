@@ -24,7 +24,8 @@ df_prep <- subset(df_prep, code_urban_concentration %nin% to_be_removed)
 
 # * pop growth ------------------------------------------------------------
 
-df_pop_growth <- readr::read_rds("../../data/urbanformbr/pca_regression_df/pop_growth_ghsl.rds")
+df_pop_growth <- readr::read_rds("../../data/urbanformbr/pca_regression_df/pop_growth_ghsl.rds") %>%
+  dplyr::filter()
 
 # * age fleet ---------------------------------------------------------------
 
@@ -68,31 +69,10 @@ df_censo <- readr::read_rds("../../data/urbanformbr/pca_regression_df/censo.rds"
   dplyr::select(-name_uca_case)
 
 # * experienced density ---------------------------------------------------
-df_exp_density <- readr::read_rds("../../data/urbanformbr/pca_regression_df/exp_density_ghsl.rds") %>%
-  dplyr::select(
-    -c(name_uca_case),
-    -ends_with("1975"),
-    -c(pop_total_total_1975:pop_total_expansao_2014),
-    -dplyr::matches("(abs_diff|expansao|consolidada)"),
-    -dplyr::matches("growth")
-  ) %>%
-  dplyr::rename(
-    code_urban_concentration = code_muni
-    , built_total_2014 = built_total_total_2014
-    , built_area_coverage_01km_2014 = density_built_01km_total_2014
-    , built_area_coverage_02km_2014 = density_built_02km_total_2014
-    , built_area_coverage_03km_2014 = density_built_03km_total_2014
-    , built_area_coverage_05km_2014 = density_built_05km_total_2014
-    , built_area_coverage_10km_2014 = density_built_10km_total_2014
-  ) %>%
-  dplyr::rename_with(
-    ~ gsub("total_","", .x),
-    .cols = dplyr::starts_with("density_pop")
-  ) %>%
-  dplyr::rename_with(
-    ~ gsub("4","5", .x, perl = T),
-    .cols = dplyr::matches("pop")
-  )
+df_exp_density <- readr::read_rds("../../data/urbanformbr/pca_regression_df/exp_density_ghsl_new.rds") %>%
+  filter(ano == 2014) %>%
+  select(-c(ano, pop_total,built_total))
+
 
 # * landuse metrics -------------------------------------------------------
 df_landuse <- data.table::fread("../../data/urbanformbr/pca_regression_df/landuse_mix_metrics.csv") %>%

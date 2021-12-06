@@ -59,8 +59,8 @@ f_get_density_matrix <- function(df_urban_area_cutoff20, df_uca_pop_built){
   ### 1 kilometer
   # utilizar 1100 para ter certeza que pegamos matriz pesos espaciais rookie (torre)
   distance_matrix_01km <- distance_matrix
-  distance_matrix_01km[distance_matrix <= 1100] <- 1
-  distance_matrix_01km[distance_matrix >  1100] <- 0
+  distance_matrix_01km[distance_matrix <= 1000] <- 1
+  distance_matrix_01km[distance_matrix >  1000] <- 0
 
   pop_01km <- distance_matrix_01km %*% pop_vector
   built_01km <- distance_matrix_01km %*% built_vector
@@ -70,8 +70,8 @@ f_get_density_matrix <- function(df_urban_area_cutoff20, df_uca_pop_built){
   # utilizar 2100 para ter certeza que pegamos pelo menos 2 km
   # (em funcao da incerteza sobre geodist(measure = "cheap"))
   distance_matrix_02km <- distance_matrix
-  distance_matrix_02km[distance_matrix <= 2100] <- 1
-  distance_matrix_02km[distance_matrix >  2100] <- 0
+  distance_matrix_02km[distance_matrix <= 2000] <- 1
+  distance_matrix_02km[distance_matrix >  2000] <- 0
 
   pop_02km <- distance_matrix_02km %*% pop_vector
   built_02km <- distance_matrix_02km %*% built_vector
@@ -79,8 +79,8 @@ f_get_density_matrix <- function(df_urban_area_cutoff20, df_uca_pop_built){
 
   ### 3 kilometers
   distance_matrix_03km <- distance_matrix
-  distance_matrix_03km[distance_matrix <= 3100] <- 1
-  distance_matrix_03km[distance_matrix >  3100] <- 0
+  distance_matrix_03km[distance_matrix <= 3000] <- 1
+  distance_matrix_03km[distance_matrix >  3000] <- 0
 
   pop_03km <- distance_matrix_03km %*% pop_vector
   built_03km <- distance_matrix_03km %*% built_vector
@@ -88,8 +88,8 @@ f_get_density_matrix <- function(df_urban_area_cutoff20, df_uca_pop_built){
 
   ### 5 kilometers
   distance_matrix_05km <- distance_matrix
-  distance_matrix_05km[distance_matrix <= 5100] <- 1
-  distance_matrix_05km[distance_matrix >  5100] <- 0
+  distance_matrix_05km[distance_matrix <= 5000] <- 1
+  distance_matrix_05km[distance_matrix >  5000] <- 0
 
   pop_05km <- distance_matrix_05km %*% pop_vector
   built_05km <- distance_matrix_05km %*% built_vector
@@ -97,8 +97,8 @@ f_get_density_matrix <- function(df_urban_area_cutoff20, df_uca_pop_built){
 
   ### 10 kilometers
   distance_matrix_10km <- distance_matrix
-  distance_matrix_10km[distance_matrix <= 10100] <- 1
-  distance_matrix_10km[distance_matrix >  10100] <- 0
+  distance_matrix_10km[distance_matrix <= 10000] <- 1
+  distance_matrix_10km[distance_matrix >  10000] <- 0
 
   pop_10km <- distance_matrix_10km %*% pop_vector
   built_10km <- distance_matrix_10km %*% built_vector
@@ -149,14 +149,9 @@ f_get_density_matrix <- function(df_urban_area_cutoff20, df_uca_pop_built){
 
 f_density_uca <- function(ano){
 
-  666666666 DECIDIR SE USAREMOS POLIGONO 2014 ("AREA TOTAL")
-  # SE FOR ESTE CASO, CORRIGIR/ATUALIZAR SCRIPTS 04_6 E 04_4 (NESTA ORDEM)
-  # ALEM DISSO, ATUALIZAR NOME PARA DEIXAR ORDEM CORRETA
-  OU
-  POLIGONO VARIANDO POR ANO (DE ACORDO COM CUTOFF 20%)
-  # SE FOR ESTE O CASO, USAR BASES SALVAS EM 04_3
+  areas <- read_rds(sprintf("../../data/urbanformbr/ghsl/results/grid_uca_%s_cutoff20.rds", ano))
 
-  areas <- read_rds(sprintf("../../data/urbanformbr/ghsl/results/total_area_grid_uca_consolidada_expansao_%s_cutoff20.rds", ano))
+  #areas <- read_rds(sprintf("../../data/urbanformbr/ghsl/results/total_area_grid_uca_consolidada_expansao_%s_cutoff20.rds", ano))
 
   codigos <- unique(areas$code_muni)
   #s <- "3550308" ## Sao paulo, SP
@@ -188,7 +183,7 @@ f_density_uca <- function(ano){
       df_uca_pop <- uca_pop %>%
         raster::as.data.frame(xy = T)
 
-      data.table::setnames(df_uca_pop,3,"pop")
+      data.table::setnames(df_uca_pop, 3, "pop")
 
       df_uca_pop <- data.table::setDT(df_uca_pop)[pop > 0]
 
@@ -208,7 +203,7 @@ f_density_uca <- function(ano){
       df_uca_built <- data.table::setDT(df_uca_built)[built > 0]
 
       # join uca pop & built
-      df_uca_pop_built <- merge(df_uca_pop,df_uca_built, all = T)
+      df_uca_pop_built <- merge(df_uca_pop, df_uca_built, all = T)
       data.table::setnafill(df_uca_pop_built, fill = 0)
 
     # run f_get_density_matrix ------------------------------------------------------------
@@ -283,6 +278,15 @@ df_2014 <- f_density_uca(2014)
 # merge dfs and estimate vars. difference ---------------------------------
 
 df_final <- data.table::rbindlist(list(df_1975, df_1990, df_2000, df_2014))
+
+data.table::setnames(
+  df_final,
+  old = "code_muni",
+  new = "code_urban_concentration"
+  )
+
+#df_final[, pop_total := NULL]
+#df_final[, built_total := NULL]
 
 # save results ------------------------------------------------------------
 
