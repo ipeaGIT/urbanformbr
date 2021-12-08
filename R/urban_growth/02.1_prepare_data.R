@@ -1,7 +1,7 @@
 #' Script para preparar plots para o relatório
 
-source('R/setup.R')
-source("R/colours.R")
+source('R/fun_support/setup.R')
+source("R/fun_support/colours.R")
 library("ggtern")
 library("PupillometryR")
 mapviewOptions(platform = "leaflet")
