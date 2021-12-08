@@ -22,14 +22,16 @@ urban_growth_df <- read_rds("../../data/urbanformbr/urban_growth/urban_growth.rd
 
 # ternary plot ------------------------------------------------------------
 urban_growth_df %>%
-  filter(period_start == 1975, period_end == 2014) %>%
+  filter(period_start == 1990, period_end == 2014) %>%
   ggtern(aes(y=adensamento, x=leapfrog, z=extensao,
              color = population,  size = population )) +
   geom_point() +
   scale_size_continuous(range = c(2, 6)) +
   scale_color_viridis_c(trans = "log") +
   theme_rgbw() +
-  theme(legend.position = "none")
+  theme(legend.position = "none") +
+  labs(title = "Participação de cada tipo de crescimento urbano no total",
+       subtitle = "período de 1990 a 2014")
 
 
 
@@ -41,7 +43,7 @@ ggsave(filename = "figures/ternary_growth_plot.png", width = 26, height = 21,
 # scatterplot -------------------------------------------------------------
 urban_growth_df %>%
   mutate(period = paste(period_start, period_end, sep = " - ")) %>%
-  mutate(period = factor(period, levels = c('1975 - 1990', '1990 - 2000' , '2000 - 2014', '1975 - 2014'))) %>%
+  mutate(period = factor(period, levels = c('1990 - 2000' , '2000 - 2014', '1990 - 2014'))) %>%
   mutate(extensao = extensao + leapfrog) %>%
   arrange(population) %>%
   ggplot(aes(x=adensamento, y=extensao)) +
@@ -54,7 +56,7 @@ urban_growth_df %>%
   theme(aspect.ratio=1) +
   theme_minimal() +
   theme(legend.position = "none") +
-  labs(title = "Taxas de crescimeto populacional (1975 - 2014",
+  labs(title = "Taxas de crescimeto populacional (1990 - 2014",
        x = "Crescimento por Adensamento + Preenchimento",
        y = "Crescimento por\n Extensão + Leapfrog") +
   facet_wrap(~period, nrow = 1)

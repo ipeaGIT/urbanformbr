@@ -12,7 +12,7 @@ urban_extent_processed <- read_rds(file = "../../data/urbanformbr/urban_growth/g
                               levels = c("upward", "infill", "extension", "leapfrog"),
                               labels = c("Adensamento", "Preenchimento", "Extensão", "Leapfrog"))) %>%
   filter(name_uca_case == "porto_alegre_rs") %>%
-  filter(period_start == 1975, period_end == 2014)
+  filter(period_start == 1990, period_end == 2014)
 
 water_bodies_sf <- st_read("../../data/urbanformbr/urban_growth/rios_porto_alegre_wsg84.gpkg")
 land_sf <- geobr::read_state(code_state = "RS")
@@ -38,7 +38,7 @@ urban_extent_processed %>%
   theme(panel.border = element_rect(fill = NA, color = "grey80"),
         panel.grid = element_blank()) +
   labs(fill = "",
-       title = "Porto Alegre / RS - expansão urbana entre 1974 e 2014")
+       title = "Porto Alegre / RS - expansão urbana entre 1990 e 2014")
 
 ggsave(filename = here::here("figures", "types_of_growth.png"),
        width = 10, height = 8, units = "cm", dpi = 300, scale = 1.8)
