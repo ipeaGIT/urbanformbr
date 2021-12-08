@@ -6,7 +6,7 @@
 
 # setup -------------------------------------------------------------------
 
-source('R/setup.R')
+source('R/fun_support/setup.R')
 
 
 # define function ---------------------------------------------------------
@@ -35,8 +35,6 @@ f_create_total_area_uca_grids <- function(year){
 
   #name <- "internacional_de_foz_do_iguacu_brasil_ciudad_del_este_paraguai"
   #code <- 4108304
-
-
 
   urban_areas_cells <- map2_df(
     .x = polygon_total_area$code_muni, .y = polygon_total_area$name_uca_case,

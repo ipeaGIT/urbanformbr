@@ -18,7 +18,7 @@
 
 # setup -------------------------------------------------------------------
 
-source('R/setup.R')
+source('R/fun_support/setup.R')
 
 # define function ---------------------------------------------------------
 f_prepare_df <- function(){
@@ -32,8 +32,16 @@ f_prepare_df <- function(){
     .(code_urban_concentration, name_urban_concentration, name_uca_case)
   ]
 
-  # exclude santa_cruz_do_sul_rs (4316808)
-  urban_shapes <- urban_shapes[code_urban_concentration %nin% 4316808]
+  # remove areas in the international border --------------------------------
+
+  # Internacional de Uruguaiana/Brasil (RS) 4322400
+  # Internacional de Foz do Iguaçu/Brasil - Ciudad del Este/Paraguai (PR) 4108304
+  # Internacional de Corumba/Brasil (MS) 5003207
+
+  # and Santa Cruz do Sul/RS because of min. urban area in 1975
+  # Santa Cruz do Sul/RS 4316808
+  to_be_removed <- c(4322400, 4108304, 5003207, 4316808)
+  urban_shapes <- subset(urban_shapes, code_urban_concentration %nin% to_be_removed)
 
 
   # * read urban concentration ibge -----------------------------------------
