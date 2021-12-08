@@ -1,7 +1,7 @@
 #' Script para preparar os resultados para a base de regressão
 #'
 
-source('R/setup.R')
+source('R/fun_support/setup.R')
 mapviewOptions(platform = "leaflet")
 
 
@@ -15,8 +15,8 @@ process_city <- function(data, city) {
 
   message(paste("working on city", city))
 
-  years_start <- c(1975, 1990, 2000, 1975)
-  years_end <- c(1990, 2000, 2014, 2014)
+  years_start <- c(1990, 2000, 1990)
+  years_end <- c(2000, 2014, 2014)
 
   city_processed <- map2_df(years_start, years_end, function(y1, y2) {
     message(paste0("working on city ", city, ", period ", y1, " to ", y2))
@@ -131,17 +131,16 @@ process_city <- function(data, city) {
 
 # load input data ---------------------------------------------------------
 
+to_be_removed <- c(4322400, 4108304, 5003207, 4316808)
 
 urban_extent <-
   rbind(
-    read_rds("../../data/urbanformbr/ghsl/results/grid_uca_1975_cutoff20.rds") %>% mutate(year = 1975),
     read_rds("../../data/urbanformbr/ghsl/results/grid_uca_1990_cutoff20.rds") %>% mutate(year = 1990),
     read_rds("../../data/urbanformbr/ghsl/results/grid_uca_2000_cutoff20.rds") %>% mutate(year = 2000),
     read_rds("../../data/urbanformbr/ghsl/results/grid_uca_2014_cutoff20.rds") %>% mutate(year = 2014)
   ) %>%
+  filter(code_muni %nin% to_be_removed) %>%
   mutate(status = "")
-
-
 
 
 # apply function - urban growth status  -------------------------------------------
@@ -199,7 +198,8 @@ urban_growth_df <- urban_growth_df %>%
 
 # drop excess columns
 urban_growth_df <- urban_growth_df %>%
-  select(code_muni:built_abs_growth, pop_geo_growth, built_geo_growth)
+  select(code_muni:built_abs_growth, pop_geo_growth, built_geo_growth) %>%
+  rename(pop_by_growth_type = pop, built_by_growth_type = built)
 
 
 write_rds(urban_growth_df, "../../data/urbanformbr/urban_growth/urban_growth.rds")
@@ -241,8 +241,7 @@ save_html_map <- function(data, start, end) {
   mapshot(mv_growth, url = paste0(getwd(), "/map_urban_growth_", start, "_", end, ".html"))
 
 }
-save_html_map(urban_extent_processed, 1975, 2014)
-save_html_map(urban_extent_processed, 1975, 1990)
+save_html_map(urban_extent_processed, 1990, 2014)
 save_html_map(urban_extent_processed, 1990, 2000)
 save_html_map(urban_extent_processed, 2000, 2014)
 

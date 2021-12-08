@@ -12,14 +12,14 @@ source("R/urban_growth/02.1_prepare_data.R")
 
 urban_extent_processed %>%
   filter(name_uca_case == "porto_alegre_rs") %>%
-  filter(period_start == 1975, period_end == 2014) %>%
+  filter(period_start == 1990, period_end == 2014) %>%
   ggplot() +
   geom_sf(aes(fill=growth_type), size = 0.2) +
   # scale_fill_brewer(palette = "Set1") +
   scale_fill_aop(palette = "blue_red", reverse = TRUE) +
   theme_minimal() +
   labs(fill = "tipo",
-       title = "Porto Alegre / RS - expansão urbana entre 1974 e 2014")
+       title = "Porto Alegre / RS - expansão urbana entre 1990 e 2014")
 
 ggsave(filename = here::here("plots/urbangrowth", "growth_types.png"),
        width = 10, height = 8, units = "cm", dpi = 300, scale = 1.8)
@@ -85,14 +85,14 @@ plot_growth_rates_by_period <- function(data, variable, start, end, remove_outli
 
 plot_growth_rates_by_period(data = urban_growth_df,
                             variable = "pop",
-                            start = 1975, end = 2014)
+                            start = 1990, end = 2014)
 ggsave(filename = here::here("plots/urbangrowth", "growth_rates_pop.png"),
        width = 14, height = 10, units = "cm", dpi = 300, scale = 1.5)
 
 
 plot_growth_rates_by_period(data = urban_growth_df,
                             variable = "built",
-                            start = 1975, end = 2014)
+                            start = 1990, end = 2014)
 
 ggsave(filename = here::here("plots/urbangrowth", "growth_rates_built.png"),
        width = 14, height = 10, units = "cm", dpi = 300, scale = 1.5)

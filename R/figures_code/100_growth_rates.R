@@ -99,14 +99,14 @@ plot_growth_rates_by_period <- function(data, variable, start, end, remove_outli
 
 plot_growth_rates_by_period(data = urban_growth_df,
                             variable = "pop",
-                            start = 1975, end = 2014)
+                            start = 1990, end = 2014)
 ggsave(filename = here::here("figures", "growth_rates_pop.png"),
        width = 12, height = 10, units = "cm", dpi = 300, scale = 1.5)
 
 
 plot_growth_rates_by_period(data = urban_growth_df,
                             variable = "built",
-                            start = 1975, end = 2014)
+                            start = 1990, end = 2014)
 
 ggsave(filename = here::here("figures", "growth_rates_built.png"),
        width = 12, height = 10, units = "cm", dpi = 300, scale = 1.5)
