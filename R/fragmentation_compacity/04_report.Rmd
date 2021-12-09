@@ -1,0 +1,190 @@
+---
+title: "Fragmentation and Compacity Analysis"
+author: "MS"
+date: "05/10/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+source(here::here("R/setup.R"))
+# source("01_prepare_data.R")
+
+library(tmap)
+library(ggrepel)
+```
+
+
+```{r include=FALSE}
+regression_metrics_df <- read_rds("L:/data/urbanformbr/pca_regression_df/pca_regression_df_ready_to_use.rds")
+
+max_compacity_df <- read_csv("L:/data/urbanformbr/fragmentation_compacity/max_compacity_metrics.csv")
+
+compacity_sf <- st_read("L:/data/urbanformbr/fragmentation_compacity/compacity.gpkg") 
+compacity_df <- compacity_sf %>% st_set_geometry(NULL)
+
+regression_metrics_df <- regression_metrics_df %>%
+  left_join(compacity_df %>% filter(year==2014), 
+            by = c("i_code_urban_concentration" = "code_muni"))
+
+
+```
+
+
+
+## Compacity Analysis
+
+```{r}
+compacity_long_df <- compacity_df %>%
+  filter(year == 2014) %>%
+  mutate(avg_cell_closeness_norm = 1 / avg_cell_closeness_norm) %>%
+  pivot_longer(cols = starts_with("avg"), names_to = "metric", values_to = "value")
+
+```
+
+
+
+### Size vs Compacity
+
+
+
+```{r}
+max_compacity_df %>% 
+  pivot_longer(cols = starts_with("compact"), names_to = "metric", values_to = "metric_value") %>%
+  ggplot(aes(x=size, y=metric_value)) +
+  geom_point() +
+  scale_x_log10() +
+  scale_y_log10() +
+  facet_wrap(~metric) +
+  labs(title = "Medidas de avg_closeness e avg_distance calculadas em\ncidade compacta (circular)")
+```
+
+
+```{r}
+compacity_long_df %>%
+  ggplot(aes(x=city_size, y=value)) +
+  geom_point() +
+  scale_x_log10() +
+  scale_y_log10() +
+  geom_smooth(method = "lm", formula = "y ~ x") +
+  facet_wrap(~metric, scales = "free") +
+  labs()
+```
+
+```{r}
+regression_metrics_df %>%
+  select(x_pop_2015, city_size, starts_with("avg")) %>%
+  cor() %>% 
+  as.data.frame %>% 
+  slice(1:2) %>%
+  select(-x_pop_2015, -city_size) 
+```
+
+
+
+## Distance vs Closeness
+
+```{r}
+cities_df <- compacity_long_df %>%
+  filter(str_detect(metric, "norm")) %>%
+  group_by(metric) %>%
+  arrange(desc(value)) %>%
+  slice(1:5)
+
+
+cities_df <- compacity_long_df %>% filter(name_uca_case %in% cities_df$name_uca_case,
+                                          str_detect(metric, "norm"))
+```
+
+```{r include=FALSE}
+cities_wide_df <- cities_df %>% 
+  pivot_wider(names_from = metric, values_from = value)
+```
+
+```{r}
+
+compacity_long_df %>%
+  filter(str_detect(metric, "norm")) %>%
+  pivot_wider(names_from = metric, values_from = value) %>%
+  ggplot(aes(x=avg_cell_distance_norm, y=avg_cell_closeness_norm)) +
+  geom_point(aes(size=city_size)) +
+  geom_text(data = cities_wide_df, aes(label = name_uca_case)) +
+  scale_x_log10() +
+  scale_y_log10() 
+```
+
+## Least compact cities
+
+
+
+
+```{r}
+compacity_long_df %>%
+  filter(str_detect(metric, "norm")) %>%
+  ggplot(aes(x=city_size, y=value)) +
+  geom_point(color="grey40") +
+  geom_text_repel(data = cities_df, aes(label = name_uca_case), color = "red") +
+  scale_x_log10() +
+  scale_y_log10() +
+  # geom_smooth(method = "lm") +
+  facet_wrap(~metric, scales = "free")  +
+  theme_bw()
+```
+
+
+```{r}
+compacity_sf %>% 
+  filter(year == 2014) %>%
+  arrange(desc(avg_cell_distance_norm)) %>% 
+  slice(1:9) %>%
+  tmap::tm_shape() +
+  tm_polygons() +
+  tm_facets(by = "name_uca_case") +
+  tmap::tm_layout(main.title = "9 cidades mais espraiadas, por avg_cell_distance")
+
+```
+
+
+
+
+```{r}
+compacity_sf %>% 
+  filter(year == 2014) %>%
+  arrange((avg_cell_closeness_norm)) %>% 
+  slice(1:8) %>%
+  tmap::tm_shape() +
+  tm_polygons() +
+  tm_facets(by = "name_uca_case") +
+  tmap::tm_layout(main.title = "8 cidades mais espraiadas, por avg_cell_closeness")
+```
+
+## Consumo de combustível e tempo médio de viagem
+
+```{r}
+regression_metrics_df %>%
+  select(y_energy_per_capita, y_wghtd_mean_commute_time, avg_cell_closeness, avg_cell_closeness_norm) %>% 
+  cor() %>%
+  as.data.frame() %>%
+  slice(1:2) %>%
+  select(-y_energy_per_capita, -y_wghtd_mean_commute_time) 
+```
+
+
+
+```{r}
+regression_metrics_df %>%
+  select(y_energy_per_capita, y_wghtd_mean_commute_time, avg_cell_distance, avg_cell_distance_norm) %>% 
+  cor() %>%
+  as.data.frame() %>%
+  slice(1:2) %>%
+  select(-y_energy_per_capita, -y_wghtd_mean_commute_time) 
+```
+
+
+
+
+
+
+
+
+

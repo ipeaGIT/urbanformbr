@@ -41,6 +41,23 @@ calculate_metrics <- function(muni, data) {
   return(pop_df)
 }
 
+calculate_metrics_for_year <- function(year) {
+  filename <- paste0("../../data/urbanformbr/ghsl/results/grid_uca_", year, "_cutoff20.rds")
+  grid_uca <- read_rds(filename)
+
+  codes <- unique(grid_uca$code_muni)
+  metrics_df <- map(codes, calculate_metrics, data = grid_uca)
+  metrics_df <- rbindlist(metrics_df)
+
+  output_file_name <- paste0("../../data/urbanformbr/landscape_metrics/cell_distance_metrics_", year, ".csv")
+  write_csv(metrics_df, output_file_name)
+
+
+}
+
+calculate_metrics_for_year(1975)
+calculate_metrics_for_year(2014)
+
 codes <- unique(grid_uca$code_muni)
 metrics_df <- map(codes, calculate_metrics, data = grid_uca)
 metrics_df <- rbindlist(metrics_df)

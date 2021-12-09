@@ -3,9 +3,14 @@
 # this script merge all the dfs containing variables to be used at exploratory
 #..and regression analysis, created at R/pca_regression_analysis/00_x_...
 
-# setup -------------------------------------------------------------------
+#6666666666666 conferir se todas as bases fizeram o filtro.
+# caso contrario, adicionar linha analoga abaixo
+ # filter only 184 from our df
+#  df_energy <- subset(df_energy, code_urban_concentration %in% df_prep$code_urban_concentration)
+
+# setup -----------------------------------,--------------------------------
 #rm(list=ls())
-source('R/setup.R')
+source('R/fun_support/setup.R')
 
 # read and clean data ---------------------------------------------------------------
 
@@ -13,9 +18,14 @@ source('R/setup.R')
 df_prep <- readr::read_rds("../../data/urbanformbr/pca_regression_df/pca_regression_df.rds") %>%
   dplyr::select(-c(code_muni_uca))
 
+# 4316808 already removed at prepare df
+to_be_removed <- c(4322400, 4108304, 5003207)
+df_prep <- subset(df_prep, code_urban_concentration %nin% to_be_removed)
+
 # * pop growth ------------------------------------------------------------
 
-df_pop_growth <- readr::read_rds("../../data/urbanformbr/pca_regression_df/pop_growth_ghsl.rds")
+df_pop_growth <- readr::read_rds("../../data/urbanformbr/pca_regression_df/pop_growth_ghsl.rds") %>%
+  dplyr::filter()
 
 # * age fleet ---------------------------------------------------------------
 
@@ -41,6 +51,13 @@ setnames(x = df_energy
          ,old = 'tep'
          ,new = 'energy_per_capita')
 
+# * emissions ------------------------------------------------------------------
+
+df_emissions <- readr::read_rds("../../data/urbanformbr/pca_regression_df/co2_per_capita2010.rds")
+
+# filter only 184 from our df
+df_emissions <- subset(df_emissions, code_urban_concentration %in% df_prep$code_urban_concentration)
+
 
 # * area coverage ---------------------------------------------------------
 df_area <- readr::read_rds("../../data/urbanformbr/pca_regression_df/area.rds") %>%
@@ -59,31 +76,10 @@ df_censo <- readr::read_rds("../../data/urbanformbr/pca_regression_df/censo.rds"
   dplyr::select(-name_uca_case)
 
 # * experienced density ---------------------------------------------------
-df_exp_density <- readr::read_rds("../../data/urbanformbr/pca_regression_df/exp_density_ghsl.rds") %>%
-  dplyr::select(
-    -c(name_uca_case),
-    -ends_with("1975"),
-    -c(pop_total_total_1975:pop_total_expansao_2014),
-    -dplyr::matches("(abs_diff|expansao|consolidada)"),
-    -dplyr::matches("growth")
-  ) %>%
-  dplyr::rename(
-    code_urban_concentration = code_muni
-    , built_total_2014 = built_total_total_2014
-    , built_area_coverage_01km_2014 = density_built_01km_total_2014
-    , built_area_coverage_02km_2014 = density_built_02km_total_2014
-    , built_area_coverage_03km_2014 = density_built_03km_total_2014
-    , built_area_coverage_05km_2014 = density_built_05km_total_2014
-    , built_area_coverage_10km_2014 = density_built_10km_total_2014
-  ) %>%
-  dplyr::rename_with(
-    ~ gsub("total_","", .x),
-    .cols = dplyr::starts_with("density_pop")
-  ) %>%
-  dplyr::rename_with(
-    ~ gsub("4","5", .x, perl = T),
-    .cols = dplyr::matches("pop")
-  )
+df_exp_density <- readr::read_rds("../../data/urbanformbr/pca_regression_df/exp_density_ghsl_new.rds") %>%
+  filter(ano == 2014) %>%
+  select(-c(ano, pop_total,built_total))
+
 
 # * landuse metrics -------------------------------------------------------
 df_landuse <- data.table::fread("../../data/urbanformbr/pca_regression_df/landuse_mix_metrics.csv") %>%
@@ -167,6 +163,9 @@ df_merge <- dplyr::left_join(
     df_area
   ) %>%
   dplyr::left_join(
+    df_emissions
+  ) %>%
+  dplyr::left_join(
     df_censo
   ) %>%
   dplyr::left_join(
@@ -229,14 +228,14 @@ df_merge <- dplyr::left_join(
 # * reorder columns -------------------------------------------------------
 df_merge <- df_merge %>%
   dplyr::relocate(
-    c(energy_per_capita, wghtd_mean_commute_time),
+    c(energy_per_capita, wghtd_mean_commute_time,emissions_capita),
     .after = name_uca_case
   )
 
 df_merge <- df_merge %>%
   dplyr::relocate(
     c(large_uca_pop:tma),
-    .after = wghtd_mean_commute_time
+    .after = emissions_capita
   )
 
 df_merge <- df_merge %>%
@@ -261,7 +260,7 @@ df_merge <- df_merge %>%
   ) %>%
   # dependent variables (y)
   dplyr::rename_with(
-    .cols = energy_per_capita:wghtd_mean_commute_time,
+    .cols = energy_per_capita:emissions_capita,
     function(x){paste0("y_", x)}
   ) %>%
   # dummy variables
