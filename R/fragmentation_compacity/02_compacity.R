@@ -1,7 +1,7 @@
 #' Script para calcular medidas de compacidade baseadas na distância média entre
 #' as células urbanas
 #'
-source('R/setup.R')
+source('R/fun_support/setup.R')
 
 
 # functions ---------------------------------------------------------------
@@ -79,7 +79,9 @@ calculate_compact_cell_dist <- function(compact_grid, n_cells = 2500) {
 ## on real grid ------------------------------------------------------------
 
 calculate_real_cell_dist <- function(data, muni, ano, compact_grid) {
-  # filter muni
+  message(paste0("working on city ", muni, ", year ", ano))
+
+    # filter muni
   muni_sf <- data %>% filter(code_muni == muni, year == ano)
 
   # Compacity metrics
@@ -116,15 +118,17 @@ calculate_real_cell_dist <- function(data, muni, ano, compact_grid) {
     group_by(code_muni, name_uca_case, year) %>%
     summarise(city_size = n(),
               avg_cell_distance = avg_cell_distance,
-              avg_cell_closeness = avg_cell_closeness) %>%
+              avg_cell_closeness = avg_cell_closeness,
+              .groups = "drop") %>%
     sf::st_transform(4326)
 
   muni_sf$avg_cell_distance_norm <- muni_sf$avg_cell_distance / compact_df$compact_cell_distance
   muni_sf$avg_cell_closeness_norm <- muni_sf$avg_cell_closeness / compact_df$compact_cell_closeness
 
   muni_sf <- muni_sf %>% select(code_muni, name_uca_case, year, city_size,
-                     avg_cell_distance, avg_cell_closeness,
-                     avg_cell_distance_norm, avg_cell_closeness_norm, geometry)
+                     compacity_abs = avg_cell_closeness,
+                     compacity_norm = avg_cell_closeness_norm, geometry) %>%
+    mutate(compacity_norm = if_else(compacity_norm <= 1, compacity_norm, 1))
 
   return(muni_sf)
 }
@@ -134,13 +138,14 @@ calculate_real_cell_dist <- function(data, muni, ano, compact_grid) {
 
 
 ## load data
+to_be_removed <- c(4322400, 4108304, 5003207, 4316808)
 
 grid_uca <- rbind(
-  read_rds("../../data/urbanformbr/ghsl/results/grid_uca_1975_cutoff20.rds") %>% mutate(year = 1975),
   read_rds("../../data/urbanformbr/ghsl/results/grid_uca_1990_cutoff20.rds") %>% mutate(year = 1990),
   read_rds("../../data/urbanformbr/ghsl/results/grid_uca_2000_cutoff20.rds") %>% mutate(year = 2000),
   read_rds("../../data/urbanformbr/ghsl/results/grid_uca_2014_cutoff20.rds") %>% mutate(year = 2014)
 ) %>%
+  filter(code_muni %nin% to_be_removed) %>%
   select(code_muni, name_uca_case, year, cell, built, pop, geometry)
 
 ## build compact grid using São Paulo as a reference
@@ -152,13 +157,14 @@ uca_codes_years <- grid_uca %>%
   st_set_geometry(NULL) %>%
   distinct()
 
-compacity_df <- map2_df(uca_codes_years$code_muni, uca_codes_years$year, calculate_real_cell_dist,
-        data = grid_uca, compact_grid = compact_grid_sf)
+compacity_df <- map2_df(uca_codes_years$code_muni,
+                        uca_codes_years$year,
+                        calculate_real_cell_dist,
+                        data = grid_uca, compact_grid = compact_grid_sf)
 
 ## save results
 sf::st_write(compacity_df, "../../data/urbanformbr/fragmentation_compacity/compacity.gpkg")
 
-compacity_df %>% filter(year == "1975") %>% sf::st_write("../../data/urbanformbr/fragmentation_compacity/compacity_1975.gpkg")
 compacity_df %>% filter(year == "1990") %>% sf::st_write("../../data/urbanformbr/fragmentation_compacity/compacity_1990.gpkg")
 compacity_df %>% filter(year == "2000") %>% sf::st_write("../../data/urbanformbr/fragmentation_compacity/compacity_2000.gpkg")
 compacity_df %>% filter(year == "2014") %>% sf::st_write("../../data/urbanformbr/fragmentation_compacity/compacity_2014.gpkg")

@@ -3,14 +3,15 @@
 #' https://github.com/r-spatialecology/landscapemetrics
 
 
-source('R/setup.R')
+source('R/fun_support/setup.R')
 library("landscapemetrics")
 
 
 data_folder <- "../../data/urbanformbr/ghsl/BUILT/urban_extent_cutoff_20"
 
 raster_files <- list.files(path = data_folder, full.names = TRUE, pattern = "1K_raster.tif$")
-
+# remove data from 1975
+raster_files <- raster_files[str_detect(raster_files, "1975", negate = TRUE)]
 
 # function ----------------------------------------------------------------
 
@@ -115,7 +116,6 @@ fragmentation_metrics_df <- map_df(raster_files, calculate_fragmentation)
 ## save results
 sf::st_write(fragmentation_metrics_df, "../../data/urbanformbr/fragmentation_compacity/fragmentation.gpkg")
 
-fragmentation_metrics_df %>% filter(year == "1975") %>% sf::st_write("../../data/urbanformbr/fragmentation_compacity/fragmentation_1975.gpkg")
 fragmentation_metrics_df %>% filter(year == "1990") %>% sf::st_write("../../data/urbanformbr/fragmentation_compacity/fragmentation_1990.gpkg")
 fragmentation_metrics_df %>% filter(year == "2000") %>% sf::st_write("../../data/urbanformbr/fragmentation_compacity/fragmentation_2000.gpkg")
 fragmentation_metrics_df %>% filter(year == "2014") %>% sf::st_write("../../data/urbanformbr/fragmentation_compacity/fragmentation_2014.gpkg")
