@@ -12,7 +12,7 @@ library(sf)
 library(openxlsx)
 
 ## prep -----
-honda_filepath = "L:/# DIRUR #/ASMEQ/bosistas/joaobazzo/master-thesis-repo/dados/Abraciclo/honda.xlsx"
+honda_filepath = "../../data/urbanformbr/denatran/honda.xlsx"
 abas <- openxlsx::getSheetNames(honda_filepath)
 abas
 
@@ -70,5 +70,5 @@ ds[,perc := round(100 * total / sum(total),2),by = c("ano")]
 ds
 
 # write rds-----
-dir.create("data/emissions/")
-readr::write_rds(ds,"data/emissions/fleet_mc.rds")
+dir.create("../../data/urbanformbr/emissions/")
+readr::write_rds(ds,"../../data/urbanformbr/emissions/fleet_mc.rds")

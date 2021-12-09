@@ -11,19 +11,19 @@ library(Hmisc)
 # Read data -----
 
 # * Engine size by vehicle (abraciclo) -----
-engine_moto_df <- readr::read_rds("data/emissions/fleet_mc.rds")
+engine_moto_df <- readr::read_rds("../../data/urbanformbr/emissions/fleet_mc.rds")
 
 
 # * Fleet by age (DENATRAN) -----
-fleet_car_raw <- readr::read_rds("data/emissions/fleet_pc_by_age.rds")
-fleet_mot_raw <- readr::read_rds("data/emissions/fleet_mc_by_age.rds")
+fleet_car_raw <- readr::read_rds("../../data/urbanformbr/emissions/fleet_pc_by_age.rds")
+fleet_mot_raw <- readr::read_rds("../../data/urbanformbr/emissions/fleet_mc_by_age.rds")
 
 
 # * Fleet by age and fuel (CETESB) -----
-fuel_age_raw <- readr::read_rds("data/emissions/fuel_by_veh-age.R")
+fuel_age_raw <- readr::read_rds("../../data/urbanformbr/emissions/fuel_by_veh-age.R")
 
 # * Fuel ratio by urban area (ANP) -----
-ratio_urban_raw <- readr::read_rds("data/fuel_urban_areas.rds")
+ratio_urban_raw <- readr::read_rds("../../data/urbanformbr/fuel/fuel_urban_areas.rds")
 
 # Treat data-----
 
@@ -136,4 +136,4 @@ df_moto[is.na(df_moto)] <- 0
 
 
 readr::write_rds(x = list("moto" = df_moto,"carro" = df_carro)
-                 ,file = "data/emissions/merged_fleet.rds")
+                 ,file = "../../data/urbanformbr/emissions/merged_fleet.rds")

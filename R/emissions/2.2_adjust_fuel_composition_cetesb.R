@@ -12,7 +12,7 @@ library(Hmisc)
 #'
 #' @ https://cetesb.sp.gov.br/veicular/relatorios-e-publicacoes/
 
-source_path <- "data-raw/emissions/Frota-Circulante-Estado-de-Sao-Paulo-2020.xlsx"
+source_path <- "../../data/urbanformbr/denatran/Frota-Circulante-Estado-de-Sao-Paulo-2020.xlsx"
 
 openxlsx::getSheetNames(source_path)
 
@@ -85,7 +85,7 @@ ggplot() +
 
 # Save ----
 
-readr::write_rds(fuel_dt1,"data/emissions/fuel_by_veh-age.R")
+readr::write_rds(fuel_dt1,"../../data/urbanformbr/emissions/fuel_by_veh-age.R")
 
 
 

@@ -177,7 +177,7 @@ fleet_carro <- data.table::copy(tmp_dt4) %>%
   .[classe == "carro"]
 
 readr::write_rds(x = fleet_carro
-                 ,file = "data/emissions/fleet_pc_by_age.rds")
+                 ,file = "../../data/urbanformbr/emissions/fleet_pc_by_age.rds")
 
 # Save motorcycle, by age ----
 
@@ -186,6 +186,6 @@ fleet_mc <- data.table::copy(tmp_dt4) %>%
 
 
 readr::write_rds(x = fleet_mc
-                 ,file = "data/emissions/fleet_mc_by_age.rds")
+                 ,file = "../../data/urbanformbr/emissions/fleet_mc_by_age.rds")
 
 

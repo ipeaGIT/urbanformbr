@@ -11,8 +11,8 @@ library(patchwork)
 message("Reading data \n")
 message("---------------------")
 
-df_moto_raw <-  readr::read_rds("data/emissions/motocycle_emissions.rds")
-df_carro_raw <- readr::read_rds("data/emissions/passanger_cars_emissions.rds")
+df_moto_raw <-  readr::read_rds("../../data/urbanformbr/emissions/motocycle_emissions.rds")
+df_carro_raw <- readr::read_rds("../../data/urbanformbr/emissions/passanger_cars_emissions.rds")
 
 uca <- geobr::read_urban_concentrations(simplified = TRUE) %>%
   data.table::setDT() %>%
@@ -102,6 +102,14 @@ p2 <- ggplot() +
 
 p1 / p2
 
+p3 <- ggplot() +
+  geom_area(data = df_plot1,aes(x= age_adj,y= V1,fill = name_veh))+
+  scale_fill_viridis_d()+
+  labs(x = "Fleet age",y = "Emissions (t of CO2)",fill = "Categoria")+
+  facet_wrap(~classe_name,scales = "free_x",nrow = 2)
+p3
+
+
 # plot 2 -----
 dt_bind[1]
 dt_pol <- data.table::copy(dt_bind)[,sum(Emissions),by = .(code_urban_concentration)]
@@ -116,6 +124,7 @@ dt_pol[1]
 
 ggplot()+
   geom_point(data = dt_pol,aes(x = tep,y = Emissions,color = pop))+
+  labs(x = "energia per capita",y = "emissoes per capita")+
   scale_color_viridis_c()
 
 

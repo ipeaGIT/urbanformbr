@@ -14,8 +14,8 @@ message("Reading data \n")
 message("---------------------")
 
 
-list_df <- readr::read_rds("data/emissions/merged_fleet.rds")
-anp_data_raw <- readr::read_rds("data/fuel_urban_areas.rds")
+list_df <- readr::read_rds("../../data/urbanformbr/emissions/merged_fleet.rds")
+anp_data_raw <- readr::read_rds("../../data/urbanformbr/fuel/fuel_urban_areas.rds")
 anp_data_raw
 data(fkm)
 
@@ -405,5 +405,5 @@ df_moto[,`:=`(  CO2_MC_150_G      = adj_f_g * fkm * total * (s1/100) * ratio_gas
 
 # Save ------
 
-readr::write_rds(x = df_moto,"data/emissions/motocycle_emissions.rds")
-readr::write_rds(x = df_carro,"data/emissions/passanger_cars_emissions.rds")
+readr::write_rds(x = df_moto,"../../data/urbanformbr/emissions/motocycle_emissions.rds")
+readr::write_rds(x = df_carro,"../../data/urbanformbr/emissions/passanger_cars_emissions.rds")

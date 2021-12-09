@@ -68,4 +68,4 @@ anp3[,ratio_gasoline := as.numeric(ratio_gasoline)]
 
 # save ----
 
-readr::write_rds(anp3,"data/fuel_urban_areas.rds")
+readr::write_rds(anp3,"../../data/urbanformbr/fuel/fuel_urban_areas.rds")
