@@ -3,12 +3,12 @@
 # this script merge all the dfs containing variables to be used at exploratory
 #..and regression analysis, created at R/pca_regression_analysis/00_x_...
 
-6666666666666 conferir se todas as bases fizeram o filtro.
- caso contrario, adicionar linha analoga abaixo
+#6666666666666 conferir se todas as bases fizeram o filtro.
+# caso contrario, adicionar linha analoga abaixo
  # filter only 184 from our df
- df_energy <- subset(df_energy, code_urban_concentration %in% df_prep$code_urban_concentration)
+#  df_energy <- subset(df_energy, code_urban_concentration %in% df_prep$code_urban_concentration)
 
-# setup -------------------------------------------------------------------
+# setup -----------------------------------,--------------------------------
 #rm(list=ls())
 source('R/fun_support/setup.R')
 
@@ -50,6 +50,13 @@ df_energy[, tep := as.numeric(tep)]
 setnames(x = df_energy
          ,old = 'tep'
          ,new = 'energy_per_capita')
+
+# * emissions ------------------------------------------------------------------
+
+df_emissions <- readr::read_rds("../../data/urbanformbr/pca_regression_df/co2_per_capita2010.rds")
+
+# filter only 184 from our df
+df_emissions <- subset(df_emissions, code_urban_concentration %in% df_prep$code_urban_concentration)
 
 
 # * area coverage ---------------------------------------------------------
@@ -156,6 +163,9 @@ df_merge <- dplyr::left_join(
     df_area
   ) %>%
   dplyr::left_join(
+    df_emissions
+  ) %>%
+  dplyr::left_join(
     df_censo
   ) %>%
   dplyr::left_join(
@@ -218,14 +228,14 @@ df_merge <- dplyr::left_join(
 # * reorder columns -------------------------------------------------------
 df_merge <- df_merge %>%
   dplyr::relocate(
-    c(energy_per_capita, wghtd_mean_commute_time),
+    c(energy_per_capita, wghtd_mean_commute_time,emissions_capita),
     .after = name_uca_case
   )
 
 df_merge <- df_merge %>%
   dplyr::relocate(
     c(large_uca_pop:tma),
-    .after = wghtd_mean_commute_time
+    .after = emissions_capita
   )
 
 df_merge <- df_merge %>%
@@ -250,7 +260,7 @@ df_merge <- df_merge %>%
   ) %>%
   # dependent variables (y)
   dplyr::rename_with(
-    .cols = energy_per_capita:wghtd_mean_commute_time,
+    .cols = energy_per_capita:emissions_capita,
     function(x){paste0("y_", x)}
   ) %>%
   # dummy variables
