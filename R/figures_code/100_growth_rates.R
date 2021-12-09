@@ -4,6 +4,8 @@ source('R/fun_support/setup.R')
 source("R/fun_support/colours.R")
 mapviewOptions(platform = "leaflet")
 
+library(PupillometryR)
+
 
 
 # prepare data ------------------------------------------------------------
