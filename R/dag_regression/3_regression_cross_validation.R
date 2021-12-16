@@ -4,11 +4,11 @@ library(margins)
 
 #########  model specifications based on DAG ---------------------------------------
 
-all_models_specs
+all_models_specs <- model_spec_all
 
 
 ######### create function to run ElasticNet model ------------------------------------
-cross_validation <- function(model, ntimes = 100){ # model <- all_models[[1]]
+cross_validation <- function(model, ntimes = 10){ # model <- all_models[[1]]
 
   # cl <- parallel::makePSOCKcluster(30)
   # doParallel::registerDoParallel(cl)
@@ -61,11 +61,11 @@ aic_list <- lapply(all_models_output_nested, FUN = function(i){round(AIC(i),1)})
 # save output table
 stargazer(
   all_models_output_nested,
-  out = "./output/regression_table_energy_dag_lm_sem-fronteira_cross-validation.html",
-  column.labels= c('all', 'landuse', 'density', 'fcompact', 'circuity', 'closeness'),
+  out = "./output/regression_table_minimum.html",
+  # column.labels= c('all', 'landuse', 'density', 'fcompact', 'circuity', 'closeness'),
   type = 'text',
   p.auto=F,
-  ci=F,
+  ci=T,
   t.auto=F,
   add.lines = list(c('AIC', paste0(aic_list)))
 )

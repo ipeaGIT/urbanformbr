@@ -47,15 +47,15 @@ df_raw[region_labels, on=c('x_state'='code_state'), c('name_state' , 'name_regio
 to_be_removed <- c(4322400, 4108304, 5003207, 4316808)
 df_raw <- subset(df_raw, i_code_urban_concentration %nin% to_be_removed)
 
-### 666666666666666666666666666
-df_raw[ i_name_urban_concentration %like% 'Internacional']
-a[ name_urban_concentration %like% 'Santa Cruz do Sul']
-
-a <- geobr::read_urban_concentrations()
-a <- subset(a, pop_total_2010 >=100000)
-unique(a$code_urban_concentration) %>% length()
-
-subset(a, code_urban_concentration %in% to_be_removed)
+        # ### 666666666666666666666666666
+        # df_raw[ i_name_urban_concentration %like% 'Internacional']
+        # a[ name_urban_concentration %like% 'Santa Cruz do Sul']
+        #
+        # a <- geobr::read_urban_concentrations()
+        # a <- subset(a, pop_total_2010 >=100000)
+        # unique(a$code_urban_concentration) %>% length()
+        #
+        # subset(a, code_urban_concentration %in% to_be_removed)
 
 
 ############### 1.2 convert values to log
@@ -89,15 +89,17 @@ df_log <- copy(df_raw)
 df_log[, (cols_to_log) := lapply(.SD, function(x){ log(x) } ), .SDcols=cols_to_log]
 # df_log[, (cols_to_log) := lapply(.SD, function(x){ log(x + sqrt(x^2 + 1) ) } ), .SDcols=cols_to_log]
 
+glimpse(df_log)
+summary(df_log)
 
 
 
 ############### 1.3 select variables to drop
 # dropping built area vars because we measure 'compactness / sprawl' with the x_avg_cell_distance var already
-drop1 <- c(  'x_built_total_2014'
+drop1 <- c( # 'x_built_total_2014'
             # 'x_urban_extent_size_2014'
-           , 'x_prop_built_consolidated_area_2014'
-           , 'd_tma'
+            # 'x_prop_built_consolidated_area_2014'
+            'd_tma'
            ,'name_region'
            , 'name_state'
            #, 'x_urban_extent_size_2014'
@@ -137,12 +139,10 @@ drop5 <- c(   'x_prop_work_from_home_res_nucleo'
             , 'x_prop_work_other_muni_res_not_nucleo')
 
 
-
 ### drop vars
-df_fuel <- dplyr::select(df_log, - c('y_wghtd_mean_commute_time', all_of(c(id_cols, drop1, drop2, drop3, drop4, drop5)) ))
-# df_time <- dplyr::select(df_log, - c('y_fuel_consumption_per_capita_2010', all_of(c(id_cols, drop1, drop2, drop3, drop4, drop5)) ))
+df_fuel <- dplyr::select(df_log, - c('y_wghtd_mean_commute_time', all_of(c(id_cols, drop1, drop2, drop4, drop5)) ))
 head(df_fuel)
-# df_fuel <- dplyr::select(df_log, - all_of(c('y_wghtd_mean_commute_time',id_cols)))
+
 
 
 
