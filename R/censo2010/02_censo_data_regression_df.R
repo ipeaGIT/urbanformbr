@@ -675,62 +675,6 @@ f_censo <- function(){
 # run function ------------------------------------------------------------
 f_censo()
 
-# plot data ---------------------------------------------------------------
-#ggplot(df_vars_total) +
-#  geom_point(aes(wghtd_mean_commute_time,prop_work_other_muni)) +
-#  scale_x_log10() +
-#  scale_y_log10()
-
-# check prop home office --------------------------------------------------
-df_censo_pes[age != "Até 15 anos" & V6920 == 1L] %>%
-  count(V0660,informal, wt = V0010)
-df_censo_pes[age != "Até 15 anos" & V6920 == 1L] %>%
-  count(V0660,V6940, wt = V0010)
-df_censo_pes[age != "Até 15 anos" & V6920 == 1L] %>%
-  count(V0660,sector, wt = V0010)
-df_censo_pes[age != "Até 15 anos" & V6920 == 1L] %>%
-  count(V0660,grupocup, wt = V0010)
-
-df_censo_pes[age != "Até 15 anos" & V6920 == 1L & name_uca_case=="sao_paulo_sp"] %>%
-  count(V0660,V6513, wt = V0010) %>%
-  mutate(percent = prop.table(n))
-
-df_censo_pes[age != "Até 15 anos" & V6920 == 1L & name_uca_case=="sao_paulo_sp"] %>%
-  count(V0660,V0651, wt = V0010) %>%
-  mutate(percent = prop.table(n))
-
-df_censo_pes[
-  ,
-  `:=`(
-    rend_princ = data.table::fcase(
-      is.na(V6513), NA_character_,
-      V6513 == 0, "0",
-      V6513 <= 100, "<=100",
-      V6513 > 100 & V6513 <= 1000, "100> x <=1000",
-      default = "acima 1000"
-    )
-  )
-  ]
-
-df_censo_pes[age != "Até 15 anos" & V6920 == 1L & name_uca_case=="sao_paulo_sp"] %>%
-  count(V0660,rend_princ, wt = V0010) %>%
-  mutate(percent = prop.table(n))
-
-df_teste_home <- df_censo_pes[
-  V1006 == 1L, # filter only individuals from urban areas
-  .(
-    from_home = sum(V0010[which(work_muni == "Próprio domicílio" & age != "Até 15 anos" & V6920 == 1L)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L)], na.rm = T),
-    from_home_rend = sum(V0010[which(work_muni == "Próprio domicílio" & age != "Até 15 anos" & V6920 == 1L & !is.na(V6513) & V6513 > 0)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & !is.na(V6513) & V6513 > 0)], na.rm = T),
-    from_home_formal = sum(V0010[which(work_muni == "Próprio domicílio" & age != "Até 15 anos" & V6920 == 1L & informal == "Formal")]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & informal == "Formal")], na.rm = T),
-    from_home_rend_din = sum(V0010[which(work_muni == "Próprio domicílio" & age != "Até 15 anos" & V6920 == 1L & V0651 == 1)]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & V0651 == 1)], na.rm = T),
-    from_home_sector_na = sum(V0010[which(work_muni == "Próprio domicílio" & age != "Até 15 anos" & V6920 == 1L & !is.na(sector))]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & !is.na(sector))], na.rm = T),
-    from_home_sector_wo_agro = sum(V0010[which(work_muni == "Próprio domicílio" & age != "Até 15 anos" & V6920 == 1L & !is.na(sector) & sector != "Agricultura")]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & !is.na(sector) & sector != "Agricultura")], na.rm = T),
-    from_home_V6930 = sum(V0010[which(work_muni == "Próprio domicílio" & age != "Até 15 anos" & V6920 == 1L & (V6930 == 1 | V6930 == 2 | V6930 == 5))]) / sum(V0010[which(age != "Até 15 anos" & V6920 == 1L & (V6930 == 1 | V6930 == 2 | V6930 == 5))], na.rm = T)
-
-  ),
-  by = .(code_urban_concentration)
-]
-
 # vars description --------------------------------------------------------
 
 # * censo domicilios ------------------------------------------------------

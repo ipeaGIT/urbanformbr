@@ -7,31 +7,27 @@
 
 # setup -------------------------------------------------------------------
 
-source('R/setup.R')
+source('R/fun_support/setup.R')
 
 # directory ---------------------------------------------------------------
 
-# * built up area ---------------------------------------------------------
+# * built up area
 
 ghsl_built_dir <- "../../data/urbanformbr/ghsl/BUILT/UCA/"
 
 # files vector
-years <-c('1975','1990','2000','2014')
+years <-c('1990','2000','2014')
 files_built <- purrr::map(years, ~dir(ghsl_built_dir, pattern = ., full.names = T))
 
-
-# * population ------------------------------------------------------------
+# * population
 
 ghsl_pop_dir <- "../../data/urbanformbr/ghsl/POP/UCA/"
 
 # files vector
-years <-c('1975','1990','2000','2015')
 files_pop <- purrr::map(years, ~dir(ghsl_pop_dir, pattern = ., full.names = T))
 
 
 # define function ---------------------------------------------------------------
-
-future::plan(future::multicore)
 
 
 # * function built -----------------------------------------------------------------
@@ -53,7 +49,6 @@ f_crop_raster_cutoff_built <- function(input){
 
   # rename each raster in the list
   names(bua_raster) <- uca_name
-
 
   # read 20% polygon cutoff
   bua_polygon20 <- readr::read_rds(
@@ -83,8 +78,8 @@ f_crop_raster_cutoff_built <- function(input){
   )
 
   # create directory
-  if (!dir.exists("../../data/urbanformbr/ghsl/BUILT/urban_extent_cutoff_20")){
-    dir.create("../../data/urbanformbr/ghsl/BUILT/urban_extent_cutoff_20")
+  if (!dir.exists("../../data/urbanformbr/ghsl/BUILT/urban_extent_cutoff_20_raster")){
+    dir.create("../../data/urbanformbr/ghsl/BUILT/urban_extent_cutoff_20_raster")
   }
 
   files_output <- purrr::map_chr(
@@ -97,7 +92,7 @@ f_crop_raster_cutoff_built <- function(input){
     uca_mask, files_output, function(x,y)
       raster::writeRaster(
         x = x,
-        filename = paste0('../../data/urbanformbr/ghsl/BUILT/urban_extent_cutoff_20/', y),
+        filename = paste0('../../data/urbanformbr/ghsl/BUILT/urban_extent_cutoff_20_raster/', y),
         overwrite = T
       )
   )
@@ -161,8 +156,8 @@ f_crop_raster_cutoff_pop <- function(input){
   )
 
   # create directory
-  if (!dir.exists("../../data/urbanformbr/ghsl/POP/urban_extent_cutoff_20")){
-    dir.create("../../data/urbanformbr/ghsl/POP/urban_extent_cutoff_20")
+  if (!dir.exists("../../data/urbanformbr/ghsl/POP/urban_extent_cutoff_20_raster")){
+    dir.create("../../data/urbanformbr/ghsl/POP/urban_extent_cutoff_20_raster")
   }
 
   files_output <- purrr::map_chr(
@@ -175,7 +170,7 @@ f_crop_raster_cutoff_pop <- function(input){
     uca_mask, files_output, function(x,y)
       raster::writeRaster(
         x = x,
-        filename = paste0('../../data/urbanformbr/ghsl/POP/urban_extent_cutoff_20/', y),
+        filename = paste0('../../data/urbanformbr/ghsl/POP/urban_extent_cutoff_20_raster/', y),
         overwrite = T
       )
   )
@@ -184,6 +179,7 @@ f_crop_raster_cutoff_pop <- function(input){
 
   # run function ------------------------------------------------------------
 
+future::plan(future::multicore)
 
 # * built up area ---------------------------------------------------------
 
