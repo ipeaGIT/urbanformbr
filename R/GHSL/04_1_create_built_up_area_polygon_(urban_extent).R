@@ -7,14 +7,14 @@
 
 # setup -------------------------------------------------------------------
 
-source('R/setup.R')
+source('R/fun_support/setup.R')
 
 # directory ---------------------------------------------------------------
 
 ghsl_built_dir <- "../../data/urbanformbr/ghsl/BUILT/UCA/"
 
 # files vector
-years <-c('1975','1990','2000','2014')
+years <-c('1990','2000','2014')
 files <- purrr::map(years, ~dir(ghsl_built_dir, pattern = .))
 
 # APAGAR DEPOIS
@@ -46,7 +46,8 @@ f_create_polygon_cutoff <- function(input){
   # obs: uca that do not meet 20% cutoff criteria in 1975
   # santa_cruz_do_sul_rs : max(bua_value) = 13.5358
   # remove / exclude santa_cruz_do_sul_rs
-  bua_uca$santa_cruz_do_sul_rs <- NULL
+  # bua_uca$santa_cruz_do_sul_rs <- NULL
+  # santa_cruz_do_sul_rs meets 20% cutoff criteria in 1990
 
   f_raster_pol_class <- function(bua_raster){
 
@@ -113,8 +114,6 @@ f_create_polygon_cutoff <- function(input){
     sf::st_drop_geometry() %>%
     data.table::setDT() %>%
     dplyr::rename(code_muni = code_urban_concentration)
-  # remove santa_cruz_do_sul_rs
-  urban_shapes <- urban_shapes[!name_uca_case=='santa_cruz_do_sul_rs']
 
   # reduce list into df
   bua_reduce <- bind_rows(bua_convert)
@@ -143,16 +142,16 @@ f_create_polygon_cutoff <- function(input){
   )
 
   # save each polygon separately
-  bua_split <- split(bua_reduce, bua_reduce$name_uca_case)
+  #bua_split <- split(bua_reduce, bua_reduce$name_uca_case)
 
 
-  furrr::future_walk2(
-    .x = bua_split, .y = names(bua_split), function(x,y)
-      sf::st_write(
-        obj = x,
-        dsn = paste0("../../data/urbanformbr/ghsl/BUILT/urban_extent_cutoff_20_shape/urban_extent_",ano,"_cutoff_20_",y,".gpkg"),
-        append = F)
-  )
+  #furrr::future_walk2(
+  #  .x = bua_split, .y = names(bua_split), function(x,y)
+  #    sf::st_write(
+  #      obj = x,
+  #      dsn = paste0("../../data/urbanformbr/ghsl/BUILT/urban_extent_cutoff_20_shape/urban_extent_",ano,"_cutoff_20_",y,".gpkg"),
+  #      append = F)
+  #  )
 
 
 }

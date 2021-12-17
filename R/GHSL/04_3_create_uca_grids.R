@@ -19,12 +19,12 @@ create_uca_grids <- function(year) {
   # name = "braganca"
 
   urban_areas_cells <- map2_df(urban_areas$code_muni, urban_areas$name_uca_case, function(code, name) {
-    raster_built <-paste0("../../data/urbanformbr/ghsl/BUILT/urban_extent_cutoff_20/",
+    raster_built <-paste0("../../data/urbanformbr/ghsl/BUILT/urban_extent_cutoff_20_raster/",
                          "GHS_BUILT_LDS", year, "_urban_extent_cutoff_20_",
                          name, "_1K_raster.tif")
 
     if (year == 2014) { y <- 2015} else {y <- year}
-    raster_pop <-paste0("../../data/urbanformbr/ghsl/POP/urban_extent_cutoff_20/",
+    raster_pop <-paste0("../../data/urbanformbr/ghsl/POP/urban_extent_cutoff_20_raster/",
                           "GHS_POP_E", y, "_urban_extent_cutoff_20_",
                           name, "_1K_raster.tif")
 
