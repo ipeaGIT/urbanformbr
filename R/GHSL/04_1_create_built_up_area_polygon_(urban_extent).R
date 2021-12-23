@@ -4,160 +4,91 @@
 #..area percentage defined at script 04-0 (i.e. built-up area >= 20%)
 # these polygons for built-up area are defined as "urban extent" and will be used
 #..to compare urban expansion in terms of increase in density and urban footprint
+# the polygons are saved in one dataframe (.rds) for each year (1990,2000,2014)
 
 # setup -------------------------------------------------------------------
 
 source('R/fun_support/setup.R')
 
-# directory ---------------------------------------------------------------
+# setup parallel ----------------------------------------------------------
 
-ghsl_built_dir <- "../../data/urbanformbr/ghsl/BUILT/UCA/"
+future::plan(future::multicore, workers = future::availableCores() / 2)
 
-# files vector
-years <-c('1990','2000','2014')
-files <- purrr::map(years, ~dir(ghsl_built_dir, pattern = .))
+# define function ---------------------------------------------------------
 
-# APAGAR DEPOIS
-#input <- files[[1]]
+#ano <- 1990
 
-# define function ---------------------------------------------------------------
-# set up parallel
-future::plan(future::multicore)
+f_create_uca_polygon_cutoff_20 <- function(ano){
 
-f_create_polygon_cutoff <- function(input){
-
-  # read all raster files from one year in a list
-  bua_uca <- purrr::map(input, ~ raster::raster(paste0(ghsl_built_dir, .)))
-
-  # extract the year
-  anos <- purrr::map_chr(input, ~ stringr::str_extract(., "(?<=LDS)[0-9]{4}"))
-
-  # extract uca name
-  uca_name <- purrr::map_chr(input, ~ stringr::str_extract(., "(?<=LDS[\\d]{4}_).+(?=_R2)"))
-
-  # add years to name
-  #uca_name <- paste0(uca_name,'_',anos)
-
-  # rename each raster in the list
-  names(bua_uca) <- uca_name
-
-  # * function raster polygons and classify -----------------------------------
-
-  # obs: uca that do not meet 20% cutoff criteria in 1975
-  # santa_cruz_do_sul_rs : max(bua_value) = 13.5358
-  # remove / exclude santa_cruz_do_sul_rs
-  # bua_uca$santa_cruz_do_sul_rs <- NULL
-  # santa_cruz_do_sul_rs meets 20% cutoff criteria in 1990
-
-  f_raster_pol_class <- function(bua_raster){
-
-    bua_pol <- bua_raster %>%
-      # convert raster to polygon (sp)
-      raster::rasterToPolygons() %>%
-      # transform to sf
-      sf::st_as_sf() %>%
-      # rename first column
-      dplyr::rename(bua_value = 1) %>%
-      # create columns classifying area based on cutoff values
-      dplyr::mutate(
-          cutoff_20 = data.table::fcase(
-          bua_value >= 20, 'Construída',
-          bua_value < 20, 'Não construída'
-        )
-      )
-
-  }
-
-  # run for every uca
-  bua_pol <- purrr::map(bua_uca, f_raster_pol_class)
-
-  # * convert crs polygon and summarise -------------------------------------
-  f_group_summarise <- function(base, variavel){
-
-    # rlang::ensym?
-    variavel <- rlang::sym(variavel)
-
-    base %>%
-      dplyr::group_by(!!variavel) %>%
-      dplyr::summarise()
-
-  }
-
-  # create column name vector
-  vetor <- paste0('cutoff_',c(20))
-  # generate converted list of sf df
-
-  bua_convert <- purrr::map(bua_pol, ~f_group_summarise(base = ., variavel = vetor))
-
-  # * reproject crs ---------------------------------------------------------
-  # reproject crs
-  #bua_convert <- purrr::map(bua_convert, ~sf::st_transform(., crs = 4326))
-
-
-  # * filter built-up area --------------------------------------------------
-  # filter built-up area (this polygon is the `urban extent`)
-  bua_convert <- purrr::map(bua_convert,
-                            ~dplyr::filter(., .$cutoff_20 == 'Construída'))
-
-  # add uca name to df
-  nomes <- names(bua_convert)
-  bua_convert <- purrr::map2(
-    bua_convert, nomes, function(x,y)
-    dplyr::mutate(
-      .data = x,
-      name_uca_case = y
-    )
-  )
-
-  # read urban shapes saved at `urban_shapes.R` to get code_muni
+  # read info df
   urban_shapes <- readr::read_rds('../../data/urbanformbr/urban_area_shapes/urban_area_pop_100000_dissolved.rds') %>%
     sf::st_drop_geometry() %>%
-    data.table::setDT() %>%
-    dplyr::rename(code_muni = code_urban_concentration)
+    select(-pop_ibge_total_2010)
 
-  # reduce list into df
-  bua_reduce <- bind_rows(bua_convert)
+  codigos <- urban_shapes$code_urban_concentration
 
-  # add code_muni to urban extent
-  bua_reduce <- dplyr::left_join(
-    bua_reduce,
-    urban_shapes %>% select(code_muni, name_uca_case),
-    by = c('name_uca_case')
-    )
+  df_pol_cutoff20 <- furrr::future_map_dfr(
+    codigos,
+    function(code_uca){
+      message(paste0("\n working on ", code_uca,"\n"))
 
-  # reorder and select variables
-  bua_reduce <- bua_reduce %>%
-    dplyr::select(code_muni, name_uca_case, geometry)
+      # * subset urban_shapes ---------------------------------------------------
 
+      df_urban_shape <- subset(urban_shapes, code_urban_concentration == code_uca)
 
-  # * save data -------------------------------------------------------------
+      # * read built up area raster ---------------------------------------------
 
-  ano <- unique(anos)
+      raster_uca_bua <- raster::raster(sprintf("../../data/urbanformbr/ghsl/BUILT/UCA/GHS_BUILT_LDS%s_%s_R2018A_54009_1K_V2_0_raster.tif", ano, code_uca))
 
-  # save as one df
-  saveRDS(
-    object = bua_reduce,
-    file = paste0('../../data/urbanformbr/ghsl/results/urban_extent_uca_',ano,'_cutoff20.rds'),
-    compress = 'xz'
+      # * filter grid cells -----------------------------------------------------
+
+      # filter grid cells with >= 20% built up area
+      raster_filter <- raster_uca_bua
+      raster_filter[raster_filter < 20] <- NA
+
+      # * convert to polygon ----------------------------------------------------
+      #
+      pol_uca_bua <- raster::rasterToPolygons(raster_filter) %>%
+        sf::st_as_sf()
+
+      # rename and create columns
+      pol_uca_bua <- pol_uca_bua %>%
+        dplyr::rename(bua_value = 1) %>%
+        dplyr::mutate(cutoff20 = "construida")
+
+      # non onverlapping join
+      pol_uca_bua <- pol_uca_bua %>%
+        dplyr::group_by(cutoff20) %>%
+        dplyr::summarise() %>%
+        dplyr::select(-cutoff20)
+
+      # add code_urban_concentration, name_urban_concentration & name_uca_case
+      df_pol_uca_bua <- pol_uca_bua %>%
+        dplyr::mutate(
+          code_urban_concentration = df_urban_shape$code_urban_concentration
+          , name_urban_concentration = df_urban_shape$name_urban_concentration
+          , name_uca_case = df_urban_shape$name_uca_case
+        ) %>%
+        dplyr::relocate("geometry", .after = name_uca_case)
+
+      return(df_pol_uca_bua)
+
+    }
   )
 
-  # save each polygon separately
-  #bua_split <- split(bua_reduce, bua_reduce$name_uca_case)
 
-
-  #furrr::future_walk2(
-  #  .x = bua_split, .y = names(bua_split), function(x,y)
-  #    sf::st_write(
-  #      obj = x,
-  #      dsn = paste0("../../data/urbanformbr/ghsl/BUILT/urban_extent_cutoff_20_shape/urban_extent_",ano,"_cutoff_20_",y,".gpkg"),
-  #      append = F)
-  #  )
+  # save as one df ----------------------------------------------------------
+  saveRDS(
+    df_pol_cutoff20,
+    sprintf("../../data/urbanformbr/ghsl/results/urban_extent_uca_%s_cutoff20.rds", ano),
+    compress = 'xz'
+  )
 
 
 }
 
-# run function ------------------------------------------------------------
+# run for mulitple years --------------------------------------------------
 
+anos <- c("1990","2000","2014")
 
-# run for multiple years
-furrr::future_map(files, ~f_create_polygon_cutoff(.))
+furrr::future_walk(anos, ~f_create_uca_polygon_cutoff_20(.))

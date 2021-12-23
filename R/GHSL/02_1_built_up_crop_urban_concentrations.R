@@ -2,123 +2,89 @@
 
 # this script
 # i. reads buil-up area raster data from GHS-BUILT-BRASIL (1km resolution)
-#..saved previously
-# ii. crops spatially using shapes from urban concentration areas by IBGE (uca)
+#..saved previously at R/GHSL/01_2_built_up_filter_save_br_data.R
+# ii. crops and masks spatially using urban concentration areas (uca) shapes by IBGE
 ## devtools::install_github("ipeaGIT/geobr", subdir = "r-package")
 # iii. saves raster for each uca and each year
 
-
+# Obs.: uca shapes were previously saved at R/urban_concentration_area/01_1_uca_shapes.R
 
 # setup -------------------------------------------------------------------
 
-source('R/setup.R')
+source('R/fun_support/setup.R')
 
-# directory and files input -----------------------------------------------
+# setup parallel ----------------------------------------------------------
 
-# directory
-ghsl_built_dir <- "../../data/urbanformbr/ghsl/BUILT/BRASIL/"
-
-# files input
-files_input <- dir(ghsl_built_dir, pattern = 'BRASIL.*raster.tif$')
-
-
-# future setting ----------------------------------------------------------
-future::plan(future::multicore)
-
+future::plan(future::multicore, workers = future::availableCores() / 2)
 
 # define function ---------------------------------------------------------
 
-f_crop_uca <- function(input){
+#ano <- 1990
 
-  # raster projection -------------------------------------------------------
-  bua_br_projection <- rgdal::GDALinfo(paste0(ghsl_built_dir, input)) %>%
+f_crop_built_uca <- function(ano){
+
+
+  # * read files ------------------------------------------------------------
+
+  # read uca sf saved at urban_concentration_area/01_1_uca_shapes
+  urban_shapes <- readr::read_rds('../../data/urbanformbr/urban_area_shapes/urban_area_pop_100000_dissolved.rds')
+
+  # read brasil raster built up area ano
+  raster_br_bua <- raster::raster(sprintf("../../data/urbanformbr/ghsl/BUILT/BRASIL/GHS_BUILT_LDS%s_BRASIL_R2018A_54009_1K_V2_0_raster.tif", ano))
+
+
+  # * change shape projection -----------------------------------------------
+
+  projection_br_bua <- rgdal::GDALinfo(sprintf("../../data/urbanformbr/ghsl/BUILT/BRASIL/GHS_BUILT_LDS%s_BRASIL_R2018A_54009_1K_V2_0_raster.tif", ano)) %>%
     attr('projection')
 
+  # change uca sf projection (using brasil built raster projection)
+  urban_shapes <- sf::st_transform(urban_shapes, projection_br_bua)
 
-  # uca shape ----------------------------------------------------------
-  if (!exists(x = 'uca_all')) {
+  codigos <- urban_shapes$code_urban_concentration
 
-    # read uca sf saved at 01_01
-    uca_all <- readr::read_rds('../../data/urbanformbr/urban_area_shapes/urban_area_pop_100000_dissolved.rds')
+  furrr::future_walk(
+    codigos,
+    function(code_uca){
+      message(paste0("\n working on ", code_uca,"\n"))
 
-    # add column with clean uca
-    uca_all <- uca_all %>%
-      mutate(name_uca_case = janitor::make_clean_names(name_urban_concentration))
+      # * subset urban_shapes ---------------------------------------------------
 
-    # arrange uca sf (name order with name_uca_case)
-    uca_all <- uca_all %>%
-      dplyr::arrange(name_uca_case)
+      # subset urban_shapes
+      df_urban_shape <- subset(urban_shapes, code_urban_concentration == code_uca)
 
-    # change uca sf projection (using raster projection)
-    uca_all <- sf::st_transform(uca_all, bua_br_projection)
+      # * crop & mask raster file ------------------------------------------------
 
-    # split uca sf into list with a df for each uca
-    uca_split <- base::split(uca_all, uca_all$name_uca_case)
+      # crop raster with urban shape
+      raster_uca_bua <- raster::crop(raster_br_bua, df_urban_shape)
 
-  }
+      # mask raster with urban shape
+      raster_uca_bua <- raster::mask(raster_uca_bua, df_urban_shape)
 
-  # built up area brasil data ------------------------------------------
+      # * save file ------------------------------------------------------------
 
-  # read bua brasil raster
-  bua_br <- raster::raster(paste0(ghsl_built_dir, input))
+      # create output name with input
+      name_output <- gsub(
+        pattern = "BRASIL",
+        replacement = df_urban_shape$code_urban_concentration,
+        x = sprintf("GHS_BUILT_LDS%s_BRASIL_R2018A_54009_1K_V2_0_raster.tif", ano)
+      )
 
-  # crop and mask -----------------------------------------------------------
-
-  # crop raster with each uca sf
-  uca_crop <- furrr::future_map(uca_split, ~raster::crop(bua_br, .))
-
-  # mask raster with each uca sf
-  uca_mask <- furrr::future_map2(
-    .x = uca_crop, .y = uca_split, function(x, y)
-      raster::mask(x = x, mask = y)
-  )
-
-  #uca_crop <- purrr::map(uca_split, ~raster::crop(bua_br, .))
-
-  #uca_mask <- purrr::map2(
-  #  .x = uca_crop, .y = uca_split, function(x, y)
-  #    raster::mask(x = x, mask = y)
-  #)
-
-
-  # create directory
-  if (!dir.exists("../../data/urbanformbr/ghsl/BUILT/UCA")){
-    dir.create("../../data/urbanformbr/ghsl/BUILT/UCA")
-  }
-
-  # create output name with input
-  files_output <- purrr::map_chr(
-    uca_all$name_uca_case,
-    ~gsub('BRASIL', ., input)
-  )
-
-  # write each mask as raster file
-  purrr::walk2(
-    uca_mask, files_output, function(x,y)
+      # save built up area raster file
       raster::writeRaster(
-        x = x,
-        filename = paste0('../../data/urbanformbr/ghsl/BUILT/UCA/', y),
+        raster_uca_bua,
+        filename = paste0("../../data/urbanformbr/ghsl/BUILT/UCA/", name_output),
         overwrite = T
       )
-  )
 
-  #furrr::future_map2(
-  #  uca_mask, files_output, function(x,y)
-  #    raster::writeRaster(
-  #      x = x,
-  #      filename = paste0('../../data/urbanformbr/ghsl/BUILT/UCA/', y, '_raster.tif'),
-  #      overwrite = T
-  #    )
-  #)
+    }
+  )
 
 }
 
 
+# run for mulitple years --------------------------------------------------
 
+anos <- c("1990","2000","2014")
 
-# run for multiple bua years ----------------------------------------------
-
-
-purrr::walk(files_input, ~f_crop_uca(.))
-
-#furrr::future_walk(files_input, ~f_crop_uca(.))
+furrr::future_walk(anos, ~f_crop_built_uca(.))

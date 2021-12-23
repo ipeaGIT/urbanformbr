@@ -16,15 +16,21 @@ source('R/fun_support/setup.R')
 ghsl_built_dir <- "../../data/urbanformbr/ghsl/BUILT/UCA/"
 
 # files vector
-years <-c('1990','2000','2014')
-files_built <- purrr::map(years, ~dir(ghsl_built_dir, pattern = ., full.names = T))
+#years <-c('1990','2000','2014')
+files_built <- purrr::map(
+  c('1990','2000','2014'),
+  ~dir(ghsl_built_dir, pattern = ., full.names = T)
+  )
 
 # * population
 
 ghsl_pop_dir <- "../../data/urbanformbr/ghsl/POP/UCA/"
 
 # files vector
-files_pop <- purrr::map(years, ~dir(ghsl_pop_dir, pattern = ., full.names = T))
+files_pop <- purrr::map(
+  c('1990','2000','2015'),
+  ~dir(ghsl_pop_dir, pattern = ., full.names = T)
+  )
 
 
 # define function ---------------------------------------------------------------

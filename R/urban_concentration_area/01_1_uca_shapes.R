@@ -1,13 +1,15 @@
 # description -------------------------------------------------------------
 
 # this script
-# 1 downloads urban concentrations areas (uca) delimited by IBGE
-# 2 dissolve their internal limits
-# 3 saves two shapefiles as .rds for future use @urbanformbr:
-## 3.1 all the uca present in the IBGE urban concentration dataset
-## 3.2 urban concentration areas with population >= 100000
-
-66666666666 EXCLUIR 4 CIDADES
+# 1. downloads urban concentrations areas (uca) delimited by IBGE
+# 2. dissolve their internal limits
+# 3. filters uca
+  # 3.1 with pop >= 100000
+  # 3.2 exclude uca's that share borders with international urban areas (listed below)
+    # 4322400 Uruguaiana RS
+    # 4108304 Foz do Iguaçu PR
+    # 5003207 Corumbá MS
+# 4. saves shapefiles as .rds for future use @urbanformbr
 
 # setup -------------------------------------------------------------------
 
@@ -25,11 +27,6 @@ f_uca_shapes <- function(){
   uca <- geobr::read_urban_concentrations(simplified = F)
 
   # 2 create pop sum --------------------------------------------------------
-
-  #uca <- uca %>%
-  #  dplyr::mutate(
-  #    name_urb_case = snakecase::to_any_case(name_urban_concentration)
-  #  )
 
   # setDT
   data.table::setDT(uca)
@@ -61,58 +58,43 @@ f_uca_shapes <- function(){
     ,
     lapply(.SD, sum),
     by = .(code_urban_concentration, name_urban_concentration),
-    .SDcols = c('pop_total_2010','pop_urban_2010','pop_rural_2010')
+    .SDcols = c('pop_total_2010')
   ]
 
   data.table::setnames(
     uca_join,
-    c('pop_total_2010','pop_urban_2010','pop_rural_2010'),
-    c('pop_ibge_total_2010','pop_ibge_urban_2010','pop_ibge_rural_2010')
+    c('pop_total_2010'),
+    c('pop_ibge_total_2010')
     )
-
-  # dplyr way
-  #uca_join <- uca %>%
-  #  dplyr::group_by(code_urban_concentration, name_urban_concentration) %>%
-  #  summarise(
-  #    pop_ibge_total_2010 = sum(pop_total_2010)),
-  #pop_ibge_urban_2010 = sum(pop_urban_2010),
-  #pop_ibge_rural_2010 = sum(pop_rural_2010)
-  #)
 
   dissolved <- dplyr::left_join(dissolved, uca_join)
 
   # reproject crs to 4326
   dissolved <- sf::st_transform(dissolved, 4326)
 
-  #### CORRIGIR BASE: PERMITIR USAR MAPVIEW -> POR QUE NAO ACEITA NO MOMENTO?
-
   # add column with clean uca name
   dissolved <- dissolved %>%
     dplyr::mutate(name_uca_case = janitor::make_clean_names(name_urban_concentration)) %>%
-  # reorder df by clean uca name
-    dplyr::arrange(name_uca_case) %>%
+  # reorder df by code_urban_concentration
+    dplyr::arrange(code_urban_concentration) %>%
   # change column order
     dplyr::relocate(name_uca_case, .after = name_urban_concentration)
 
 
+  # 4 filter uca with pop >= 100000 -----------------------------------------
+  dissolved <- subset(dissolved, pop_ibge_total_2010 >= 100000)
 
-  # remove 4 cities ---------------------------------------------------------
-  to_be_removed <- c(4322400, 4108304, 5003207, 4316808)
+  # 5 remove ucas that share international borders ---------------------------------
+  # 4322400 Uruguaiana RS
+  # 4108304 Foz do Iguaçu PR
+  # 5003207 Corumbá MS
+  to_be_removed <- c(4322400, 4108304, 5003207)
   dissolved <- subset(dissolved, code_urban_concentration %nin% to_be_removed)
 
 
-  # 4 save resulting shape --------------------------------------------------
-
-    # * 4.1 full uca dataset --------------------------------------------------
-  #saveRDS(
-  #  object = dissolved,
-  #  file = '//storage6/usuarios/Proj_acess_oport/data/urbanformbr/urban_area_shapes/urban_area_dissolved.rds',
-  #  compress = 'xz'
-  #)
-
-    # * 4.2 filter pop >= 100000 ----------------------------------------------
+  # 5 save resulting shape --------------------------------------------------
   saveRDS(
-    object = dissolved %>% dplyr::filter(pop_ibge_total_2010 >= 100000),
+    object = dissolved,
     file = '//storage6/usuarios/Proj_acess_oport/data/urbanformbr/urban_area_shapes/urban_area_pop_100000_dissolved.rds',
     compress = 'xz'
   )
