@@ -13,13 +13,16 @@
 
 source('R/fun_support/setup.R')
 
+# setup parallel ----------------------------------------------------------
+
+future::plan(future::multicore, workers = future::availableCores() / 2)
+
 # define function ---------------------------------------------------------
 
 # * function density matrix -----------------------------------------------
 # function to extract density matrix for each urban extent (5 & 10 km)
 
 f_get_density_matrix <- function(df_urban_area_cutoff20, df_uca_pop_built){
-
 
   # df_urban_areas <- urban_area
 
@@ -40,7 +43,7 @@ f_get_density_matrix <- function(df_urban_area_cutoff20, df_uca_pop_built){
     points_latlon_origem,
     points_latlon_destino,
     measure = "cheap")
-    )
+  )
   # Santa Maria - 11674 points
   # user  system elapsed
   # 3.450   1.002   4.488
@@ -107,7 +110,7 @@ f_get_density_matrix <- function(df_urban_area_cutoff20, df_uca_pop_built){
 
   # * * temp output ---------------------------------------------------------
 
-  temp_output <- data.table('code_muni' = df_urban_area_cutoff20$code_muni,
+  temp_output <- data.table('code_urban_concentration' = df_urban_area_cutoff20$code_urban_concentration,
                             'name_uca_case' = df_urban_area_cutoff20$name_uca_case,
                             'cell' = df_urban_area_cutoff20$cell,
                             'pop' = df_urban_area_cutoff20$pop,
@@ -129,11 +132,11 @@ f_get_density_matrix <- function(df_urban_area_cutoff20, df_uca_pop_built){
     old = c(
       "pop_01km.V1","pop_02km.V1","pop_03km.V1","pop_05km.V1","pop_10km.V1",
       "built_01km.V1","built_02km.V1","built_03km.V1","built_05km.V1","built_10km.V1"
-      ),
+    ),
     new = c(
       "pop_01km","pop_02km","pop_03km","pop_05km","pop_10km",
       "built_01km","built_02km","built_03km","built_05km","built_10km"
-      )
+    )
   )
 
   return(temp_output)
@@ -145,68 +148,63 @@ f_get_density_matrix <- function(df_urban_area_cutoff20, df_uca_pop_built){
 # densities for each grid cell (1km x 1km) are then saved
 # map_df returns df with all weighted mean experienced densities
 
-#ano <- c(1975,2014)
-
 f_density_uca <- function(ano){
 
   areas <- read_rds(sprintf("../../data/urbanformbr/ghsl/results/grid_uca_%s_cutoff20.rds", ano))
 
-  #areas <- read_rds(sprintf("../../data/urbanformbr/ghsl/results/total_area_grid_uca_consolidada_expansao_%s_cutoff20.rds", ano))
-
-  codigos <- unique(areas$code_muni)
-  #s <- "3550308" ## Sao paulo, SP
+  codigos <- unique(areas$code_urban_concentration)
+  #code_uca <- "3550308" ## Sao paulo, SP
 
   df_density <- purrr::map_df(
     codigos,
-    function(s){
-      message(paste0("\n working on ", s,"\n"))
+    function(code_uca){
+      message(paste0("\n working on ", code_uca,"\n"))
 
       # subset area
-      df_urban_area <- subset(areas, code_muni == s)
+      df_urban_area <- subset(areas, code_urban_concentration == code_uca)
 
       nome_uca <- unique(df_urban_area$name_uca_case)
 
-    # read raster -------------------------------------------------------------
+      # read raster -------------------------------------------------------------
 
       if (ano == 2014) {
         ano_pop = 2015
       } else {ano_pop = ano}
 
       # read raster pop
-      uca_pop <- raster::raster(
-        paste0("../../data/urbanformbr/ghsl/POP/UCA/GHS_POP_E",ano_pop,"_",nome_uca,
-               "_R2019A_54009_1K_V1_0_raster.tif")
-        ) %>%
+      uca_pop <- raster::raster(sprintf("../../data/urbanformbr/ghsl/POP/UCA/GHS_POP_E%s_%s_R2019A_54009_1K_V1_0_raster.tif", ano_pop, code_uca)) %>%
         raster::projectRaster(crs = 4326)
 
-      # convert to data.frame
+      # convert raster to data.frame
       df_uca_pop <- uca_pop %>%
         raster::as.data.frame(xy = T)
 
+      # rename third column
       data.table::setnames(df_uca_pop, 3, "pop")
 
+      # filter cells with pop > 0
       df_uca_pop <- data.table::setDT(df_uca_pop)[pop > 0]
 
       # read raster built
       uca_built <- raster::raster(
-        paste0("../../data/urbanformbr/ghsl/BUILT//UCA/GHS_BUILT_LDS",ano,"_",nome_uca,
-               "_R2018A_54009_1K_V2_0_raster.tif")
-      ) %>%
+        sprintf("../../data/urbanformbr/ghsl/BUILT/UCA/GHS_BUILT_LDS%s_%s_R2018A_54009_1K_V2_0_raster.tif", ano, code_uca)) %>%
         raster::projectRaster(crs = 4326)
 
       # convert to data.frame
       df_uca_built <- uca_built %>%
         raster::as.data.frame(xy = T)
 
-      data.table::setnames(df_uca_built,3,"built")
+      data.table::setnames(df_uca_built, 3, "built")
 
       df_uca_built <- data.table::setDT(df_uca_built)[built > 0]
 
       # join uca pop & built
       df_uca_pop_built <- merge(df_uca_pop, df_uca_built, all = T)
+
+      # fill NA values with zero
       data.table::setnafill(df_uca_pop_built, fill = 0)
 
-    # run f_get_density_matrix ------------------------------------------------------------
+      # run f_get_density_matrix ------------------------------------------------------------
 
       output_df <- f_get_density_matrix(df_urban_area, df_uca_pop_built)
 
@@ -234,7 +232,10 @@ f_density_uca <- function(ano){
 
 
       # save
-      fwrite(output_df, paste0('../../data/urbanformbr/density-experienced/output_density_ghsl_',ano,"_",s,'.csv') )
+      fwrite(
+        output_df,
+        sprintf("../../data/urbanformbr/density-experienced/output_density_ghsl_%s_%s.csv", ano, code_uca)
+      )
 
       # total Pop vs avg Density
       # df total area
@@ -254,9 +255,9 @@ f_density_uca <- function(ano){
           density_built_03km = weighted.mean(x=built_density03km, w=built),
           density_built_05km = weighted.mean(x=built_density05km, w=built),
           density_built_10km = weighted.mean(x=built_density10km, w=built)
-          ),
-        by = .(code_muni,name_uca_case)
-        ]
+        ),
+        by = .(code_urban_concentration, name_uca_case)
+      ]
 
       return(df_final)
 
@@ -268,49 +269,16 @@ f_density_uca <- function(ano){
 
 }
 
-# run function for each year ----------------------------------------------
+# run for mulitple years --------------------------------------------------
 
-df_1975 <- f_density_uca(1975)
-df_1990 <- f_density_uca(1990)
-df_2000 <- f_density_uca(2000)
-df_2014 <- f_density_uca(2014)
+anos <- c("1990","2000","2014")
 
-# merge dfs and estimate vars. difference ---------------------------------
-
-df_final <- data.table::rbindlist(list(df_1975, df_1990, df_2000, df_2014))
-
-data.table::setnames(
-  df_final,
-  old = "code_muni",
-  new = "code_urban_concentration"
-  )
-
-#df_final[, pop_total := NULL]
-#df_final[, built_total := NULL]
+df_final <- furrr::future_map_dfr(anos, ~f_density_uca(.))
 
 # save results ------------------------------------------------------------
 
 saveRDS(
   df_final,
-  "../../data/urbanformbr/pca_regression_df/exp_density_ghsl_new.rds",
+  "../../data/urbanformbr/density-experienced/ghsl_experienced_density_metrics.rds",
   compress = 'xz'
 )
-
-
-# plot data ---------------------------------------------------------------
-
-
-#ggplot(data=df_1975) +
-#  geom_point(aes(x=density_pop_10km, y=density_built_10km), alpha=.4) +
-#  scale_x_continuous(trans='log10')+
-#  scale_y_continuous(trans='log10')
-
-#ggplot(data=df_2014) +
-#  geom_point(aes(x=density_pop_10km, y=density_built_10km), alpha=.4) +
-#  scale_x_continuous(trans='log10')+
-#  scale_y_continuous(trans='log10')
-
-
-
-
-
