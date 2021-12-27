@@ -100,5 +100,5 @@ anp3[,tep := as.numeric(tep)/pop_2010]
 anp3 <- anp3[,.SD,.SDcols = c("code_urban_concentration","tep")]
 
 # 4) save-----
-readr::write_rds(anp3,"../../data/urbanformbr/pca_regression_df/energy_per_capita_2010.rds")
+readr::write_rds(anp3,"../../data/urbanformbr/fuel/anp_energy-2010_metrics.rds")
 
