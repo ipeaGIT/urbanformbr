@@ -10,10 +10,10 @@ library(patchwork)
 
 df_fleet <- readr::read_rds(file = "../../data/urbanformbr/denatran/fleet_age_by_vehicle.rds")
 
-df_pop <- readr::read_rds("../../data/urbanformbr/pca_regression_df/censo.rds")
-df_pop <- df_pop[,c("code_urban_concentration","pop_2010")]
+df_urban_concentration <- geobr::read_urban_concentrations()
 
-# processing -------
+
+# processing 'df_fleet' -------
 
 
 
@@ -50,8 +50,8 @@ prop_mot_old <- data.table::copy(tmp_dt)[classe == "carro" & status != "0-10"]
 
 
 readr::write_rds(tmp_age
-                 ,"../../data/urbanformbr/pca_regression_df/fleet_age_mean_df.rds")
+                 ,"../../data/urbanformbr/denatran/denatran_mean-fleet-age_metrics.rds")
 
 readr::write_rds(tmp_dt[,!"num_frota"]
-                 ,"../../data/urbanformbr/pca_regression_df/fleet_age_class_df.rds")
+                 ,"../../data/urbanformbr/denatran/denatran_proportion-vehicle-classe_metrics.rds")
 
