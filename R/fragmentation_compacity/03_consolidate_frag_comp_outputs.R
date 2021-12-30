@@ -17,6 +17,7 @@ compacity_df <- read_csv("../../data/urbanformbr/fragmentation_compacity/compaci
 
 metrics_df <- left_join(fragmentation_df, compacity_df)
 
-write_csv(metrics_df, file = "../../data/urbanformbr/pca_regression_df/fragmentation_compacity.csv")
-read_csv("../../data/urbanformbr/pca_regression_df/fragmentation_compacity.csv") %>% View()
+write_csv(metrics_df, file = "../../data/urbanformbr/consolidated_data/fragmentation_compacity.csv")
+
+# read_csv("../../data/urbanformbr/consolidated_data/fragmentation_compacity.csv") %>% View()
 
