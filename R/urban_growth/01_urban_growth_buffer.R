@@ -36,7 +36,7 @@ process_city <- function(data, city) {
     buffer_dist <- 1000
     units(buffer_dist) <- "m"
     consolidated_buffer <- st_buffer(cells_prior, dist = buffer_dist) %>%
-      group_by(code_muni, name_uca_case, year) %>%
+      group_by(code_urban_concentration, name_uca_case, year) %>%
       summarise(.groups = "drop") %>%
       st_cast("POLYGON") %>%
       mutate(patch_number = row_number())
@@ -52,7 +52,7 @@ process_city <- function(data, city) {
     expansion_points <- subset(points_current, consolidated == FALSE)
     if (nrow(expansion_points) > 0) {
       expansion_buffer <- st_buffer(expansion_points, dist = buffer_dist) %>%
-        group_by(code_muni, name_uca_case, year) %>%
+        group_by(code_urban_concentration, name_uca_case, year) %>%
         summarise(.groups = "drop") %>%
         st_cast("POLYGON") %>%
         mutate(patch_number = row_number())
@@ -85,7 +85,7 @@ process_city <- function(data, city) {
 
       # put information on number of consolidated neighbors back into points_current
       points_current <- left_join(points_current, points_adjacent,
-                                  by = c("code_muni", "name_uca_case", "cell",
+                                  by = c("code_urban_concentration", "name_uca_case", "cell",
                                          "built", "pop", "year", "status",
                                          "adjacent", "consolidated", "leapfrog"))
 
@@ -113,9 +113,9 @@ process_city <- function(data, city) {
 
     city_processed <- cells_current %>%
       left_join(points_current %>% st_set_geometry(NULL),
-                by = c("code_muni", "name_uca_case", "cell", "built", "pop", "year")) %>%
+                by = c("code_urban_concentration", "name_uca_case", "cell", "built", "pop", "year")) %>%
       mutate(pop_start, pop_end, built_start, built_end) %>%
-      select(code_muni, name_uca_case, period_start, period_end,
+      select(code_urban_concentration, name_uca_case, period_start, period_end,
              pop_start, pop_end, built_start, built_end,
              cell, status = status.y, built, pop, geometry)
 
@@ -131,15 +131,12 @@ process_city <- function(data, city) {
 
 # load input data ---------------------------------------------------------
 
-to_be_removed <- c(4322400, 4108304, 5003207, 4316808)
-
 urban_extent <-
   rbind(
     read_rds("../../data/urbanformbr/ghsl/results/grid_uca_1990_cutoff20.rds") %>% mutate(year = 1990),
     read_rds("../../data/urbanformbr/ghsl/results/grid_uca_2000_cutoff20.rds") %>% mutate(year = 2000),
     read_rds("../../data/urbanformbr/ghsl/results/grid_uca_2014_cutoff20.rds") %>% mutate(year = 2014)
   ) %>%
-  filter(code_muni %nin% to_be_removed) %>%
   mutate(status = "")
 
 
@@ -165,7 +162,7 @@ urban_growth_df <- st_set_geometry(urban_extent_processed, NULL)
 
 # calculate total population and built area
 urban_growth_df <- urban_growth_df %>%
-  group_by(code_muni, name_uca_case, period_start, period_end,
+  group_by(code_urban_concentration, name_uca_case, period_start, period_end,
            pop_start, pop_end, built_start, built_end, status) %>%
   summarise(pop = round(sum(pop)), built = sum(built), .groups = "drop_last") %>%
   mutate(pop_start = round(pop_start), pop_end = round(pop_end))
@@ -198,7 +195,7 @@ urban_growth_df <- urban_growth_df %>%
 
 # drop excess columns
 urban_growth_df <- urban_growth_df %>%
-  select(code_muni:built_abs_growth, pop_geo_growth, built_geo_growth) %>%
+  select(code_urban_concentration:built_abs_growth, pop_geo_growth, built_geo_growth) %>%
   rename(pop_by_growth_type = pop, built_by_growth_type = built)
 
 
