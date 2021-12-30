@@ -7,7 +7,7 @@ source('R/fun_support/setup.R')
 library("landscapemetrics")
 
 
-data_folder <- "../../data/urbanformbr/ghsl/BUILT/urban_extent_cutoff_20"
+data_folder <- "../../data/urbanformbr/ghsl/BUILT/urban_extent_cutoff_20_raster"
 
 raster_files <- list.files(path = data_folder, full.names = TRUE, pattern = "1K_raster.tif$")
 # remove data from 1975
@@ -16,9 +16,9 @@ raster_files <- raster_files[str_detect(raster_files, "1975", negate = TRUE)]
 # function ----------------------------------------------------------------
 
 calculate_fragmentation <- function(file) {
-  city_year <- stringr::str_remove(file, pattern = "../../data/urbanformbr/ghsl/BUILT/urban_extent_cutoff_20/GHS_BUILT_LDS")
+  city_year <- stringr::str_remove(file, pattern = "../../data/urbanformbr/ghsl/BUILT/urban_extent_cutoff_20_raster/GHS_BUILT_LDS")
   city_year <- stringr::str_remove(city_year, pattern = "_1K_raster.tif")
-  city_year <- stringr::str_remove(city_year, pattern = "urban_extent_cutoff_20_")
+  city_year <- stringr::str_remove(city_year, pattern = "_urban_extent_cutoff_20")
 
   city_year <- stringr::str_split(city_year, pattern = "_", simplify = TRUE)
 

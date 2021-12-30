@@ -15,7 +15,7 @@ source('R/fun_support/setup.R')
 
 build_compact_grid <- function(muni, data, max_cells = 2500) {
   ## Input data
-  muni_sf <- filter(data, code_muni == muni, year=="2014") %>% sf::st_transform(31983)
+  muni_sf <- filter(data, code_urban_concentration == muni, year=="2014") %>% sf::st_transform(31983)
   cells_centroids_sf <- sf::st_centroid(muni_sf)
 
   # build regular grid covering study area
@@ -82,7 +82,7 @@ calculate_real_cell_dist <- function(data, muni, ano, compact_grid) {
   message(paste0("working on city ", muni, ", year ", ano))
 
     # filter muni
-  muni_sf <- data %>% filter(code_muni == muni, year == ano)
+  muni_sf <- data %>% filter(code_urban_concentration == muni, year == ano)
 
   # Compacity metrics
 
@@ -115,7 +115,7 @@ calculate_real_cell_dist <- function(data, muni, ano, compact_grid) {
 
   ## Consolidate results
   muni_sf <- muni_sf %>%
-    group_by(code_muni, name_uca_case, year) %>%
+    group_by(code_urban_concentration, name_uca_case, year) %>%
     summarise(city_size = n(),
               avg_cell_distance = avg_cell_distance,
               avg_cell_closeness = avg_cell_closeness,
@@ -125,7 +125,7 @@ calculate_real_cell_dist <- function(data, muni, ano, compact_grid) {
   muni_sf$avg_cell_distance_norm <- muni_sf$avg_cell_distance / compact_df$compact_cell_distance
   muni_sf$avg_cell_closeness_norm <- muni_sf$avg_cell_closeness / compact_df$compact_cell_closeness
 
-  muni_sf <- muni_sf %>% select(code_muni, name_uca_case, year, city_size,
+  muni_sf <- muni_sf %>% select(code_urban_concentration, name_uca_case, year, city_size,
                      compacity_abs = avg_cell_closeness,
                      compacity_norm = avg_cell_closeness_norm, geometry) %>%
     mutate(compacity_norm = if_else(compacity_norm <= 1, compacity_norm, 1))
@@ -138,26 +138,23 @@ calculate_real_cell_dist <- function(data, muni, ano, compact_grid) {
 
 
 ## load data
-to_be_removed <- c(4322400, 4108304, 5003207, 4316808)
-
 grid_uca <- rbind(
   read_rds("../../data/urbanformbr/ghsl/results/grid_uca_1990_cutoff20.rds") %>% mutate(year = 1990),
   read_rds("../../data/urbanformbr/ghsl/results/grid_uca_2000_cutoff20.rds") %>% mutate(year = 2000),
   read_rds("../../data/urbanformbr/ghsl/results/grid_uca_2014_cutoff20.rds") %>% mutate(year = 2014)
 ) %>%
-  filter(code_muni %nin% to_be_removed) %>%
-  select(code_muni, name_uca_case, year, cell, built, pop, geometry)
+  select(code_urban_concentration, name_uca_case, year, cell, built, pop, geometry)
 
 ## build compact grid using São Paulo as a reference
 compact_grid_sf <- build_compact_grid(data = grid_uca, muni = 3550308)
 
 ## calculate metrics for each UCA and year
 uca_codes_years <- grid_uca %>%
-  select(code_muni, year) %>%
+  select(code_urban_concentration, year) %>%
   st_set_geometry(NULL) %>%
   distinct()
 
-compacity_df <- map2_df(uca_codes_years$code_muni,
+compacity_df <- map2_df(uca_codes_years$code_urban_concentration,
                         uca_codes_years$year,
                         calculate_real_cell_dist,
                         data = grid_uca, compact_grid = compact_grid_sf)
