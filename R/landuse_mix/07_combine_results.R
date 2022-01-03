@@ -102,7 +102,7 @@ combine_results <- function(muni) {
 # uca <- 2211001 # Teresina
 combine_by_uca <- function(uca) {
 
-  uca_name = unique(subset(urban_areas, code_muni == uca)$name_uca_case)
+  uca_name = unique(subset(urban_areas, code_urban_concentration == uca)$name_uca_case)
 
   output_file <- paste0("../../data/urbanformbr/cnefe/uca/", uca, "_", uca_name, ".gpkg")
 
@@ -139,7 +139,8 @@ combine_by_uca <- function(uca) {
 codes <- unique(munis_df$code_muni)
 geocoding_stats_df <- map(codes, combine_results)
 
-ucas <- unique(ucas_df$code_urban_concentration)
+
+ucas <- unique(urban_areas$code_urban_concentration)
 walk(ucas, combine_by_uca)
 
 
