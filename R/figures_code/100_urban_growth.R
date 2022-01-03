@@ -27,7 +27,7 @@ df <- df_raw[, .(
             built_start = sum(built_start),
             built_end = sum(built_end)
             ),
-       by=.(code_muni, name_uca_case, period_start, period_end)]
+       by=.(code_urban_concentration, name_uca_case, period_start, period_end)]
 
 
 

@@ -14,7 +14,7 @@ urban_growth_df <- read_rds("../../data/urbanformbr/urban_growth/urban_growth.rd
   ungroup() %>%
   mutate(growth_type = factor(growth_type,
                               levels = c("upward", "infill", "extension", "leapfrog"))) %>%
-  select(code_muni, name_uca_case, period_start, period_end,
+  select(code_urban_concentration, name_uca_case, period_start, period_end,
          growth_type, pop_geo_growth, population = pop_end) %>%
   pivot_wider(names_from = growth_type, values_from = pop_geo_growth, values_fill = 0) %>%
   mutate(adensamento = upward + infill, extensao = extension)
