@@ -1,12 +1,12 @@
 # description -------------------------------------------------------------
 
-# Este scripot faz o download da base de dados de  faces de logradouros do
+# Este script faz o download da base de dados de  faces de logradouros do
 # IBGE, referentes ao censo 2010 e à atualização de 2019 feita em preparação
 # para o próxiom censo
 
 # setup -------------------------------------------------------------------
 
-source('R/setup.R')
+source('R/fun_support/setup.R')
 
 library("curl")
 library("rvest")

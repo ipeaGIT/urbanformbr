@@ -4,7 +4,7 @@
 
 # setup -------------------------------------------------------------------
 
-source('R/setup.R')
+source('R/fun_support/setup.R')
 
 # list of Brazilian municipalities
 munis_df <- geobr::lookup_muni("all")
