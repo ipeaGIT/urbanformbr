@@ -275,10 +275,22 @@ anos <- c("1990","2000","2014")
 
 df_final <- furrr::future_map_dfr(anos, ~f_density_uca(.))
 
+
+# pivot to wide -----------------------------------------------------------
+
+df_final[, pop_total := NULL]
+df_final[, built_total := NULL]
+
+df_final_wide <- tidyr::pivot_wider(
+  data = df_final
+  , names_from = ano
+  , values_from = density_pop_01km:density_built_10km
+)
+
 # save results ------------------------------------------------------------
 
 saveRDS(
-  df_final,
-  "../../data/urbanformbr/density-experienced/ghsl_experienced_density_metrics.rds",
+  df_final_wide,
+  "../../data/urbanformbr/consolidated_data/ghsl_experienced_density_metrics.rds",
   compress = 'xz'
 )

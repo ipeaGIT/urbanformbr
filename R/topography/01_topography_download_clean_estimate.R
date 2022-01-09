@@ -1,9 +1,10 @@
 # description -------------------------------------------------------------
-# Adaptaion from acesso_oport/R/01_8-topografia.R to download topography raster data
-# from earthdata.nasa.gov, using urban extent polygons in 2014 for each urban
-# concentration area.
+# this cript downloads, cleans, and extracts topography metrics from nasa earthdata
+#..topography raster data for all 182 urban concentration areas in the study
 
-# Username and password are extracted from aopint package, using aop APIs
+# OBS1: Adaptaion from acesso_oport/R/01_8-topografia.R
+
+# OBS2: Username and password are extracted from aopint package, using aop APIs
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ###### Leitura e filtro de elevacao/topografia
@@ -26,19 +27,24 @@
 
 
 # setup -------------------------------------------------------------------
-source("R/setup.R")
+source("R/fun_support/setup.R")
 
+# setup parallel ----------------------------------------------------------
+
+future::plan(future::multicore, workers = future::availableCores() / 2)
 
   # * update Renviron -------------------------------------------------------
 
   # Load AOP APIs username and passwords, using aopint package
-  library(aopint) # https://github.com/dhersz/aopint
+  # https://github.com/dhersz/aopint
+  # install.packages("aopint", repos = "https://dhersz.r-universe.dev")
+  library(aopint)
   aopint::atualizar_renviron()
   username <- Sys.getenv("EARTHDATA_LOGIN")
   password <- Sys.getenv("EARTHDATA_PASS")
 
 
-# define function ---------------------------------------------------------
+# read necessary files ----------------------------------------------------
 
 # nameuca <- "abaetetuba"
 # code_uca <- 1500107
@@ -50,8 +56,6 @@ urban_extent <- readr::read_rds("../../data/urbanformbr/ghsl/results/urban_exten
 
 # urban concentration areas political administrative shapes
 urban_shapes <- readr::read_rds("../../data/urbanformbr/urban_area_shapes/urban_area_pop_100000_dissolved.rds")
-# filter only 184 obs
-urban_shapes <- subset(urban_shapes, code_urban_concentration %in% urban_extent$code_muni)
 urban_shapes <- urban_shapes %>%
   dplyr::select(-starts_with("pop"))
 
@@ -59,25 +63,31 @@ urban_shapes <- urban_shapes %>%
 urban_extent <- sf::st_transform(urban_extent, sf::st_crs(urban_shapes))
 
 urban_extent <- urban_extent %>%
-  dplyr::arrange(name_uca_case)
+  dplyr::arrange(code_urban_concentration)
 
 urban_shapes <- urban_shapes %>%
-  dplyr::arrange(name_uca_case)
+  dplyr::arrange(code_urban_concentration)
+
+# define function ---------------------------------------------------------
 
 
 f_download_srtm <- function(code_uca) {
 
   message(paste0("\n working on ", code_uca,"\n"))
 
-  urban_extent_subset <- subset(urban_extent, code_muni == code_uca) %>%
-    dplyr::group_by(code_muni, name_uca_case) %>%
+  # subset urban extent
+  urban_extent_subset <- subset(urban_extent, code_urban_concentration == code_uca) %>%
+    dplyr::group_by(code_urban_concentration, name_uca_case) %>%
     dplyr::summarise()
 
+  # subset urban shapes
   urban_shapes_subset <- subset(urban_shapes, code_urban_concentration == code_uca)
 
   # muni_sf %>% mapview()
 
   # extract bounding box
+  # 3205309 (vitoria_es) has an island that prevents st_bbox to work properly on urban
+  #...SHAPE (all political administrative area). hence, 3205309 should use urban extent
   if (code_uca == 3205309){
     bbox <- st_bbox(urban_extent_subset)
   } else {
@@ -119,7 +129,10 @@ f_download_srtm <- function(code_uca) {
   zipfiles <- paste0(outputdir, "\\", tile, ".hgt.zip")
   rstfiles <- paste0(outputdir, "\\", tile, ".hgt")
 
-  walk2(urls, zipfiles, function(url, filename) {
+  walk2(
+    urls,
+    zipfiles,
+    function(url, filename) {
     httr::GET(url = url,
               authenticate(username, password),
               write_disk(path =filename, overwrite = TRUE),
@@ -181,22 +194,28 @@ f_download_srtm <- function(code_uca) {
     )
   ]
 
-  ## count number of raster cells above threshold
+
+  # * count number cells above threshold ------------------------------------
+
+    ## count number of raster cells above threshold
 
   # subset only slope raster
-  df_slope <- subset(rst_layer_terrain, "slope") %>%
+  #df_slope <- subset(rst_layer_terrain, "slope") %>%
     # raster frequency table based on cells' value
-    raster::freq(useNA = "no", merge = T) %>%
-    data.table::as.data.table()
+  #  raster::freq(useNA = "no", merge = T) %>%
+  #  data.table::as.data.table()
 
   # proportion of cells according to the their value
-  df_slope[, prop := count / sum(count)]
+  #df_slope[, prop := count / sum(count)]
 
   # column: proportion of cells with slope above 10
-  output_df[
-    ,
-    prop_slope_above_10 := df_slope[value > 10, sum(prop)]
-  ]
+  #output_df[
+  #  ,
+  #  prop_slope_above_10 := df_slope[value > 10, sum(prop)]
+  #]
+
+
+  # * return output ---------------------------------------------------------
 
   return(output_df)
 
@@ -211,179 +230,16 @@ f_download_srtm <- function(code_uca) {
 #furrr::future_map_dfr
 
 # save in a df all topografy standard deviation
-df_topo <- purrr::map_df(
-  urban_extent$code_muni,
+df_topo <- furrr::future_map_dfr(
+  urban_extent$code_urban_concentration,
   ~f_download_srtm(code_uca = .)
   )
 
 # save results ---------------------------------------------------------------
 
-saveRDS(
-  object = df_topo,
-  file = '../../data/urbanformbr/pca_regression_df/topography.rds',
-  compress = 'xz'
+data.table::fwrite(
+  x = df_topo
+  , file = '../../data/urbanformbr/topography/topography_non_filtered_df.csv'
+  , sep = ";"
+  , append = F
 )
-
-
-# detectar erro -----------------------------------------------------------
-
-erro <- purrr::map(
-  urban_extent$code_muni,
-  purrr::possibly(~f_download_srtm(.x),'erro') # incluir funcao para verificar erro
-)
-
-map(erro, class) %>% unique()
-teste <- purrr::keep(erro, inherits, 'character')
-
-teste2 <- purrr::discard(erro, inherits, 'character')
-teste2 <- bind_rows(teste2)
-
-# deram erro (antes arrange): erro[[8]], erro[[147]], erro[[183]]
-# aracaju_se (2800308)
-# salvador_ba (2927408)
-# vitoria_es (3205309)
-
-uca_erro <- urban_shapes %>% filter(!code_urban_concentration %in% teste2$code_muni)
-
-
-codigos_erro <- c(2800308,2927408,3205309)
-filtro_erro <- urban_shapes %>% filter(code_urban_concentration %in% codigos_erro)
-sf::st_is_valid(filtro_erro)
-filtro_erro_valid <- sf::st_make_valid(filtro_erro)
-# salvar erros para explorar
-filtro_split <- split(filtro_erro, filtro_erro$name_uca_case)
-purrr::walk2(
-  .x = filtro_split, .y = names(filtro_split),
-  ~sf::st_write(
-    obj = .x,
-    dsn = paste0("../../data/urbanformbr/urban_area_shapes/", .y,".gpkg")
-    )
-  )
-
-
-
-
-# * check union polygons --------------------------------------------------
-
-uc <- geobr::read_urban_concentrations(simplified = F)
-ara <- uc %>% filter(code_urban_concentration==2800308)
-sf::st_write(ara, "../../data/urbanformbr/urban_area_shapes/ara.gpkg")
-teste <- ara %>% filter(code_muni %in% c(2804805,2803609))
-
-### geometry union with dissolve_polygons function
-
-# to_multipolygon
-dissolved <- to_multipolygon(teste)
-# simplify_temp_sf
-dissolved <- simplify_temp_sf(dissolved)
-# dissolve_polygons
-dissolved <- dissolve_polygons(dissolved, 'code_urban_concentration')
-
-### geometry union with sf::st_union
-
-a <- sf::st_union(teste)
-
-
-### geometry union with summarize
-b <- ara %>% dplyr::group_by(code_urban_concentration) %>%
-  dplyr::summarise()
-# substituir b por urban_shapes_subset (testar usando union no lugar do dissolve)
-# resultado é o mesmo (lons, lats, tiles, todos sao iguais)
-
-# em 2800308, nao é possivel acessar o url S12W037
-# em 2927408, nao é possivel acessar o url S14W038
-# em 3205309, multiplos url nao existem (mais do que 4 urls, como o restante)
-# erro na linha 106: walk(zipfiles, unzip, exdir = outputdir)
-
-
-# detectar erro 2 ---------------------------------------------------------
-
-
-erro <- purrr::map(
-  urban_extent$code_muni,
-  purrr::possibly(~f_download_srtm(.x),'erro') # incluir funcao para verificar erro
-)
-
-map(erro, class) %>% unique()
-teste <- purrr::keep(erro, inherits, 'character')
-
-teste2 <- purrr::discard(erro, inherits, 'character')
-teste2 <- bind_rows(teste2)
-
-# uca errro: 1400100  boa_vista
-
-
-uca_erro <- urban_shapes %>% filter(!code_urban_concentration %in% teste2$code_muni)
-
-
-# TESTAR CIDADES EM DIFERENTES POSICOES GEOGRAFICAS
-# toda no hemisferio SUL
-  # salvador
-# toda no hemisferio Norte (existe na amostra?)
-  # boa vista
-# parte Sul parte Norte
-  # macapa
-cod_hem <- c(2927408,1400100,1600303)
-
-code_uca <- cod_hem[[1]]
-
-# save urban shape
-sf::write_sf(
-  urban_shapes_subset,
-  paste0("../../data/urbanformbr/urban_area_shapes/",code_uca,"_shape.gpkg"
-         )
-  )
-# save raster
-raster::writeRaster(
-  rst_layer,
-  paste0("../../data/urbanformbr/urban_area_shapes/",code_uca,"_raster.tif"),
-  overwrite=TRUE
-  )
-
-
-# COMPARACAO BOUNDING BOX X QGIS
-# formula nova:
-#bbox["ymin"] <- bbox["ymin"] - 1
-#bbox["ymax"] <- bbox["ymax"] + 1
-#bbox <- ifelse(bbox, as.integer(floor(bbox)), "erro")
-2927408
-xmin ymin xmax ymax
--39  -15  -38  -12
-1400100
-xmin ymin xmax ymax
--62    1  -61    4
-1600303
-xmin ymin xmax ymax
--52   -2  -50    2
-
-# formula original:
-#as.integer(st_bbox(urban_shapes_subset)) - 1
-2927408
-xmin ymin xmax ymax
--39  -14  -38  -13
-1400100
-xmin ymin xmax ymax
--62   1  -61   2
-1600303
-xmin ymin xmax ymax
--52  -1 -50   0
-
-# QGIS
-2927408
-xmin ymin xmax ymax
--39   -14 -37  -12
-1400100
-xmin ymin xmax ymax
--62   2   -59   4
-1600303
-xmin ymin xmax ymax
--52   -1   -49  2
-2800308
-xmin ymin xmax ymax
--38  -12  -36  -10
-
-# nova formula:
-#data.table::fifelse(str_detect(names(bbox), "min$"),floor(bbox),ceiling(bbox))
-2800308
-xmin ymin xmax ymax
--38  -12  -36  -10
