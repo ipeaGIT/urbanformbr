@@ -1,31 +1,29 @@
 # description -------------------------------------------------------------
 
-# this script merge all the dfs containing variables to be used at exploratory
-#..and regression analysis, created at R/pca_regression_analysis/00_x_...
+# this script merge all the metrics dfs, adds sufix according to variable type and
+# save a full database, to be filtered at factor/cluster and regression analysis
 
 #6666666666666 conferir se todas as bases fizeram o filtro.
 # caso contrario, adicionar linha analoga abaixo
  # filter only 184 from our df
-#  df_energy <- subset(df_energy, code_urban_concentration %in% df_prep$code_urban_concentration)
+#  df_energy <- subset(df_energy, code_urban_concentration %in% df_reference$code_urban_concentration)
 
-# setup -----------------------------------,--------------------------------
-#rm(list=ls())
+# setup -------------------------------------------------------------------
+
 source('R/fun_support/setup.R')
 
 # read and clean data ---------------------------------------------------------------
 
 # * prep data -------------------------------------------------------------
-df_prep <- readr::read_rds("../../data/urbanformbr/pca_regression_df/pca_regression_df.rds") %>%
-  dplyr::select(-c(code_muni_uca))
-
-# 4316808 already removed at prepare df
-to_be_removed <- c(4322400, 4108304, 5003207)
-df_prep <- subset(df_prep, code_urban_concentration %nin% to_be_removed)
+df_reference <- readr::read_rds("../../data/urbanformbr/urban_area_shapes/urban_area_pop_100000_dissolved.rds") %>%
+  sf::st_drop_geometry() %>%
+  select(-pop_ibge_total_2010)
 
 # * pop growth ------------------------------------------------------------
 
-df_pop_growth <- readr::read_rds("../../data/urbanformbr/pca_regression_df/pop_growth_ghsl.rds") %>%
-  dplyr::filter()
+df_pop_growth <- data.table::fread("../../data/urbanformbr/consolidated_data/urban_growth_population.csv")
+df_pop_growth[, name_uca_case := NULL]
+
 
 # * age fleet ---------------------------------------------------------------
 
@@ -43,7 +41,7 @@ df_energy <- readr::read_rds("../../data/urbanformbr/pca_regression_df/energy_pe
   dplyr::select(code_urban_concentration,tep)
 
 # filter only 184 from our df
-df_energy <- subset(df_energy, code_urban_concentration %in% df_prep$code_urban_concentration)
+df_energy <- subset(df_energy, code_urban_concentration %in% df_reference$code_urban_concentration)
 
 df_energy[, tep := as.numeric(tep)]
 # rename
@@ -56,55 +54,32 @@ setnames(x = df_energy
 df_emissions <- readr::read_rds("../../data/urbanformbr/pca_regression_df/co2_per_capita2010.rds")
 
 # filter only 184 from our df
-df_emissions <- subset(df_emissions, code_urban_concentration %in% df_prep$code_urban_concentration)
+df_emissions <- subset(df_emissions, code_urban_concentration %in% df_reference$code_urban_concentration)
 
-
-# * area coverage ---------------------------------------------------------
-df_area <- readr::read_rds("../../data/urbanformbr/pca_regression_df/area.rds") %>%
-  dplyr::select(
-    code_muni
-    ,urban_extent_size_2014
-    #,saturation_total_area_fixed_2014
-  ) %>%
-  dplyr::rename(
-    code_urban_concentration = code_muni
-    #,coverage = saturation_total_area_fixed_2014
-  )
 
 # * censo -----------------------------------------------------------------
-df_censo <- readr::read_rds("../../data/urbanformbr/pca_regression_df/censo.rds") %>%
-  dplyr::select(-name_uca_case)
+df_censo <- data.table::fread("../../data/urbanformbr/consolidated_data/censo_metrics.csv")
+df_censo[, name_uca_case := NULL]
 
 # * experienced density ---------------------------------------------------
-df_exp_density <- readr::read_rds("../../data/urbanformbr/pca_regression_df/exp_density_ghsl_new.rds") %>%
-  filter(ano == 2014) %>%
-  select(-c(ano, pop_total,built_total))
+df_exp_density <- data.table::fread("../../data/urbanformbr/consolidated_data/ghsl_experienced_density_metrics.csv")
+df_exp_density[, name_uca_case := NULL]
 
 
 # * landuse metrics -------------------------------------------------------
-df_landuse <- data.table::fread("../../data/urbanformbr/pca_regression_df/landuse_mix_metrics.csv") %>%
-  dplyr::select(-c(name_uca_case,theil_h,entropy)) %>%
-  dplyr::rename(code_urban_concentration = code_muni)
-
-df_landuse[
-  ,
-  `:=`(
-    land_use_mix = 1 - dissimilarity,
-    land_use_mix_5km = 1 - dissimilarity_5km,
-    land_use_mix_10km = 1 - dissimilarity_10km,
-    land_use_mix_15km = 1 - dissimilarity_15km
-  )
-]
-
-df_landuse <- df_landuse %>%
-  select(-starts_with("dissimilarity"))
+df_landuse <- data.table::fread("../../data/urbanformbr/consolidated_data/landuse_mix.csv")
+df_landuse[, name_uca_case := NULL]
 
 # * street metrics --------------------------------------------------------
+df_street <- data.table::fread("../../data/urbanformbr/consolidated_data/streets_metrics_new_23_12_2021.csv")
+df_street <- subset(df_street, name_urban_concentration %in% df_reference$name_urban_concentration)
+
+66666666666 TERMINAR
+
 df_street <- data.table::fread("../../data/urbanformbr/pca_regression_df/streets_metrics_new.csv") %>%
   dplyr::select(-c(intersection_count,k_avg)) %>%
   dplyr::rename(street_orientation_irregularity = entropy)
 
-df_street <- subset(df_street, name_urban_concentration %in% df_prep$name_urban_concentration)
 
 # * fragmentation compacity -----------------------------------------------
 df_frag_comp <- data.table::fread("../../data/urbanformbr/pca_regression_df/fragmentation_compacity.csv") %>%
@@ -132,7 +107,7 @@ df_classify_uca_large <- readr::read_rds('../../data/urbanformbr/pca_regression_
 # filter ucas
 df_classify_uca_large <- subset(
   df_classify_uca_large,
-  code_urban_concentration %in% df_prep$code_urban_concentration
+  code_urban_concentration %in% df_reference$code_urban_concentration
 )
 
 # * factors ---------------------------------------------------------------
@@ -141,7 +116,7 @@ df_factors <- readr::read_rds("../../data/urbanformbr/pca_regression_df/factors_
 # merge data --------------------------------------------------------------
 
 df_merge <- dplyr::left_join(
-  df_prep,
+  df_reference,
   df_pop_growth
 ) %>%
   #dplyr::left_join(
@@ -304,7 +279,7 @@ readr::write_rds(
 #df_pop_censo <- readr::read_rds("../../data/urbanformbr/pca_regression_df/1970-2015_pop.rds")
 
 # filter only 184 from our df
-#df_pop_censo <- subset(df_pop_censo, code_urban_concentration %in% df_prep$code_urban_concentration)
+#df_pop_censo <- subset(df_pop_censo, code_urban_concentration %in% df_reference$code_urban_concentration)
 
 #df_pop_censo <- df_pop_censo %>%
 #  tidyr::pivot_wider(
@@ -327,7 +302,7 @@ readr::write_rds(
 #    pop_ghsl_1975 = pop1975,
 #    pop_ghsl_2015 = pop2015
 #    ) %>%
-#  dplyr::filter(code_urban_concentration %in% df_prep$code_urban_concentration)
+#  dplyr::filter(code_urban_concentration %in% df_reference$code_urban_concentration)
 
 
 #data.table::setDT(df_pop_ghsl)[
@@ -354,7 +329,7 @@ readr::write_rds(
 #  dplyr::select(-c(valor,pop))
 
 # filter only 184 from our df
-#df_pib <- subset(df_pib, code_urban_concentration %in% df_prep$code_urban_concentration)
+#df_pib <- subset(df_pib, code_urban_concentration %in% df_reference$code_urban_concentration)
 
 #df_pib <- df_pib %>%
 #  tidyr::pivot_wider(

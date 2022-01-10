@@ -12,7 +12,14 @@ source('R/fun_support/setup.R')
 df_censo <- data.table::fread('../../data/urbanformbr/censo/censo_non_filtered_df.csv')
 
 df_censo <- df_censo %>%
-  dplyr::select(666666666666 COMPLETAR)
+  dplyr::select(
+    code_urban_concentration
+    , pop_2010
+    , prop_dom_urban
+    , prop_high_educ
+    , prop_razao_dep
+    , wghtd_mean_household_income_per_capita
+    )
 
 # save data ---------------------------------------------------------------
 data.table::fwrite(

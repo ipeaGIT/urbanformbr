@@ -453,11 +453,11 @@ f_censo <- function(){
 
   ## total population
   ## estimate total population for each uca
-  #df_pop_pes <- df_censo_pes[
-  #  ,
-  #  .(pop_2010 = sum(V0010, na.rm = T)),
-  #  by = .(code_urban_concentration)
-  #]
+  df_pop_pes <- df_censo_pes[
+    ,
+    .(pop_2010 = sum(V0010, na.rm = T)),
+    by = .(code_urban_concentration)
+  ]
 
   ## prorportion
   # V1006: % pessoas em domicilios em situacao urbana
@@ -588,11 +588,11 @@ f_censo <- function(){
     , by = "code_urban_concentration"
     )
 
-  #df_vars_pes <- data.table::merge.data.table(
-  #  x = df_vars_pes
-  #  , y = df_pop_pes
-  #  , by = "code_urban_concentration"
-  # )
+  df_vars_pes <- data.table::merge.data.table(
+    x = df_vars_pes
+    , y = df_pop_pes
+    , by = "code_urban_concentration"
+   )
 
 
   # * merge dom pes vars ----------------------------------------------------
@@ -607,7 +607,7 @@ f_censo <- function(){
 
   data.table::fwrite(
     x = df_vars_total
-    , file = '../../data/urbanformbr/censo/censo_non_filtered_df.csv'
+    , file = '../../data/urbanformbr/consolidated_data/censo_metrics.csv'
     , sep = ";"
     , append = F
   )

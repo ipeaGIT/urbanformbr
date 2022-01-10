@@ -4,7 +4,7 @@
 #..pop growth between these years to be used at the regression analysis
 
 # setup -------------------------------------------------------------------
-source('R/setup.R')
+source('R/fun_support/setup.R')
 
 # read and clean data -----------------------------------------------------
 df_prep <- readr::read_rds("../../data/urbanformbr/pca_regression_df/pca_regression_df.rds") %>%

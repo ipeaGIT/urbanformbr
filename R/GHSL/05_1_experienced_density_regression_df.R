@@ -289,8 +289,10 @@ df_final_wide <- tidyr::pivot_wider(
 
 # save results ------------------------------------------------------------
 
-saveRDS(
-  df_final_wide,
-  "../../data/urbanformbr/consolidated_data/ghsl_experienced_density_metrics.rds",
-  compress = 'xz'
+data.table::fwrite(
+  x = df_final_wide
+  , file = '../../data/urbanformbr/consolidated_data/ghsl_experienced_density_metrics.csv'
+  , sep = ";"
+  , append = F
 )
+
