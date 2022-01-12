@@ -239,7 +239,7 @@ df_topo <- furrr::future_map_dfr(
 
 data.table::fwrite(
   x = df_topo
-  , file = '../../data/urbanformbr/topography/topography_non_filtered_df.csv'
+  , file = '../../data/urbanformbr/consolidated_data/topography_metrics.csv'
   , sep = ";"
   , append = F
 )

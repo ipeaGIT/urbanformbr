@@ -7,41 +7,51 @@
 
 # setup -------------------------------------------------------------------
 
-source('R/setup.R')
+source('R/fun_support/setup.R')
 
 
 # read data ---------------------------------------------------------------
+df_shapes <- readr::read_rds("../../data/urbanformbr/urban_area_shapes/urban_area_pop_100000_dissolved.rds") %>%
+  sf::st_drop_geometry() %>%
+  select(-pop_ibge_total_2010)
 
 
-# * uca munis code --------------------------------------------------------
+df_uca <- geobr::read_urban_concentrations(simplified = T)
 
-# read df with code and names of urban concentration, and codes of each muni
-#..belonging to them
-df_codes <- readr::read_rds("//storage6/usuarios/Proj_acess_oport/data/urbanformbr/pca_regression_df/pca_regression_df.rds")
+df_uca <- df_uca %>%
+  sf::st_drop_geometry() %>%
+  dplyr::select(code_urban_concentration:name_muni)
 
-# add column with muni name without
+df_uca <- subset(df_uca, code_urban_concentration %in% df_shapes$code_urban_concentration)
 
-df <- df_codes %>%
-  tidyr::unnest_longer(code_muni_uca) %>%
-  data.table::setDT()
+data.table::setDT(df_uca)
 
-f_nome_muni <- function(x){
-  df <- geobr::lookup_muni(code_muni = x)
-  data.table::setDT(df)[, name_muni]
-}
 
-# ABAIXO REQUER MULTIPLAS TENTATIVAS
-n1 <- map_chr(df$code_muni_uca[1:150], f_nome_muni)
-n2 <- map_chr(df$code_muni_uca[151:300], f_nome_muni)
-n3 <- map_chr(df$code_muni_uca[301:450], f_nome_muni)
-n4 <- map_chr(df$code_muni_uca[451:600], f_nome_muni)
-n5 <- map_chr(df$code_muni_uca[601:638], f_nome_muni)
+# add column with muni name without any special character or UF
+#(ex: "Belo Horizonte/MG").
+# this is done to merge df later
 
-df[, name_muni_uca := c(n1,n2,n3,n4,n5) ]
+# df <- df_codes %>%
+#   tidyr::unnest_longer(code_muni_uca) %>%
+#   data.table::setDT()
+#
+# f_nome_muni <- function(x){
+#   df <- geobr::lookup_muni(code_muni = x)
+#   data.table::setDT(df)[, name_muni]
+# }
+#
+# # ABAIXO REQUER MULTIPLAS TENTATIVAS
+# n1 <- map_chr(df_uca$code_muni[1:150], f_nome_muni)
+# n2 <- map_chr(df_uca$code_muni[151:300], f_nome_muni)
+# n3 <- map_chr(df_uca$code_muni[301:450], f_nome_muni)
+# n4 <- map_chr(df_uca$code_muni[451:600], f_nome_muni)
+# n5 <- map_chr(df_uca$code_muni[601:635], f_nome_muni)
+#
+# df_uca[, name_muni_merge := c(n1,n2,n3,n4,n5) ]
 
 
 # * rede tma --------------------------------------------------------------
-rede_tma <- readr::read_rds("../../data/urbanformbr/rede_tma.rds")
+rede_tma <- readr::read_rds("../../data/urbanformbr/rede_transp_tma/rede_tma.rds")
 
 #df_estacoes <- sf::st_drop_geometry(rede_tma$estacoes)
 df_corredores <-  sf::st_drop_geometry(rede_tma$corredores)
@@ -56,7 +66,8 @@ df_corredores <- df_corredores %>%
   dplyr::filter(!(modo == "Barca" | modo == "VLT")) %>%
   dplyr::filter(!(ano == 1 | ano == 999 | ano > 2010))
 
-cidades <- df_corredores[order(cidade), .N, by=cidade][,N:=1]
+cidades <- df_corredores[order(cidade), .N, by=cidade][, N:=1]
+
 data.table::setnames(
   x = cidades,
   old = c("cidade","N"),
@@ -66,11 +77,7 @@ data.table::setnames(
 #cidades_tma <- df_corredores[,logical(1),keyby=cidade]$cidade
 
 # merge data --------------------------------------------------------------
-df_tma <- dplyr::left_join(
-  df,
-  cidades,
-  by = "name_muni_uca"
-)
+df_tma <- dplyr::left_join(df_uca, cidades, by = c("name_muni" = "name_muni_uca"))
 
 df_tma[, tma := replace_na(tma, 0)]
 
@@ -80,11 +87,10 @@ df_tma <- df_tma %>%
 
 # save data ---------------------------------------------------------------
 
-saveRDS(
-  object = df_tma,
-  file = '../../data/urbanformbr/pca_regression_df/classify_uca_tma.rds',
-  compress = 'xz'
+data.table::fwrite(
+  x = df_tma
+  , file = "../../data/urbanformbr/consolidated_data/classify_tma_public_transport.csv"
+  , sep = ";"
+  , append = F
 )
-
-
 

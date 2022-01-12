@@ -14,10 +14,11 @@ source('R/fun_support/setup.R')
 
 # read and clean data ---------------------------------------------------------------
 
-# * prep data -------------------------------------------------------------
+# * prep/reference data -------------------------------------------------------------
 df_reference <- readr::read_rds("../../data/urbanformbr/urban_area_shapes/urban_area_pop_100000_dissolved.rds") %>%
   sf::st_drop_geometry() %>%
   select(-pop_ibge_total_2010)
+
 
 # * pop growth ------------------------------------------------------------
 
@@ -25,25 +26,18 @@ df_pop_growth <- data.table::fread("../../data/urbanformbr/consolidated_data/urb
 df_pop_growth[, name_uca_case := NULL]
 
 
-# * age fleet ---------------------------------------------------------------
+# * fleet ---------------------------------------------------------------
 
-df_age_fleet_veh <- readr::read_rds("../../data/urbanformbr/pca_regression_df/fleet_age_mean_df.rds")
-
-df_age_fleet_class <- readr::read_rds("../../data/urbanformbr/pca_regression_df/fleet_age_class_df.rds")
-
-
-
-
+df_fleet <- data.table::fread("../../data/urbanformbr/consolidated_data/denatran_fleet_metrics.csv")
 
 # * energy ------------------------------------------------------------------
 
-df_energy <- readr::read_rds("../../data/urbanformbr/pca_regression_df/energy_per_capita_2010.rds") %>%
-  dplyr::select(code_urban_concentration,tep)
+df_energy <- readr::read_rds("../../data/urbanformbr/consolidated_data/anp_energy-2010_metrics.rds")
 
-# filter only 184 from our df
+# filter 182 ucas
 df_energy <- subset(df_energy, code_urban_concentration %in% df_reference$code_urban_concentration)
 
-df_energy[, tep := as.numeric(tep)]
+# df_energy[, tep := as.numeric(tep)]
 # rename
 setnames(x = df_energy
          ,old = 'tep'
@@ -51,10 +45,10 @@ setnames(x = df_energy
 
 # * emissions ------------------------------------------------------------------
 
-df_emissions <- readr::read_rds("../../data/urbanformbr/pca_regression_df/co2_per_capita2010.rds")
-
-# filter only 184 from our df
-df_emissions <- subset(df_emissions, code_urban_concentration %in% df_reference$code_urban_concentration)
+# df_emissions <- readr::read_rds("../../data/urbanformbr/pca_regression_df/co2_per_capita2010.rds")
+#
+# # filter only 184 from our df
+# df_emissions <- subset(df_emissions, code_urban_concentration %in% df_reference$code_urban_concentration)
 
 
 # * censo -----------------------------------------------------------------
@@ -65,7 +59,6 @@ df_censo[, name_uca_case := NULL]
 df_exp_density <- data.table::fread("../../data/urbanformbr/consolidated_data/ghsl_experienced_density_metrics.csv")
 df_exp_density[, name_uca_case := NULL]
 
-
 # * landuse metrics -------------------------------------------------------
 df_landuse <- data.table::fread("../../data/urbanformbr/consolidated_data/landuse_mix.csv")
 df_landuse[, name_uca_case := NULL]
@@ -74,98 +67,42 @@ df_landuse[, name_uca_case := NULL]
 df_street <- data.table::fread("../../data/urbanformbr/consolidated_data/streets_metrics_new_23_12_2021.csv")
 df_street <- subset(df_street, name_urban_concentration %in% df_reference$name_urban_concentration)
 
-66666666666 TERMINAR
-
-df_street <- data.table::fread("../../data/urbanformbr/pca_regression_df/streets_metrics_new.csv") %>%
-  dplyr::select(-c(intersection_count,k_avg)) %>%
-  dplyr::rename(street_orientation_irregularity = entropy)
-
+# df_street <- data.table::fread("../../data/urbanformbr/pca_regression_df/streets_metrics_new.csv") %>%
+#   dplyr::select(-c(intersection_count,k_avg)) %>%
+#   dplyr::rename(street_orientation_irregularity = entropy)
 
 # * fragmentation compacity -----------------------------------------------
-df_frag_comp <- data.table::fread("../../data/urbanformbr/pca_regression_df/fragmentation_compacity.csv") %>%
-  select(c(code_muni, compacity, proportion_largest_patch)) %>%
-  dplyr::rename(
-    code_urban_concentration = code_muni
-    , contiguity = proportion_largest_patch
-  )
+df_frag_comp <- data.table::fread("../../data/urbanformbr/consolidated_data/fragmentation_compacity.csv")
 
 # * topography ------------------------------------------------------------
-df_topo <- readr::read_rds("../../data/urbanformbr/pca_regression_df/topography.rds") %>%
-  dplyr::select(-c(name_uca_case,mean_ruggedness)) %>%
-  dplyr::rename(code_urban_concentration = code_muni)
+df_topo <- data.table::fread("../../data/urbanformbr/consolidated_data/topography_metrics.csv")
+df_topo[, name_uca_case := NULL]
 
-# * classify uca ----------------------------------------------------------
 
-# * * tma (transporte media alta capacidade) ------------------------------
-df_classify_tma <- readr::read_rds("../../data/urbanformbr/pca_regression_df/classify_uca_tma.rds")
 
-# * * large uca -----------------------------------------------------------
-
-df_classify_uca_large <- readr::read_rds('../../data/urbanformbr/pca_regression_df/classify_uca_large_pop.rds') %>%
-  dplyr::select(-pop_uca_2010)
-
-# filter ucas
-df_classify_uca_large <- subset(
-  df_classify_uca_large,
-  code_urban_concentration %in% df_reference$code_urban_concentration
-)
+# * tma (public transport) --------------------------------------------------
+df_tma <- data.table::fread("../../data/urbanformbr/consolidated_data/classify_tma_public_transport.csv")
 
 # * factors ---------------------------------------------------------------
-df_factors <- readr::read_rds("../../data/urbanformbr/pca_regression_df/factors_morphology.rds")
+df_factors <- data.table::fread("../../data/urbanformbr/consolidated_data/factor_analysis_metrics.csv")
+
+
+# state and region --------------------------------------------------------
+
 
 # merge data --------------------------------------------------------------
-
-df_merge <- dplyr::left_join(
-  df_reference,
-  df_pop_growth
-) %>%
-  #dplyr::left_join(
-  #  df_pop_censo
-  #  ) %>%
-  #dplyr::left_join(
-  #  df_fleet
-  #) %>%
-  # dplyr::left_join(
-  #   df_fuel
-  # ) %>%
-  dplyr::left_join(
-    df_energy
-  ) %>%
-  #dplyr::left_join(
-  #  df_pib
-  #) %>%
-  dplyr::left_join(
-    df_area
-  ) %>%
-  dplyr::left_join(
-    df_emissions
-  ) %>%
-  dplyr::left_join(
-    df_censo
-  ) %>%
-  dplyr::left_join(
-    df_exp_density
-  ) %>%
-  dplyr::left_join(
-    df_landuse
-  )
+df_merge <- dplyr::left_join(df_reference, df_factors) %>%
+  dplyr::left_join(df_tma) %>%
+  dplyr::left_join(df_pop_growth) %>%
+  dplyr::left_join(df_fleet) %>%
+  dplyr::left_join(df_energy) %>%
+  dplyr::left_join(df_censo) %>%
+  dplyr::left_join(df_exp_density) %>%
+  dplyr::left_join(df_landuse) %>%
+  dplyr::left_join(df_frag_comp) %>%
+  dplyr::left_join(df_topo)
 
 
-setDT(df_merge)[df_age_fleet_class[classe == "moto" & status == "0-10",]
-                , on = "code_urban_concentration"
-                , prop_new_moto := i.prop_veh_status]
-
-df_merge[df_age_fleet_class[classe == "carro" & status == "0-10",]
-         , on = "code_urban_concentration"
-         , prop_new_auto := i.prop_veh_status]
-
-df_merge[df_age_fleet_veh[classe == "carro",]
-         , on = "code_urban_concentration"
-         , mean_age_auto := i.age]
-
-df_merge[df_age_fleet_veh[classe == "moto",]
-         , on = "code_urban_concentration"
-         , mean_age_moto := i.age]
 
 df_merge <- dplyr::left_join(
   df_merge,
@@ -173,57 +110,16 @@ df_merge <- dplyr::left_join(
   by = c('name_urban_concentration' = 'name_urban_concentration')
 )
 
-df_merge <- dplyr::left_join(
-  df_merge,
-  df_frag_comp,
-  by = c('code_urban_concentration' = 'code_urban_concentration')
-)
-
-df_merge <- dplyr::left_join(
-  df_merge, df_topo,
-  by = c('code_urban_concentration' = 'code_urban_concentration')
-)
-
-df_merge <- dplyr::left_join(
-  df_merge, df_classify_uca_large,
-  by = c('code_urban_concentration' = 'code_urban_concentration')
-) %>%
-  #dplyr::left_join(df_classify_isolated) %>%
-  dplyr::left_join(df_classify_tma)
-
-df_merge <- dplyr::left_join(
-  df_merge, df_factors,
-  by = c('name_uca_case' = 'name_uca_case')
-)
-
-# calculate fuel consumption per capita
-# df_merge <- df_merge %>%
-#   mutate(fuel_consumption_per_capita_2010 = fuel_consumption_total_2010 / pop_2015)
-
 # * reorder columns -------------------------------------------------------
 df_merge <- df_merge %>%
   dplyr::relocate(
-    c(energy_per_capita, wghtd_mean_commute_time,emissions_capita),
+    c(energy_per_capita, wghtd_mean_commute_time),
     .after = name_uca_case
   )
 
+# * CREATE street pop ------------------------------------------------------------
 df_merge <- df_merge %>%
-  dplyr::relocate(
-    c(large_uca_pop:tma),
-    .after = emissions_capita
-  )
-
-df_merge <- df_merge %>%
-  dplyr::relocate(
-    c(compact_contig_inter_dens),
-    .after = tma
-  )
-
-# * STREET POP ------------------------------------------------------------
-df_merge <- df_merge %>%
-  dplyr::mutate(street_pop = street_length / pop_2010) %>%
-  dplyr::relocate(street_pop, .after = street_length)# %>%
-#dplyr::select(-street_length)
+  dplyr::mutate(street_pop = street_length / pop_2010)
 
 # * add prefix (dependent & independent variable) -------------------------
 
@@ -235,26 +131,28 @@ df_merge <- df_merge %>%
   ) %>%
   # dependent variables (y)
   dplyr::rename_with(
-    .cols = energy_per_capita:emissions_capita,
+    .cols = energy_per_capita:wghtd_mean_commute_time,
     function(x){paste0("y_", x)}
-  ) %>%
-  # dummy variables
-  dplyr::rename_with(
-    .cols = large_uca_pop:tma,
-    function(x){paste0("d_", x)}
   ) %>%
   # factors
   dplyr::rename_with(
     .cols = compact_contig_inter_dens,
     function(x){paste0("f_", x)}
   ) %>%
+  # dummy variables
+  dplyr::rename_with(
+    .cols = tma,
+    function(x){paste0("d_", x)}
+  ) %>%
   # independent variables (x)
   dplyr::rename_with(
-    .cols = pop_growth_1975_2015:length(.),
+    .cols = upward_pop_growth_1990_2014:length(.),
     function(x){paste0("x_", x)}
   )
 
 glimpse(df_merge)
+
+data.table::setDT(df_merge)
 # save data ---------------------------------------------------------------
 
 # check if there is any missing values
