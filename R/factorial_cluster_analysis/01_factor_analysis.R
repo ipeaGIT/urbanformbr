@@ -148,7 +148,6 @@ df_factor_results <- df_factor_results %>%
 data.table::fwrite(
   x = df_factor_results
   , file = "../../data/urbanformbr/consolidated_data/factor_analysis_metrics.csv"
-  , sep = ";"
   , append = F
 )
 

@@ -608,7 +608,6 @@ f_censo <- function(){
   data.table::fwrite(
     x = df_vars_total
     , file = '../../data/urbanformbr/consolidated_data/censo_metrics.csv'
-    , sep = ";"
     , append = F
   )
 

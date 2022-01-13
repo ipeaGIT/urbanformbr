@@ -19,6 +19,21 @@ df_reference <- readr::read_rds("../../data/urbanformbr/urban_area_shapes/urban_
   sf::st_drop_geometry() %>%
   select(-pop_ibge_total_2010)
 
+# * * state and region ----------------------------------------------------
+
+## add columns with state and region
+df_reference$state <- substring(df_reference$code_urban_concentration, 1,2) %>%
+  as.numeric()
+
+region_labels <- geobr::read_state() %>% setDT()
+
+data.table::setDT(df_reference)[
+  region_labels,
+  on = c('state' = 'code_state'),
+  c('name_state' , 'name_region') := list(i.name_state, i.name_region)
+  ]
+
+
 # * pop growth ------------------------------------------------------------
 
 df_pop_growth <- data.table::fread("../../data/urbanformbr/consolidated_data/urban_growth_population.csv")
@@ -107,6 +122,14 @@ df_merge <- df_merge %>%
   dplyr::relocate(
     c(energy_per_capita, wghtd_mean_commute_time),
     .after = name_uca_case
+  ) %>%
+  dplyr::relocate(
+    c(name_state, name_region),
+    .after = name_uca_case
+  ) %>%
+  dplyr::relocate(
+    state,
+    .after = tma
   )
 
 # * CREATE street pop ------------------------------------------------------------
@@ -118,7 +141,7 @@ df_merge <- df_merge %>%
 df_merge <- df_merge %>%
   # id
   dplyr::rename_with(
-    .cols = code_urban_concentration:name_uca_case,
+    .cols = code_urban_concentration:name_region,
     function(x){paste0("i_", x)}
   ) %>%
   # dependent variables (y)
@@ -138,7 +161,7 @@ df_merge <- df_merge %>%
   ) %>%
   # independent variables (x)
   dplyr::rename_with(
-    .cols = upward_pop_growth_1990_2014:length(.),
+    .cols = state:length(.),
     function(x){paste0("x_", x)}
   )
 
@@ -159,7 +182,6 @@ any(is.na(df_merge))
 data.table::fwrite(
   x = df_merge
   , file = "../../data/urbanformbr/consolidated_data/urbanformbr_metrics_full.csv"
-  , sep = ";"
   , append = F
 )
 

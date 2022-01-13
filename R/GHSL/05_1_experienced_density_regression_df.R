@@ -292,7 +292,6 @@ df_final_wide <- tidyr::pivot_wider(
 data.table::fwrite(
   x = df_final_wide
   , file = '../../data/urbanformbr/consolidated_data/ghsl_experienced_density_metrics.csv'
-  , sep = ";"
   , append = F
 )
 

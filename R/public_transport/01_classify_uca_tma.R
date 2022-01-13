@@ -90,7 +90,6 @@ df_tma <- df_tma %>%
 data.table::fwrite(
   x = df_tma
   , file = "../../data/urbanformbr/consolidated_data/classify_tma_public_transport.csv"
-  , sep = ";"
   , append = F
 )
 

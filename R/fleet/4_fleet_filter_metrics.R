@@ -51,7 +51,6 @@ df_fleet <- dplyr::left_join(df_fleet_age_mean, df_fleet_age_class)
 data.table::fwrite(
   x = df_fleet
   , file = '../../data/urbanformbr/consolidated_data/denatran_fleet_metrics.csv'
-  , sep = ";"
   , append = F
 )
 
