@@ -33,10 +33,10 @@ df_fragmentation <- df_fragmentation %>%
   dplyr::select(code_urban_concentration,ends_with("2014"))
 
 # * street metrics --------------------------------------------------------
-df_street <- data.table::fread("../../data/urbanformbr/consolidated_data/streets_metrics_new_23_12_2021.csv")
+df_street <- data.table::fread(file = "../../data/urbanformbr/consolidated_data/streets_metrics_new_23_12_2021_v3.csv")
 
 df_street <- df_street %>%
-  select(name_urban_concentration, intersection_density_km,circuity_avg,
+  select(name_urban_concentration, intersection_density_km, circuity_avg,
          normalized_closeness_centrality_avg
          #, street_length
          )
@@ -55,7 +55,7 @@ df_street <- subset(df_street, name_urban_concentration %in% df_shapes$name_urba
 df_factor <- dplyr::left_join(df_shapes, df_density) %>%
   dplyr::left_join(df_land_mix) %>%
   dplyr::left_join(df_fragmentation) %>%
-   dplyr::left_join(df_street) #%>%
+  dplyr::left_join(df_street) #%>%
   # dplyr::left_join(df_censo)
 
 # create variable --------------------------------------------------------
@@ -69,17 +69,17 @@ df_factor <- dplyr::left_join(df_shapes, df_density) %>%
 # prep data ---------------------------------------------------------------
 
 #### change datatable to dataframe for converting one id column to row.names
-df_select <- df_factor %>%
+df_input <- df_factor %>%
   select(-c(code_urban_concentration, name_urban_concentration))
 
-#df_select_df <- df_select %>%
+#df_input_df <- df_input %>%
 #  tibble::column_to_rownames("i_name_urban_concentration")
 
-df_select <- data.frame(df_select)
+df_input <- data.frame(df_input)
 
-df_select <- data.frame(
-  df_select[,-1],
-  row.names = df_select[,1]
+df_input <- data.frame(
+  df_input[,-1],
+  row.names = df_input[,1]
 )
 
 # factor analysis ---------------------------------------------------------
@@ -90,7 +90,7 @@ df_select <- data.frame(
 # ref: Manly, Alberto, 2017: Multivariate Statistics: A Primer
 
 #r_pca <- FactoMineR::PCA(
-#  X = df_select_df, scale.unit = T, ncp = ncol(df_select_df), graph = F
+#  X = df_input_df, scale.unit = T, ncp = ncol(df_input_df), graph = F
 #)
 
 # determine number of factors: eigenvalues
@@ -101,12 +101,12 @@ df_select <- data.frame(
 # check communalities and factor loadings
 
 #(r_factor_none <- psych::principal(
-#  r = df_select_df, nfactors = ncol(df_select_df), rotate = "none"
+#  r = df_input_df, nfactors = ncol(df_input_df), rotate = "none"
 #)
 #)
 
 #(r_factor_varimax <- psych::principal(
-#  r = df_select_df, nfactors = ncol(df_select_df), rotate = "varimax"
+#  r = df_input_df, nfactors = ncol(df_input_df), rotate = "varimax"
 #)
 #)
 
@@ -115,7 +115,7 @@ df_select <- data.frame(
 
 # comando final utilizado
 (r_factor_varimax <- psych::fa(
-  df_select, rotate = "varimax",nfactors = ncol(df_select), fm = "pa", SMC = F
+  df_input, rotate = "varimax", nfactors = ncol(df_input), fm = "pa", SMC = F
   )
 )
 
@@ -157,7 +157,7 @@ data.table::fwrite(
 # correlogram -------------------------------------------------------------
 #
 # GGally::ggpairs(
-#   df_select_df,
+#   df_input_df,
 #   columnLabels = c(
 #     #"Y: Energy per capita", "Y: Commute time",
 #     "Urban size", "Density pop 01km", "Density built 01km", "Land use mix",
@@ -166,6 +166,6 @@ data.table::fwrite(
 #   )
 #   )
 #
-# GGally::ggcorr(df_select_df)
+# GGally::ggcorr(df_input_df)
 
 

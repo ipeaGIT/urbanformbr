@@ -1,7 +1,6 @@
 # description -------------------------------------------------------------
 
-# this script filters fleet metrics to be used at regression analysis
-
+# this script filters and cleans fleet metrics to be used at regression analysis
 
 # setup -------------------------------------------------------------------
 
@@ -31,7 +30,7 @@ df_fleet_age_mean <- df_fleet_age_mean[classe == "carro" & code_urban_concentrat
 
 df_fleet_age_mean[, classe := NULL]
 
-data.table::setnames(df_fleet_age_mean, "age", "fleet_age_mean")
+data.table::setnames(df_fleet_age_mean, "age", "mean_fleet_age")
 
 
 # * fleet class -----------------------------------------------------------
@@ -55,5 +54,4 @@ data.table::fwrite(
   , sep = ";"
   , append = F
 )
-
 

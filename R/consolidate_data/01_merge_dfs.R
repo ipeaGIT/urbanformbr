@@ -19,12 +19,10 @@ df_reference <- readr::read_rds("../../data/urbanformbr/urban_area_shapes/urban_
   sf::st_drop_geometry() %>%
   select(-pop_ibge_total_2010)
 
-
 # * pop growth ------------------------------------------------------------
 
 df_pop_growth <- data.table::fread("../../data/urbanformbr/consolidated_data/urban_growth_population.csv")
 df_pop_growth[, name_uca_case := NULL]
-
 
 # * fleet ---------------------------------------------------------------
 
@@ -40,8 +38,8 @@ df_energy <- subset(df_energy, code_urban_concentration %in% df_reference$code_u
 # df_energy[, tep := as.numeric(tep)]
 # rename
 setnames(x = df_energy
-         ,old = 'tep'
-         ,new = 'energy_per_capita')
+         , old = 'tep'
+         , new = 'energy_per_capita')
 
 # * emissions ------------------------------------------------------------------
 
@@ -64,11 +62,10 @@ df_landuse <- data.table::fread("../../data/urbanformbr/consolidated_data/landus
 df_landuse[, name_uca_case := NULL]
 
 # * street metrics --------------------------------------------------------
-df_street <- data.table::fread("../../data/urbanformbr/consolidated_data/streets_metrics_new_23_12_2021.csv")
+df_street <- data.table::fread("../../data/urbanformbr/consolidated_data/streets_metrics_new_23_12_2021_v3.csv")
 df_street <- subset(df_street, name_urban_concentration %in% df_reference$name_urban_concentration)
 
-# df_street <- data.table::fread("../../data/urbanformbr/pca_regression_df/streets_metrics_new.csv") %>%
-#   dplyr::select(-c(intersection_count,k_avg)) %>%
+# df_street <- df_street %>%
 #   dplyr::rename(street_orientation_irregularity = entropy)
 
 # * fragmentation compacity -----------------------------------------------
@@ -78,16 +75,11 @@ df_frag_comp <- data.table::fread("../../data/urbanformbr/consolidated_data/frag
 df_topo <- data.table::fread("../../data/urbanformbr/consolidated_data/topography_metrics.csv")
 df_topo[, name_uca_case := NULL]
 
-
-
 # * tma (public transport) --------------------------------------------------
 df_tma <- data.table::fread("../../data/urbanformbr/consolidated_data/classify_tma_public_transport.csv")
 
 # * factors ---------------------------------------------------------------
 df_factors <- data.table::fread("../../data/urbanformbr/consolidated_data/factor_analysis_metrics.csv")
-
-
-# state and region --------------------------------------------------------
 
 
 # merge data --------------------------------------------------------------
@@ -150,23 +142,26 @@ df_merge <- df_merge %>%
     function(x){paste0("x_", x)}
   )
 
-glimpse(df_merge)
+
+# check data --------------------------------------------------------------
 
 data.table::setDT(df_merge)
-# save data ---------------------------------------------------------------
+
+glimpse(df_merge)
 
 # check if there is any missing values
 any(is.na(df_merge))
 # complete.cases to avoid missing values
 #df_merge <- df_merge[complete.cases(df_merge)]
 
+# save data ---------------------------------------------------------------
 
-readr::write_rds(
-  x = df_merge,
-  file = '../../data/urbanformbr/pca_regression_df/pca_regression_df_ready_to_use.rds',
-  compress = 'gz'
+data.table::fwrite(
+  x = df_merge
+  , file = "../../data/urbanformbr/consolidated_data/urbanformbr_metrics_full.csv"
+  , sep = ";"
+  , append = F
 )
-
 
 
 ##############################################################################
