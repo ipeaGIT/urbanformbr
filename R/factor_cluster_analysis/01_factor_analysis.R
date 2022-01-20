@@ -120,7 +120,10 @@ df_input <- data.frame(
 )
 
 
-# export factors ----------------------------------------------------------
+# clean objects for exporting ---------------------------------------------
+
+
+# * factors ---------------------------------------------------------------
 
 df_factor_results <- as.data.frame(r_factor_varimax$scores)
 
@@ -142,6 +145,15 @@ df_factor_results <- df_factor_results %>%
   select(-name_uca_case) %>%
   relocate(code_urban_concentration, .before = compact_contig_inter_dens)
 
+
+
+# * factor loadings -------------------------------------------------------
+666666666666 CONTINUAR
+666666 DESCOBRIR COMO EXPORTAR
+stargazer::stargazer(
+  r_factor_varimax$loadings,
+  "./output/factor_output/factor_table.html"
+)
 
 # save results ------------------------------------------------------------
 
