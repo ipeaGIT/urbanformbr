@@ -123,7 +123,7 @@ df_input <- data.frame(
 # clean objects for exporting ---------------------------------------------
 
 
-# * factors ---------------------------------------------------------------
+# * factors results ---------------------------------------------------------------
 
 df_factor_results <- as.data.frame(r_factor_varimax$scores)
 
@@ -146,16 +146,26 @@ df_factor_results <- df_factor_results %>%
   relocate(code_urban_concentration, .before = compact_contig_inter_dens)
 
 
-
 # * factor loadings -------------------------------------------------------
-666666666666 CONTINUAR
-666666 DESCOBRIR COMO EXPORTAR
-stargazer::stargazer(
-  r_factor_varimax$loadings,
-  "./output/factor_output/factor_table.html"
-)
+table_loadings <- psych::fa.sort(r_factor_varimax$loadings[])
+
+df_vaccounted <- data.frame(
+  "SS loadings" = r_factor_varimax$Vaccounted[1,]
+  , "Proportion Var" = r_factor_varimax$Vaccounted[2,]
+  , "Cumulative Var" = r_factor_varimax$Vaccounted[3,]
+) %>%
+  t()
+
+lista_vaccounted <- list(
+  "SS loadings" = r_factor_varimax$Vaccounted[1,]
+  , "Proportion Var" = r_factor_varimax$Vaccounted[2,]
+  , "Cumulative Var" = r_factor_varimax$Vaccounted[3,]
+  )
+
 
 # save results ------------------------------------------------------------
+
+  # * factor results .csv -----------------------------------------------------
 
 data.table::fwrite(
   x = df_factor_results
@@ -163,7 +173,20 @@ data.table::fwrite(
   , append = F
 )
 
+  # * factor html/txt tables --------------------------------------------------
 
+stargazer::stargazer(
+  table_loadings
+  , out = "./output/factor_output/factor_loadings_table.html"
+  , type = "html"
+  , add.lines = lista_vaccounted # DESCOBRIR PQ NAO FUNCIONA
+)
+
+stargazer::stargazer(
+  df_vaccounted
+  , out = "./output/factor_output/factor_var_accounted_table.html"
+  , type = "html"
+)
 
 # correlogram -------------------------------------------------------------
 #
