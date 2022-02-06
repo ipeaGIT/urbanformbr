@@ -1,5 +1,8 @@
 library(caret)
 library(margins)
+library(interactions)
+# library(stargazer)
+# library(fixest)
 
 
 #########  model specifications based on DAG ---------------------------------------
@@ -16,7 +19,7 @@ cross_validation <- function(model, ntimes = 10){ # model <- all_models[[1]]
   # Set training control
   # K fold cross validation
   train_control <- trainControl(method = "repeatedcv",
-                                number = 2,
+                                number = 2,            # sample groups
                                 repeats = ntimes,
                                 search = "random",
                                 verboseIter = TRUE)
