@@ -93,3 +93,76 @@ model_table <- fixest::etable(model, digits = 3, tex=F)
 xlsx::write.xlsx(model_table, file='./output/regression_output/regression_table_1.xlsx', sheetName="Sheet1",row.names = TRUE)
 
 
+
+
+
+
+
+#### all reg models ----------------------------
+
+
+# read all models
+files <- list.files('./output/regression_output/', pattern = '.rds', full.names = T)
+
+file_to_df <- function(f){ # f <- files[5]
+
+        # read file
+        models <- readr::read_rds(f)
+
+        # function to get list of models into data.frames
+        list_to_df <- function(name_model){ # name_model <- names(models)[1]
+                # select model
+                temp_model <- models[name_model]
+
+                # convert to df
+                modeldf <- broom::tidy(temp_model[[1]], conf.int = TRUE, conf.level = 0.90)
+                modeldf$name_model <- name_model
+                return(modeldf)
+        }
+
+        temp_model <- lapply(X=names(models), FUN=list_to_df)
+        temp_model <- rbindlist(temp_model)
+        return(temp_model)
+}
+
+# gather all regrission models as data.frames
+df <- lapply(X=files, FUN=file_to_df)
+df <- rbindlist(df)
+table(df$name_model)
+
+
+setDT(df)[, interval := paste0('(', round(conf.low,2), ', ', round(conf.high,2), ')') ]
+
+
+df[, significance := fcase(p.value>0.1,"",
+                                p.value<=0.1,"*",
+                                p.value<=0.05,"**",
+                                p.value<=0.01,"***") ]
+
+
+df[, coef_stars := paste(round(estimate,3),significance)]
+
+
+#### subset for urban form variables
+vars_urban_form <- c('f_compact_contig_inter_dens', 'x_circuity_avg', 'x_density_pop_02km_2014', 'x_land_use_mix', 'x_normalized_closeness_centrality_avg', 'I(x_pop_2010 * f_compact_contig_inter_dens)')
+df <- subset(df, term %in% vars_urban_form)
+
+df <- subset(df,
+                name_model=='model_spec_all' |
+                name_model=='model_spec_circuity' & term== 'x_circuity_avg' |
+                name_model=='model_spec_closenes' & term== 'x_normalized_closeness_centrality_avg' |
+                name_model=='model_spec_density' & term== 'x_density_pop_02km_2014' |
+                name_model=='model_spec_landuse' & term== 'x_land_use_mix' |
+                name_model %like% 'model_spec_fcompact' & term %in% c('f_compact_contig_inter_dens', 'I(x_pop_2010 * f_compact_contig_inter_dens)')
+             )
+
+
+ggplot(data=df, aes(x = estimate , y = reorder(term, estimate), xmin = conf.low, xmax = conf.high, color = name_model)) +
+        geom_pointrange(shape = 21, show.legend = F, position = position_dodge(width = 0.9)) +
+        facet_wrap(.~term, ncol = 1, scales = 'free_y') +
+        geom_vline(xintercept = 0, linetype = 4) +
+        xlab("Elasticity") +
+        ylab("Variables") +
+        # theme_classic() +
+        theme( # axis.text.y = element_blank(),
+        axis.title.y = element_blank())
