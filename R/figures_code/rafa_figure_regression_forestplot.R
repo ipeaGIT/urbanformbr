@@ -20,10 +20,11 @@ setDT(modeldf)
 modeldf[, interval := paste0('(', round(conf.low,2), ', ', round(conf.high,2), ')') ]
 
 
-modeldf[, significance := fcase(p.value>0.1,"",
-                                p.value<=0.1,"*",
+modeldf[, significance := fcase(p.value<=0.01,"***",
                                 p.value<=0.05,"**",
-                                p.value<=0.01,"***") ]
+                                p.value<=0.1,"*",
+                                p.value>0.1,""
+                                ) ]
 
 
 modeldf[, coef_stars := paste(round(estimate,3),significance)]
@@ -67,7 +68,8 @@ data_table <- ggplot(data = urbanformdf, aes(y = reorder(term, estimate)) ) +
                 geom_text(aes(x = 7, label = reorder(interval, estimate) ), hjust = '4') +
                 scale_colour_identity() +
                 theme_void() +
-                theme(plot.margin = margin(5, 0, 30, 0))
+                theme(plot.margin = margin(5, 0, 30, 0)) +
+                expand_limits(x=c(0,8))
 
 
 temp_figure <- gridExtra::grid.arrange(data_table, p, ncol = 2, widths = c(1.5,1))
@@ -134,10 +136,10 @@ table(df$name_model)
 setDT(df)[, interval := paste0('(', round(conf.low,2), ', ', round(conf.high,2), ')') ]
 
 
-df[, significance := fcase(p.value>0.1,"",
-                                p.value<=0.1,"*",
-                                p.value<=0.05,"**",
-                                p.value<=0.01,"***") ]
+df[, significance := fcase(p.value<=0.01,"***",
+                           p.value<=0.05,"**",
+                           p.value<=0.1,"*",
+                           p.value>0.1,"") ]
 
 
 df[, coef_stars := paste(round(estimate,3),significance)]

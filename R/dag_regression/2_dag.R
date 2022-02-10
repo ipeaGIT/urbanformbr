@@ -549,7 +549,9 @@ etable(ll)
 #' cor(df_fuel$x_pop_2010  , df_fuel$f_compact_contig_inter_dens)
 library(interactions)
 a <- lm(formula(model_spec_all[[1]]), data = df_log)
-interact_plot(a, pred = 'f_compact_contig_inter_dens', modx = 'x_pop_2010' , plot.points = TRUE) # interval = TRUE
+interact_plot(a, pred = 'f_compact_contig_inter_dens',
+              modx = 'x_pop_2010' ,
+              plot.points = TRUE) # interval = TRUE
 
 interact_plot(a, pred = 'f_compact_contig_inter_dens', modx = 'x_pop_2010', linearity.check = TRUE,
               plot.points = TRUE)
@@ -584,7 +586,7 @@ for ( i in names(all_models_specs) ){# i = names(all_models_specs)[1]
 # tem_model <- lapply(X=l, FUN= lm, data=df_log)
 # performance::check_model(tem_model)
 # performance::compare_performance(tem_model, rank = T)  %>% plot()
-#
+
 
 
 
