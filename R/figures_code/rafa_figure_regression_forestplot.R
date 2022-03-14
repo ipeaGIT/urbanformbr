@@ -89,7 +89,6 @@ ggsave(temp_figure, file='./figures/forestplot.png', dpi = 300,
 # https://cran.r-project.org/web/packages/fixest/vignettes/exporting_tables.html
 
 # export regression table to excel
-
 model_table <- fixest::etable(model, digits = 3, tex=F)
 
 xlsx::write.xlsx(model_table, file='./output/regression_output/regression_table_1.xlsx', sheetName="Sheet1",row.names = TRUE)
@@ -97,7 +96,24 @@ xlsx::write.xlsx(model_table, file='./output/regression_output/regression_table_
 
 
 
+#### tipping point interaction variable ----------------------------
+summary(model)
 
+f <-  -0.575858   # coef de var fator
+p <- -0.007326    # coef de  var pop
+i <-  0.049173    # coef de interacao
+
+# h = f *fator + p*populacao + i*f*p
+# df / df = f + i * populacao
+
+populacao= log(seq(50000, 10000000, 50000))
+efeitos = f + i * populacao
+
+plot(efeitos)
+
+
+tipping_point = exp(0.010205020 - f / i)
+#> 123138.2
 
 
 #### all reg models ----------------------------
