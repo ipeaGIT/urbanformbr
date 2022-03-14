@@ -134,63 +134,6 @@ geocode_logradouro <- function(muni) {
 
 }
 
-geocode_missing_by_logradouro_2019 <- function(muni) {
-  # extract urban area name and uf from data
-  muni_name <- unique(subset(munis_df, code_muni == muni)$name_muni)
-  muni_uf <- unique(subset(munis_df, code_muni == muni)$abrev_state)
-
-  output_file <- paste0("../../data/urbanformbr/cnefe/geo/partial/", muni_uf, "/", muni, "_", muni_name, "_", muni_uf, "_logradouro_2019.rds")
-
-  if (!file.exists(output_file)) {
-    rds_dir <- paste0("../../data/urbanformbr/cnefe/geo/partial/", muni_uf, "/")
-    if (!dir.exists(rds_dir)) {
-      dir.create(rds_dir, recursive = TRUE)
-    }
-
-    message(sprintf("Geocoding missing data of  %s / %s by logradouros 2019", muni_name, muni_uf))
-
-    input_file <- paste0("../../data/urbanformbr/cnefe/geo/partial/", muni_uf, "/", muni, "_", muni_name, "_", muni_uf, "_missing.rds")
-
-    cnefe_df <- read_rds(input_file) %>% setDT()
-
-    # build logradouro identifier
-    cnefe_df[, CD_GEO := paste0(code_tract, block_number, face_number)]
-
-    # load logradouros
-    gpkg_file <- paste0("../../data/urbanformbr/faces_de_logradouros/2019/", muni_uf, "/", muni, "_", muni_name, "_", muni_uf, ".gpkg")
-    logradouros_sf <- st_read(gpkg_file)
-    logradouros_sf <- st_make_valid(logradouros_sf)
-    is_correct <- st_is(logradouros_sf, type = "MULTILINESTRING")
-    logradouros_sf <- logradouros_sf[is_correct, ]
-    setDT(logradouros_sf)
-    logradouros_sf[, CD_GEO := paste0(CD_SETOR, CD_QUADRA, CD_FACE)]
-
-    # find addresses with missing link in logradouros
-    cnefe_missing <- cnefe_df[CD_GEO %nin% logradouros_sf$CD_GEO]
-    cnefe_missing[, CD_GEO := NULL]
-    rds_file <- paste0("../../data/urbanformbr/cnefe/geo/partial/", muni_uf, "/", muni, "_", muni_name, "_", muni_uf, "_missing_2019.rds")
-    write_rds(cnefe_missing, rds_file, compress = "gz")
-
-    # join cnefe to logradouros
-    cnefe_df <- cnefe_df[CD_GEO %in% logradouros_sf$CD_GEO]
-    cnefe_df[logradouros_sf, on = "CD_GEO", geometry := i.geom]
-
-    cnefe_df[, point := map(geometry, st_sample, size = 1)]
-
-    cnefe_df[ ,latitude := map_dbl(point, function(x) st_coordinates(x)[[2]])]
-    cnefe_df[ ,longitude := map_dbl(point, function(x) st_coordinates(x)[[1]])]
-
-    cnefe_df[, CD_GEO := NULL]
-    cnefe_df[, point := NULL]
-    cnefe_df[, geometry := NULL]
-
-    write_rds(cnefe_df, output_file, compress = "gz")
-
-  } else {
-    # message(sprintf("Skipping %s / %s", muni_name, muni_uf))
-  }
-
-}
 
 build_gpkg <- function(muni) {
   # extract urban area name and uf from data
@@ -227,34 +170,6 @@ build_gpkg <- function(muni) {
 
 }
 
-build_pkg_2019 <- function(muni) {
-  # extract urban area name and uf from data
-  muni_name <- unique(subset(munis_df, code_muni == muni)$name_muni)
-  muni_uf <- unique(subset(munis_df, code_muni == muni)$abrev_state)
-
-  output_file <- paste0("../../data/urbanformbr/cnefe/geo/", muni_uf, "/", muni, "_", muni_name, "_", muni_uf, "_2019.gpkg")
-
-  if (!file.exists(output_file)) {
-    rds_dir <- paste0("../../data/urbanformbr/cnefe/geo/", muni_uf, "/")
-    if (!dir.exists(rds_dir)) {
-      dir.create(rds_dir, recursive = TRUE)
-    }
-
-    message(sprintf("Building geopackage 2019 for city %s / %s", muni_name, muni_uf))
-
-    # load by logradouros
-    rds_file <- paste0("../../data/urbanformbr/cnefe/geo/partial/", muni_uf, "/", muni, "_", muni_name, "_", muni_uf, "_logradouro_2019.rds")
-    cnefe_df <- read_rds(rds_file)
-
-    cnefe_sf = st_as_sf(cnefe_df, coords = c("longitude", "latitude"), crs = 4674, agr = "constant")
-
-    st_write(cnefe_sf, output_file)
-
-  } else {
-    # message(sprintf("Skipping %s / %s", muni_name, muni_uf))
-  }
-
-}
 
 geocode_muni_simple <- function(muni) {
   geocode_latlon(muni)

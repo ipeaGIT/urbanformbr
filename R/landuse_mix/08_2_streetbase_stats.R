@@ -66,3 +66,4 @@ geocoding_stats_df <- map(codes, compute_stats)
 full_stats_df <- rbindlist(geocoding_stats_df)
 
 write_csv(full_stats_df, file = "../../data/urbanformbr/cnefe/streetbase_stats.csv")
+
