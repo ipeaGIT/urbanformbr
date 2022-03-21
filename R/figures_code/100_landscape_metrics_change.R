@@ -70,7 +70,7 @@ fig_dens <-
   stat_density_ridges(quantile_lines = TRUE, quantiles=2, show.legend = FALSE) +
   scale_fill_brewer(palette = 'Greens', direction = -1) +
   # scale_x_continuous(breaks = seq(0, 1, 0.2), limits = c(0, 1.2)) +
-  labs(y='', x='Densidade Experienciada (2 km)') +
+  labs(y='', x='Densidade Experienciada (raio de 2 km)') +
   theme_ridges() +
   theme(strip.background = element_blank(),
         strip.text = element_text(face = "bold"),
@@ -82,7 +82,7 @@ fig_dens <-
 fig_final <- fig_comp / fig_frag / fig_dens + plot_annotation(tag_levels = 'A')
 fig_final
 
-ggsave(fig_final, file='./figures/lanscape_metrics_over_time.png', dpi = 300,
+ggsave(fig_final, file='./figures/landscape_metrics_over_time.png', dpi = 300,
        width = 16, height = 24, units = 'cm')
 
 
