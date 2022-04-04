@@ -2,6 +2,7 @@ library(ggplot2)
 library(gridExtra)
 library(data.table)
 library(broom)
+library(modelsummary)
 
 options(scipen = 99)
 
@@ -118,119 +119,114 @@ tipping_point = exp(0.010205020 - f / i)
 #> 123138.2
 
 
-#### all reg models ----------------------------
+#### Annex - Regression tables ----------------------------
+# https://vincentarelbundock.github.io/modelsummary/articles/modelsummary.html
 
-models <- lapply(X=files, FUN= readr::read_rds)
-models <- list(models[[1]], models[[2]], models[[3]], models[[4]], models[[5]], models[[6]])
-models_table <- fixest::etable(models, digits = 3, tex=F)
-
+library(modelsummary)
 
 
 # read all models
 files <- list.files('./output/regression_output/', pattern = '.rds', full.names = T)
 
-# output_all <- read_rds(files[1])
-# output_circuity <- read_rds(files[2])
-# output_closenes <- read_rds(files[3])
-# output_density <- read_rds(files[4])
-# output_fcompact <- read_rds(files[5])
-# output_landuse <- read_rds(files[6])
-#
-# output_all[[1]]
-library(modelsummary)
 
-for( i in files){ # i = files[3]
 
+for( i in files){ # i = files[4]
+print(i)
+# read model
 temp_model <- readRDS(i)
 
-a <- modelplot(temp_model, coef_omit = 'Intercept|x_state')
-a <- a + theme(legend.position = 'bottom')
-ggsave(a, file='./output/regression_output/a.png', width = 16, height = 20, units='cm')
+# plot
+temp_fig <- modelplot(temp_model, coef_omit = 'Interc|x_state')
+temp_fig <- temp_fig + theme(legend.position = 'bottom')
 
+ggsave(temp_fig,
+       file = paste0('./output/regression_output/annex_fig_',names(temp_model)[1], '.png'),
+       width = 16, height = 20, units='cm')
+
+# table
 modelsummary(temp_model,
              stars= T,
-             statistic = 'conf.int',
-             coef_omit = 'Intercept|x_state',
+             # statistic = 'conf.int',
+             statistic = NULL,
+             estimate = "{estimate} {stars} [{conf.low}, {conf.high}]",
+             coef_omit = 'Interc|x_state',
              output = paste0('./output/regression_output/annex_table_',names(temp_model)[1], '.png'))
 
 
-
-}
-# fixest::etable( output_fcompact,
-#                digits = 3,
-#                ci = 0.95,
-#                tex=FALSE,
-#                file ='./output/regression_output/annex_regression_table.txt')
-
-
-
-library(modelsummary)
-modelsummary(output_fcompact,
+modelsummary(temp_model,
              stars= T,
-             output = './output/regression_output/annex_regression_table.xls')
-
-
-
-
-file_to_df <- function(f){ # f <- files[3]
-
-        # read file
-        models <- readr::read_rds(f)
-
-        # function to get list of models into data.frames
-        list_to_df <- function(name_model){ # name_model <- names(models)[1]
-                # select model
-                temp_model <- models[name_model]
-
-                # convert to df
-                modeldf <- broom::tidy(temp_model[[1]], conf.int = TRUE, conf.level = 0.90)
-                modeldf$name_model <- name_model
-                return(modeldf)
-        }
-
-        temp_model <- lapply(X=names(models), FUN=list_to_df)
-        temp_model <- rbindlist(temp_model)
-        return(temp_model)
+             # statistic = 'conf.int',
+             statistic = NULL,
+             estimate = "{estimate} [{conf.low}, {conf.high}] {stars}",
+             coef_omit = 'Interc|x_state',
+             output = paste0('./output/regression_output/annex_table_',names(temp_model)[1], '.html'))
 }
 
-# gather all regression models as data.frames
-df <- lapply(X=files, FUN=file_to_df)
-df <- rbindlist(df)
-table(df$name_model)
 
 
-setDT(df)[, interval := paste0('(', round(conf.low,2), ', ', round(conf.high,2), ')') ]
 
 
-df[, significance := fcase(p.value<=0.01,"***",
-                           p.value<=0.05,"**",
-                           p.value<=0.1,"*",
-                           p.value>0.1,"") ]
 
-
-df[, coef_stars := paste(round(estimate,3),significance)]
-
-
-#### subset for urban form variables
-vars_urban_form <- c('f_compact_contig_inter_dens', 'x_circuity_avg', 'x_density_pop_02km_2014', 'x_land_use_mix', 'x_normalized_closeness_centrality_avg', 'I(x_pop_2010 * f_compact_contig_inter_dens)')
-df <- subset(df, term %in% vars_urban_form)
-
-df <- subset(df,
-                name_model=='model_spec_all' |
-                name_model=='model_spec_circuity' & term== 'x_circuity_avg' |
-                name_model=='model_spec_closenes' & term== 'x_normalized_closeness_centrality_avg' |
-                name_model=='model_spec_density' & term== 'x_density_pop_02km_2014' |
-                name_model=='model_spec_landuse' & term== 'x_land_use_mix' |
-                name_model %like% 'model_spec_fcompact' & term %in% c('f_compact_contig_inter_dens', 'I(x_pop_2010 * f_compact_contig_inter_dens)')
-             )
-
-
-ggplot(data=df, aes(x = estimate , y = reorder(term, estimate), xmin = conf.low, xmax = conf.high, color = name_model)) +
-        geom_pointrange(shape = 21, show.legend = F, position = position_dodge(width = 0.9)) +
-        facet_wrap(.~term, ncol = 1, scales = 'free_y') +
-        geom_vline(xintercept = 0, linetype = 4) +
-        xlab("Elasticity") +
-        ylab("Variables") +
-        # theme_classic() +
-        theme( # axis.text.y = element_blank(),
-        axis.title.y = element_blank())
+#
+# file_to_df <- function(f){ # f <- files[3]
+#
+#         # read file
+#         models <- readr::read_rds(f)
+#
+#         # function to get list of models into data.frames
+#         list_to_df <- function(name_model){ # name_model <- names(models)[1]
+#                 # select model
+#                 temp_model <- models[name_model]
+#
+#                 # convert to df
+#                 modeldf <- broom::tidy(temp_model[[1]], conf.int = TRUE, conf.level = 0.90)
+#                 modeldf$name_model <- name_model
+#                 return(modeldf)
+#         }
+#
+#         temp_model <- lapply(X=names(models), FUN=list_to_df)
+#         temp_model <- rbindlist(temp_model)
+#         return(temp_model)
+# }
+#
+# # gather all regression models as data.frames
+# df <- lapply(X=files, FUN=file_to_df)
+# df <- rbindlist(df)
+# table(df$name_model)
+#
+#
+# setDT(df)[, interval := paste0('(', round(conf.low,2), ', ', round(conf.high,2), ')') ]
+#
+#
+# df[, significance := fcase(p.value<=0.01,"***",
+#                            p.value<=0.05,"**",
+#                            p.value<=0.1,"*",
+#                            p.value>0.1,"") ]
+#
+#
+# df[, coef_stars := paste(round(estimate,3),significance)]
+#
+#
+# #### subset for urban form variables
+# vars_urban_form <- c('f_compact_contig_inter_dens', 'x_circuity_avg', 'x_density_pop_02km_2014', 'x_land_use_mix', 'x_normalized_closeness_centrality_avg', 'I(x_pop_2010 * f_compact_contig_inter_dens)')
+# df <- subset(df, term %in% vars_urban_form)
+#
+# df <- subset(df,
+#                 name_model=='model_spec_all' |
+#                 name_model=='model_spec_circuity' & term== 'x_circuity_avg' |
+#                 name_model=='model_spec_closenes' & term== 'x_normalized_closeness_centrality_avg' |
+#                 name_model=='model_spec_density' & term== 'x_density_pop_02km_2014' |
+#                 name_model=='model_spec_landuse' & term== 'x_land_use_mix' |
+#                 name_model %like% 'model_spec_fcompact' & term %in% c('f_compact_contig_inter_dens', 'I(x_pop_2010 * f_compact_contig_inter_dens)')
+#              )
+#
+#
+# ggplot(data=df, aes(x = estimate , y = reorder(term, estimate), xmin = conf.low, xmax = conf.high, color = name_model)) +
+#         geom_pointrange(shape = 21, show.legend = F, position = position_dodge(width = 0.9)) +
+#         facet_wrap(.~term, ncol = 1, scales = 'free_y') +
+#         geom_vline(xintercept = 0, linetype = 4) +
+#         xlab("Elasticity") +
+#         ylab("Variables") +
+#         # theme_classic() +
+#         theme( # axis.text.y = element_blank(),
+#         axis.title.y = element_blank())
