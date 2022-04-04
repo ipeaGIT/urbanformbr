@@ -96,6 +96,8 @@ xlsx::write.xlsx(model_table, file='./output/regression_output/regression_table_
 
 
 
+
+
 #### tipping point interaction variable ----------------------------
 summary(model)
 
@@ -118,11 +120,59 @@ tipping_point = exp(0.010205020 - f / i)
 
 #### all reg models ----------------------------
 
+models <- lapply(X=files, FUN= readr::read_rds)
+models <- list(models[[1]], models[[2]], models[[3]], models[[4]], models[[5]], models[[6]])
+models_table <- fixest::etable(models, digits = 3, tex=F)
+
+
 
 # read all models
 files <- list.files('./output/regression_output/', pattern = '.rds', full.names = T)
 
-file_to_df <- function(f){ # f <- files[5]
+# output_all <- read_rds(files[1])
+# output_circuity <- read_rds(files[2])
+# output_closenes <- read_rds(files[3])
+# output_density <- read_rds(files[4])
+# output_fcompact <- read_rds(files[5])
+# output_landuse <- read_rds(files[6])
+#
+# output_all[[1]]
+library(modelsummary)
+
+for( i in files){ # i = files[3]
+
+temp_model <- readRDS(i)
+
+a <- modelplot(temp_model, coef_omit = 'Intercept|x_state')
+a <- a + theme(legend.position = 'bottom')
+ggsave(a, file='./output/regression_output/a.png', width = 16, height = 20, units='cm')
+
+modelsummary(temp_model,
+             stars= T,
+             statistic = 'conf.int',
+             coef_omit = 'Intercept|x_state',
+             output = paste0('./output/regression_output/annex_table_',names(temp_model)[1], '.png'))
+
+
+
+}
+# fixest::etable( output_fcompact,
+#                digits = 3,
+#                ci = 0.95,
+#                tex=FALSE,
+#                file ='./output/regression_output/annex_regression_table.txt')
+
+
+
+library(modelsummary)
+modelsummary(output_fcompact,
+             stars= T,
+             output = './output/regression_output/annex_regression_table.xls')
+
+
+
+
+file_to_df <- function(f){ # f <- files[3]
 
         # read file
         models <- readr::read_rds(f)
@@ -143,7 +193,7 @@ file_to_df <- function(f){ # f <- files[5]
         return(temp_model)
 }
 
-# gather all regrission models as data.frames
+# gather all regression models as data.frames
 df <- lapply(X=files, FUN=file_to_df)
 df <- rbindlist(df)
 table(df$name_model)

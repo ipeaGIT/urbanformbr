@@ -1,0 +1,370 @@
+                                            model_spec_fcompa..
+Dependent Var.:                             y_energy_per_capita
+                                                               
+(Intercept)                                    -15.2*** (0.794)
+f_compact_contig_inter_dens                    -0.552** (0.089)
+x_mean_slope                                     -0.052 (0.044)
+x_normalized_closeness_centrality_avg             0.028 (0.046)
+x_pop_2010                                    -0.107*** (0.008)
+x_prop_dom_urban                                  1.34* (0.333)
+x_prop_razao_dep                                 -0.098 (0.051)
+x_wghtd_mean_household_income_per_capita        1.22*** (0.132)
+I(x_pop_2010 x f_compact_contig_inter_dens)     0.047** (0.006)
+x_prop_high_educ                                               
+x_state12                                                      
+x_state13                                                      
+x_state14                                                      
+x_state15                                                      
+x_state16                                                      
+x_state17                                                      
+x_state21                                                      
+x_state22                                                      
+x_state23                                                      
+x_state24                                                      
+x_state25                                                      
+x_state26                                                      
+x_state27                                                      
+x_state28                                                      
+x_state29                                                      
+x_state31                                                      
+x_state32                                                      
+x_state33                                                      
+x_state35                                                      
+x_state41                                                      
+x_state42                                                      
+x_state43                                                      
+x_state50                                                      
+x_state51                                                      
+x_state52                                                      
+x_state53                                                      
+x_total_pop_growth_1990_2014                                   
+________________________________________    ___________________
+S.E.: Clustered                               by: i_name_region
+Observations                                                181
+R2                                                      0.82100
+Adj. R2                                                 0.81267
+
+                                            model_spec_fcompa..
+Dependent Var.:                             y_energy_per_capita
+                                                               
+(Intercept)                                    -15.0*** (0.881)
+f_compact_contig_inter_dens                    -0.568** (0.074)
+x_mean_slope                                     -0.049 (0.044)
+x_normalized_closeness_centrality_avg             0.036 (0.050)
+x_pop_2010                                    -0.108*** (0.008)
+x_prop_dom_urban                                  1.34* (0.340)
+x_prop_razao_dep                                               
+x_wghtd_mean_household_income_per_capita        1.21*** (0.121)
+I(x_pop_2010 x f_compact_contig_inter_dens)    0.048*** (0.006)
+x_prop_high_educ                                  0.028 (0.111)
+x_state12                                                      
+x_state13                                                      
+x_state14                                                      
+x_state15                                                      
+x_state16                                                      
+x_state17                                                      
+x_state21                                                      
+x_state22                                                      
+x_state23                                                      
+x_state24                                                      
+x_state25                                                      
+x_state26                                                      
+x_state27                                                      
+x_state28                                                      
+x_state29                                                      
+x_state31                                                      
+x_state32                                                      
+x_state33                                                      
+x_state35                                                      
+x_state41                                                      
+x_state42                                                      
+x_state43                                                      
+x_state50                                                      
+x_state51                                                      
+x_state52                                                      
+x_state53                                                      
+x_total_pop_growth_1990_2014                                   
+________________________________________    ___________________
+S.E.: Clustered                               by: i_name_region
+Observations                                                181
+R2                                                      0.82095
+Adj. R2                                                 0.81262
+
+                                            model_spec_fcompa..
+Dependent Var.:                             y_energy_per_capita
+                                                               
+(Intercept)                                    -8.16*** (0.230)
+f_compact_contig_inter_dens                     -0.889* (0.230)
+x_mean_slope                                                   
+x_normalized_closeness_centrality_avg             0.064 (0.205)
+x_pop_2010                                       0.0001 (0.025)
+x_prop_dom_urban                                  1.90* (0.453)
+x_prop_razao_dep                                               
+x_wghtd_mean_household_income_per_capita                       
+I(x_pop_2010 x f_compact_contig_inter_dens)      0.071* (0.018)
+x_prop_high_educ                                               
+x_state12                                       -0.302* (0.100)
+x_state13                                     -0.689*** (0.072)
+x_state14                                        -0.084 (0.076)
+x_state15                                     -0.665*** (0.073)
+x_state16                                      -0.398** (0.063)
+x_state17                                        -0.108 (0.111)
+x_state21                                     -0.535*** (0.048)
+x_state22                                      -0.592** (0.124)
+x_state23                                      -0.685** (0.086)
+x_state24                                        -0.269 (0.129)
+x_state25                                       -0.399* (0.110)
+x_state26                                       -0.370* (0.090)
+x_state27                                      -0.498** (0.081)
+x_state28                                       -0.355. (0.128)
+x_state29                                      -0.537** (0.080)
+x_state31                                        -0.121 (0.098)
+x_state32                                       -0.246* (0.086)
+x_state33                                       -0.423* (0.097)
+x_state35                                        0.239. (0.105)
+x_state41                                        -0.024 (0.107)
+x_state42                                         0.208 (0.108)
+x_state43                                         0.059 (0.106)
+x_state50                                        -0.083 (0.122)
+x_state51                                         0.019 (0.101)
+x_state52                                         0.050 (0.107)
+x_state53                                        0.481* (0.142)
+x_total_pop_growth_1990_2014                                   
+________________________________________    ___________________
+S.E.: Clustered                               by: i_name_region
+Observations                                                181
+R2                                                      0.86724
+Adj. R2                                                 0.83962
+
+                                            model_spec_fcompa..
+Dependent Var.:                             y_energy_per_capita
+                                                               
+(Intercept)                                    -9.35*** (0.489)
+f_compact_contig_inter_dens                       -1.06 (0.621)
+x_mean_slope                                                   
+x_normalized_closeness_centrality_avg                          
+x_pop_2010                                       0.064. (0.028)
+x_prop_dom_urban                                               
+x_prop_razao_dep                                               
+x_wghtd_mean_household_income_per_capita                       
+I(x_pop_2010 x f_compact_contig_inter_dens)       0.081 (0.042)
+x_prop_high_educ                                               
+x_state12                                                      
+x_state13                                                      
+x_state14                                                      
+x_state15                                                      
+x_state16                                                      
+x_state17                                                      
+x_state21                                                      
+x_state22                                                      
+x_state23                                                      
+x_state24                                                      
+x_state25                                                      
+x_state26                                                      
+x_state27                                                      
+x_state28                                                      
+x_state29                                                      
+x_state31                                                      
+x_state32                                                      
+x_state33                                                      
+x_state35                                                      
+x_state41                                                      
+x_state42                                                      
+x_state43                                                      
+x_state50                                                      
+x_state51                                                      
+x_state52                                                      
+x_state53                                                      
+x_total_pop_growth_1990_2014                        2.79 (2.76)
+________________________________________    ___________________
+S.E.: Clustered                               by: i_name_region
+Observations                                                181
+R2                                                      0.04993
+Adj. R2                                                 0.02833
+---
+Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+                                            model_spec_fcompa..
+Dependent Var.:                             y_energy_per_capita
+                                                               
+(Intercept)                                    -15.2*** (0.794)
+f_compact_contig_inter_dens                    -0.552** (0.089)
+x_mean_slope                                     -0.052 (0.044)
+x_normalized_closeness_centrality_avg             0.028 (0.046)
+x_pop_2010                                    -0.107*** (0.008)
+x_prop_dom_urban                                  1.34* (0.333)
+x_prop_razao_dep                                 -0.098 (0.051)
+x_wghtd_mean_household_income_per_capita        1.22*** (0.132)
+I(x_pop_2010 x f_compact_contig_inter_dens)     0.047** (0.006)
+x_prop_high_educ                                               
+x_state12                                                      
+x_state13                                                      
+x_state14                                                      
+x_state15                                                      
+x_state16                                                      
+x_state17                                                      
+x_state21                                                      
+x_state22                                                      
+x_state23                                                      
+x_state24                                                      
+x_state25                                                      
+x_state26                                                      
+x_state27                                                      
+x_state28                                                      
+x_state29                                                      
+x_state31                                                      
+x_state32                                                      
+x_state33                                                      
+x_state35                                                      
+x_state41                                                      
+x_state42                                                      
+x_state43                                                      
+x_state50                                                      
+x_state51                                                      
+x_state52                                                      
+x_state53                                                      
+x_total_pop_growth_1990_2014                                   
+________________________________________    ___________________
+S.E.: Clustered                               by: i_name_region
+Observations                                                181
+R2                                                      0.82100
+Adj. R2                                                 0.81267
+
+                                            model_spec_fcompa..
+Dependent Var.:                             y_energy_per_capita
+                                                               
+(Intercept)                                    -15.0*** (0.881)
+f_compact_contig_inter_dens                    -0.568** (0.074)
+x_mean_slope                                     -0.049 (0.044)
+x_normalized_closeness_centrality_avg             0.036 (0.050)
+x_pop_2010                                    -0.108*** (0.008)
+x_prop_dom_urban                                  1.34* (0.340)
+x_prop_razao_dep                                               
+x_wghtd_mean_household_income_per_capita        1.21*** (0.121)
+I(x_pop_2010 x f_compact_contig_inter_dens)    0.048*** (0.006)
+x_prop_high_educ                                  0.028 (0.111)
+x_state12                                                      
+x_state13                                                      
+x_state14                                                      
+x_state15                                                      
+x_state16                                                      
+x_state17                                                      
+x_state21                                                      
+x_state22                                                      
+x_state23                                                      
+x_state24                                                      
+x_state25                                                      
+x_state26                                                      
+x_state27                                                      
+x_state28                                                      
+x_state29                                                      
+x_state31                                                      
+x_state32                                                      
+x_state33                                                      
+x_state35                                                      
+x_state41                                                      
+x_state42                                                      
+x_state43                                                      
+x_state50                                                      
+x_state51                                                      
+x_state52                                                      
+x_state53                                                      
+x_total_pop_growth_1990_2014                                   
+________________________________________    ___________________
+S.E.: Clustered                               by: i_name_region
+Observations                                                181
+R2                                                      0.82095
+Adj. R2                                                 0.81262
+
+                                            model_spec_fcompa..
+Dependent Var.:                             y_energy_per_capita
+                                                               
+(Intercept)                                    -8.16*** (0.230)
+f_compact_contig_inter_dens                     -0.889* (0.230)
+x_mean_slope                                                   
+x_normalized_closeness_centrality_avg             0.064 (0.205)
+x_pop_2010                                       0.0001 (0.025)
+x_prop_dom_urban                                  1.90* (0.453)
+x_prop_razao_dep                                               
+x_wghtd_mean_household_income_per_capita                       
+I(x_pop_2010 x f_compact_contig_inter_dens)      0.071* (0.018)
+x_prop_high_educ                                               
+x_state12                                       -0.302* (0.100)
+x_state13                                     -0.689*** (0.072)
+x_state14                                        -0.084 (0.076)
+x_state15                                     -0.665*** (0.073)
+x_state16                                      -0.398** (0.063)
+x_state17                                        -0.108 (0.111)
+x_state21                                     -0.535*** (0.048)
+x_state22                                      -0.592** (0.124)
+x_state23                                      -0.685** (0.086)
+x_state24                                        -0.269 (0.129)
+x_state25                                       -0.399* (0.110)
+x_state26                                       -0.370* (0.090)
+x_state27                                      -0.498** (0.081)
+x_state28                                       -0.355. (0.128)
+x_state29                                      -0.537** (0.080)
+x_state31                                        -0.121 (0.098)
+x_state32                                       -0.246* (0.086)
+x_state33                                       -0.423* (0.097)
+x_state35                                        0.239. (0.105)
+x_state41                                        -0.024 (0.107)
+x_state42                                         0.208 (0.108)
+x_state43                                         0.059 (0.106)
+x_state50                                        -0.083 (0.122)
+x_state51                                         0.019 (0.101)
+x_state52                                         0.050 (0.107)
+x_state53                                        0.481* (0.142)
+x_total_pop_growth_1990_2014                                   
+________________________________________    ___________________
+S.E.: Clustered                               by: i_name_region
+Observations                                                181
+R2                                                      0.86724
+Adj. R2                                                 0.83962
+
+                                            model_spec_fcompa..
+Dependent Var.:                             y_energy_per_capita
+                                                               
+(Intercept)                                    -9.35*** (0.489)
+f_compact_contig_inter_dens                       -1.06 (0.621)
+x_mean_slope                                                   
+x_normalized_closeness_centrality_avg                          
+x_pop_2010                                       0.064. (0.028)
+x_prop_dom_urban                                               
+x_prop_razao_dep                                               
+x_wghtd_mean_household_income_per_capita                       
+I(x_pop_2010 x f_compact_contig_inter_dens)       0.081 (0.042)
+x_prop_high_educ                                               
+x_state12                                                      
+x_state13                                                      
+x_state14                                                      
+x_state15                                                      
+x_state16                                                      
+x_state17                                                      
+x_state21                                                      
+x_state22                                                      
+x_state23                                                      
+x_state24                                                      
+x_state25                                                      
+x_state26                                                      
+x_state27                                                      
+x_state28                                                      
+x_state29                                                      
+x_state31                                                      
+x_state32                                                      
+x_state33                                                      
+x_state35                                                      
+x_state41                                                      
+x_state42                                                      
+x_state43                                                      
+x_state50                                                      
+x_state51                                                      
+x_state52                                                      
+x_state53                                                      
+x_total_pop_growth_1990_2014                        2.79 (2.76)
+________________________________________    ___________________
+S.E.: Clustered                               by: i_name_region
+Observations                                                181
+R2                                                      0.04993
+Adj. R2                                                 0.02833
+---
+Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1

@@ -9,36 +9,42 @@ library(stargazer)
 
 d <- dagitty('dag {
 bb="0,0,1,1"
-f_compact_contig_inter_dens [exposure,pos="0.633,0.031"]
-x_circuity_avg [exposure,pos="0.615,0.259"]
-x_density_pop_02km_2014 [exposure,pos="0.432,0.371"]
-x_land_use_mix [exposure,pos="0.587,0.573"]
-x_mean_fleet_age [pos="0.664,0.884"]
-x_mean_slope [pos="0.411,0.254"]
-x_normalized_closeness_centrality_avg [exposure,pos="0.624,0.145"]
-x_pop_2010 [adjusted,pos="0.075,0.333"]
-x_prop_autos_dom [pos="0.630,0.435"]
-x_prop_dom_urban [pos="0.382,0.520"]
-x_prop_high_educ [pos="0.269,0.668"]
-x_prop_razao_dep [pos="0.450,0.744"]
-x_state [pos="0.166,0.530"]
-x_street_pop [pos="0.638,0.760"]
-x_total_pop_growth_1990_2014 [pos="0.146,0.036"]
-x_wghtd_mean_household_income_per_capita [pos="0.200,0.824"]
-y_energy_per_capita [outcome,pos="0.928,0.429"]
-f_compact_contig_inter_dens -> y_energy_per_capita
-x_circuity_avg -> y_energy_per_capita
+VKT [latent,pos="0.803,0.258"]
+f_compact_contig_inter_dens [exposure,pos="0.477,0.036"]
+trip_mode [latent,pos="0.760,0.579"]
+x_circuity_avg [exposure,pos="0.494,0.213"]
+x_density_pop_02km_2014 [exposure,pos="0.472,0.331"]
+x_land_use_mix [exposure,pos="0.440,0.532"]
+x_mean_fleet_age [pos="0.601,0.923"]
+x_mean_slope [pos="0.354,0.268"]
+x_normalized_closeness_centrality_avg [exposure,pos="0.488,0.123"]
+x_pop_2010 [adjusted,pos="0.055,0.404"]
+x_prop_autos_dom [pos="0.575,0.471"]
+x_prop_dom_urban [pos="0.343,0.438"]
+x_prop_high_educ [pos="0.223,0.675"]
+x_prop_razao_dep [pos="0.581,0.802"]
+x_state [pos="0.139,0.539"]
+x_street_pop [pos="0.528,0.645"]
+x_total_pop_growth_1990_2014 [pos="0.031,0.053"]
+x_wghtd_mean_household_income_per_capita [pos="0.215,0.879"]
+y_energy_per_capita [outcome,pos="0.918,0.429"]
+VKT -> y_energy_per_capita
+f_compact_contig_inter_dens -> VKT
+trip_mode -> y_energy_per_capita
+x_circuity_avg -> VKT
+x_density_pop_02km_2014 -> VKT
+x_density_pop_02km_2014 -> trip_mode
 x_density_pop_02km_2014 -> x_land_use_mix
 x_density_pop_02km_2014 -> x_prop_autos_dom
 x_density_pop_02km_2014 -> x_street_pop
-x_density_pop_02km_2014 -> y_energy_per_capita
+x_land_use_mix -> VKT
+x_land_use_mix -> trip_mode
 x_land_use_mix -> x_prop_autos_dom
-x_land_use_mix -> y_energy_per_capita
 x_mean_fleet_age -> y_energy_per_capita
 x_mean_slope -> x_circuity_avg
 x_mean_slope -> x_prop_autos_dom
 x_mean_slope -> y_energy_per_capita
-x_normalized_closeness_centrality_avg -> y_energy_per_capita
+x_normalized_closeness_centrality_avg -> VKT
 x_pop_2010 -> f_compact_contig_inter_dens
 x_pop_2010 -> x_density_pop_02km_2014
 x_pop_2010 -> x_land_use_mix
@@ -46,27 +52,31 @@ x_pop_2010 -> x_normalized_closeness_centrality_avg
 x_pop_2010 -> x_prop_dom_urban
 x_pop_2010 -> x_street_pop
 x_pop_2010 -> x_wghtd_mean_household_income_per_capita
+x_prop_autos_dom -> VKT
+x_prop_autos_dom -> trip_mode
 x_prop_autos_dom -> x_street_pop
-x_prop_autos_dom -> y_energy_per_capita
+x_prop_dom_urban -> VKT
+x_prop_dom_urban -> trip_mode
 x_prop_dom_urban -> x_density_pop_02km_2014
 x_prop_dom_urban -> x_prop_high_educ
-x_prop_dom_urban -> y_energy_per_capita
 x_prop_high_educ -> x_prop_razao_dep
+x_prop_razao_dep -> VKT
+x_prop_razao_dep -> trip_mode
 x_prop_razao_dep -> x_prop_autos_dom
-x_prop_razao_dep -> y_energy_per_capita
 x_state -> x_mean_slope
 x_state -> x_prop_dom_urban
 x_state -> x_prop_high_educ
 x_state -> x_wghtd_mean_household_income_per_capita
-x_street_pop -> y_energy_per_capita
+x_street_pop -> VKT
+x_street_pop -> trip_mode
 x_total_pop_growth_1990_2014 -> f_compact_contig_inter_dens
 x_total_pop_growth_1990_2014 -> x_normalized_closeness_centrality_avg
 x_total_pop_growth_1990_2014 -> x_pop_2010
 x_total_pop_growth_1990_2014 -> x_prop_dom_urban
+x_wghtd_mean_household_income_per_capita -> trip_mode
 x_wghtd_mean_household_income_per_capita -> x_mean_fleet_age
 x_wghtd_mean_household_income_per_capita -> x_prop_autos_dom
 x_wghtd_mean_household_income_per_capita -> x_street_pop
-x_wghtd_mean_household_income_per_capita -> y_energy_per_capita
 }')
 
 
@@ -74,7 +84,7 @@ x_wghtd_mean_household_income_per_capita -> y_energy_per_capita
 test <- dagitty::localTests(x = d, data = cov( df_fuel ))
 setDT(test)[p.value > 0.01] %>% nrow() / nrow(test)
 setDT(test)[p.value > 0.05] %>% nrow() / nrow(test)
-setDT(test)[p.value > 0.15] %>% nrow() / nrow(test)
+setDT(test)[p.value > 0.10] %>% nrow() / nrow(test)
 
 testImplications <- function( covariance.matrix, sample.size ){
   library(ggm)
@@ -261,9 +271,9 @@ testImplications <- function( covariance.matrix, sample.size ){
                        c("x_pop_2010","x_prop_razao_dep","x_prop_high_educ"),
                        c("x_pop_2010","x_prop_razao_dep","x_prop_dom_urban","x_state"),
                        c("x_pop_2010","x_state"),
-                       c("x_pop_2010","y_energy_per_capita","x_mean_slope","x_normalized_closeness_centrality_avg","x_prop_autos_dom","x_prop_dom_urban","x_prop_razao_dep","x_street_pop","x_wghtd_mean_household_income_per_capita","f_compact_contig_inter_dens","x_density_pop_02km_2014","x_land_use_mix"),
-                       c("x_pop_2010","y_energy_per_capita","x_street_pop","x_wghtd_mean_household_income_per_capita","f_compact_contig_inter_dens","x_density_pop_02km_2014","x_land_use_mix","x_mean_slope","x_normalized_closeness_centrality_avg","x_prop_autos_dom","x_prop_dom_urban","x_prop_high_educ"),
-                       c("x_pop_2010","y_energy_per_capita","x_prop_dom_urban","x_state","x_street_pop","x_wghtd_mean_household_income_per_capita","f_compact_contig_inter_dens","x_density_pop_02km_2014","x_land_use_mix","x_normalized_closeness_centrality_avg","x_prop_autos_dom"),
+                       c("x_pop_2010","y_energy_per_capita","x_density_pop_02km_2014","x_land_use_mix","x_normalized_closeness_centrality_avg","x_prop_autos_dom","x_prop_dom_urban","x_prop_razao_dep","x_street_pop","f_compact_contig_inter_dens","x_mean_slope","x_wghtd_mean_household_income_per_capita"),
+                       c("x_pop_2010","y_energy_per_capita","x_density_pop_02km_2014","x_land_use_mix","x_normalized_closeness_centrality_avg","x_prop_autos_dom","x_prop_dom_urban","x_street_pop","f_compact_contig_inter_dens","x_mean_slope","x_wghtd_mean_household_income_per_capita","x_prop_high_educ"),
+                       c("x_pop_2010","y_energy_per_capita","x_prop_dom_urban","x_state","x_density_pop_02km_2014","x_land_use_mix","x_normalized_closeness_centrality_avg","x_prop_autos_dom","x_street_pop","f_compact_contig_inter_dens","x_wghtd_mean_household_income_per_capita"),
                        c("x_prop_autos_dom","x_prop_dom_urban","x_pop_2010","x_state","x_prop_high_educ","x_density_pop_02km_2014"),
                        c("x_prop_autos_dom","x_prop_dom_urban","x_pop_2010","x_state","x_prop_razao_dep","x_density_pop_02km_2014"),
                        c("x_prop_autos_dom","x_prop_dom_urban","x_pop_2010","x_wghtd_mean_household_income_per_capita","x_prop_high_educ","x_mean_slope","x_density_pop_02km_2014"),
@@ -312,9 +322,9 @@ testImplications <- function( covariance.matrix, sample.size ){
                        c("x_prop_high_educ","x_total_pop_growth_1990_2014","x_state","x_prop_dom_urban"),
                        c("x_prop_high_educ","x_wghtd_mean_household_income_per_capita","x_pop_2010","x_state"),
                        c("x_prop_high_educ","x_wghtd_mean_household_income_per_capita","x_prop_dom_urban","x_state"),
-                       c("x_prop_high_educ","y_energy_per_capita","x_mean_slope","x_normalized_closeness_centrality_avg","x_prop_autos_dom","x_prop_dom_urban","x_prop_razao_dep","x_street_pop","x_wghtd_mean_household_income_per_capita","f_compact_contig_inter_dens","x_density_pop_02km_2014","x_land_use_mix"),
-                       c("x_prop_high_educ","y_energy_per_capita","x_wghtd_mean_household_income_per_capita","f_compact_contig_inter_dens","x_mean_slope","x_normalized_closeness_centrality_avg","x_prop_dom_urban","x_prop_razao_dep","x_pop_2010"),
-                       c("x_prop_high_educ","y_energy_per_capita","x_wghtd_mean_household_income_per_capita","x_mean_slope","x_prop_dom_urban","x_prop_razao_dep","x_pop_2010","x_total_pop_growth_1990_2014"),
+                       c("x_prop_high_educ","y_energy_per_capita","x_density_pop_02km_2014","x_land_use_mix","x_normalized_closeness_centrality_avg","x_prop_autos_dom","x_prop_dom_urban","x_prop_razao_dep","x_street_pop","f_compact_contig_inter_dens","x_mean_slope","x_wghtd_mean_household_income_per_capita"),
+                       c("x_prop_high_educ","y_energy_per_capita","x_normalized_closeness_centrality_avg","x_prop_dom_urban","x_prop_razao_dep","f_compact_contig_inter_dens","x_mean_slope","x_wghtd_mean_household_income_per_capita","x_pop_2010"),
+                       c("x_prop_high_educ","y_energy_per_capita","x_prop_dom_urban","x_prop_razao_dep","x_pop_2010","x_total_pop_growth_1990_2014","x_mean_slope","x_wghtd_mean_household_income_per_capita"),
                        c("x_prop_high_educ","y_energy_per_capita","x_prop_dom_urban","x_state","x_prop_razao_dep"),
                        c("x_prop_razao_dep","x_state","x_prop_high_educ"),
                        c("x_prop_razao_dep","x_street_pop","x_density_pop_02km_2014","x_pop_2010","x_prop_autos_dom","x_wghtd_mean_household_income_per_capita"),
@@ -332,12 +342,12 @@ testImplications <- function( covariance.matrix, sample.size ){
                        c("x_state","x_street_pop","x_mean_slope","x_prop_razao_dep","x_wghtd_mean_household_income_per_capita","x_pop_2010","x_prop_dom_urban"),
                        c("x_state","x_street_pop","x_wghtd_mean_household_income_per_capita","x_mean_slope","x_prop_high_educ","x_pop_2010","x_prop_dom_urban"),
                        c("x_state","x_total_pop_growth_1990_2014"),
-                       c("x_state","y_energy_per_capita","x_mean_slope","x_normalized_closeness_centrality_avg","x_prop_autos_dom","x_prop_dom_urban","x_prop_razao_dep","x_street_pop","x_wghtd_mean_household_income_per_capita","f_compact_contig_inter_dens","x_density_pop_02km_2014","x_land_use_mix"),
-                       c("x_state","y_energy_per_capita","x_wghtd_mean_household_income_per_capita","f_compact_contig_inter_dens","x_mean_slope","x_normalized_closeness_centrality_avg","x_prop_dom_urban","x_prop_razao_dep","x_pop_2010"),
-                       c("x_state","y_energy_per_capita","x_wghtd_mean_household_income_per_capita","x_mean_slope","x_prop_dom_urban","x_prop_razao_dep","x_pop_2010","x_total_pop_growth_1990_2014"),
-                       c("x_state","y_energy_per_capita","x_street_pop","x_wghtd_mean_household_income_per_capita","f_compact_contig_inter_dens","x_density_pop_02km_2014","x_land_use_mix","x_mean_slope","x_normalized_closeness_centrality_avg","x_prop_autos_dom","x_prop_dom_urban","x_prop_high_educ"),
-                       c("x_state","y_energy_per_capita","x_wghtd_mean_household_income_per_capita","f_compact_contig_inter_dens","x_mean_slope","x_normalized_closeness_centrality_avg","x_prop_dom_urban","x_pop_2010","x_prop_high_educ"),
-                       c("x_state","y_energy_per_capita","x_wghtd_mean_household_income_per_capita","x_mean_slope","x_prop_dom_urban","x_pop_2010","x_prop_high_educ","x_total_pop_growth_1990_2014"),
+                       c("x_state","y_energy_per_capita","x_density_pop_02km_2014","x_land_use_mix","x_normalized_closeness_centrality_avg","x_prop_autos_dom","x_prop_dom_urban","x_prop_razao_dep","x_street_pop","f_compact_contig_inter_dens","x_mean_slope","x_wghtd_mean_household_income_per_capita"),
+                       c("x_state","y_energy_per_capita","x_normalized_closeness_centrality_avg","x_prop_dom_urban","x_prop_razao_dep","f_compact_contig_inter_dens","x_mean_slope","x_wghtd_mean_household_income_per_capita","x_pop_2010"),
+                       c("x_state","y_energy_per_capita","x_prop_dom_urban","x_prop_razao_dep","x_pop_2010","x_total_pop_growth_1990_2014","x_mean_slope","x_wghtd_mean_household_income_per_capita"),
+                       c("x_state","y_energy_per_capita","x_density_pop_02km_2014","x_land_use_mix","x_normalized_closeness_centrality_avg","x_prop_autos_dom","x_prop_dom_urban","x_street_pop","f_compact_contig_inter_dens","x_mean_slope","x_wghtd_mean_household_income_per_capita","x_prop_high_educ"),
+                       c("x_state","y_energy_per_capita","x_normalized_closeness_centrality_avg","x_prop_dom_urban","f_compact_contig_inter_dens","x_mean_slope","x_wghtd_mean_household_income_per_capita","x_pop_2010","x_prop_high_educ"),
+                       c("x_state","y_energy_per_capita","x_prop_dom_urban","x_pop_2010","x_total_pop_growth_1990_2014","x_mean_slope","x_wghtd_mean_household_income_per_capita","x_prop_high_educ"),
                        c("x_street_pop","x_total_pop_growth_1990_2014","x_prop_dom_urban","x_pop_2010","x_state"),
                        c("x_street_pop","x_total_pop_growth_1990_2014","x_wghtd_mean_household_income_per_capita","x_prop_high_educ","x_mean_slope","x_pop_2010","x_prop_dom_urban"),
                        c("x_street_pop","x_total_pop_growth_1990_2014","x_prop_razao_dep","x_prop_dom_urban","x_wghtd_mean_household_income_per_capita","x_mean_slope","x_pop_2010"),
@@ -347,12 +357,12 @@ testImplications <- function( covariance.matrix, sample.size ){
                        c("x_street_pop","x_total_pop_growth_1990_2014","x_prop_razao_dep","x_wghtd_mean_household_income_per_capita","x_mean_slope","x_pop_2010","x_density_pop_02km_2014"),
                        c("x_street_pop","x_total_pop_growth_1990_2014","x_wghtd_mean_household_income_per_capita","x_prop_autos_dom","x_density_pop_02km_2014","x_pop_2010"),
                        c("x_total_pop_growth_1990_2014","x_wghtd_mean_household_income_per_capita","x_pop_2010"),
-                       c("x_total_pop_growth_1990_2014","y_energy_per_capita","x_mean_slope","x_normalized_closeness_centrality_avg","x_prop_autos_dom","x_prop_dom_urban","x_prop_razao_dep","x_street_pop","x_wghtd_mean_household_income_per_capita","f_compact_contig_inter_dens","x_density_pop_02km_2014","x_land_use_mix"),
-                       c("x_total_pop_growth_1990_2014","y_energy_per_capita","x_street_pop","x_wghtd_mean_household_income_per_capita","f_compact_contig_inter_dens","x_density_pop_02km_2014","x_land_use_mix","x_mean_slope","x_normalized_closeness_centrality_avg","x_prop_autos_dom","x_prop_dom_urban","x_prop_high_educ"),
-                       c("x_total_pop_growth_1990_2014","y_energy_per_capita","x_prop_dom_urban","x_state","x_street_pop","x_wghtd_mean_household_income_per_capita","f_compact_contig_inter_dens","x_density_pop_02km_2014","x_land_use_mix","x_normalized_closeness_centrality_avg","x_prop_autos_dom"),
-                       c("x_total_pop_growth_1990_2014","y_energy_per_capita","x_wghtd_mean_household_income_per_capita","f_compact_contig_inter_dens","x_mean_slope","x_normalized_closeness_centrality_avg","x_prop_dom_urban","x_prop_razao_dep","x_pop_2010"),
-                       c("x_total_pop_growth_1990_2014","y_energy_per_capita","x_wghtd_mean_household_income_per_capita","f_compact_contig_inter_dens","x_mean_slope","x_normalized_closeness_centrality_avg","x_prop_dom_urban","x_pop_2010","x_prop_high_educ"),
-                       c("x_total_pop_growth_1990_2014","y_energy_per_capita","x_prop_dom_urban","x_state","f_compact_contig_inter_dens","x_normalized_closeness_centrality_avg","x_pop_2010"))
+                       c("x_total_pop_growth_1990_2014","y_energy_per_capita","x_density_pop_02km_2014","x_land_use_mix","x_normalized_closeness_centrality_avg","x_prop_autos_dom","x_prop_dom_urban","x_prop_razao_dep","x_street_pop","f_compact_contig_inter_dens","x_mean_slope","x_wghtd_mean_household_income_per_capita"),
+                       c("x_total_pop_growth_1990_2014","y_energy_per_capita","x_density_pop_02km_2014","x_land_use_mix","x_normalized_closeness_centrality_avg","x_prop_autos_dom","x_prop_dom_urban","x_street_pop","f_compact_contig_inter_dens","x_mean_slope","x_wghtd_mean_household_income_per_capita","x_prop_high_educ"),
+                       c("x_total_pop_growth_1990_2014","y_energy_per_capita","x_prop_dom_urban","x_state","x_density_pop_02km_2014","x_land_use_mix","x_normalized_closeness_centrality_avg","x_prop_autos_dom","x_street_pop","f_compact_contig_inter_dens","x_wghtd_mean_household_income_per_capita"),
+                       c("x_total_pop_growth_1990_2014","y_energy_per_capita","x_normalized_closeness_centrality_avg","x_prop_dom_urban","x_prop_razao_dep","f_compact_contig_inter_dens","x_mean_slope","x_wghtd_mean_household_income_per_capita","x_pop_2010"),
+                       c("x_total_pop_growth_1990_2014","y_energy_per_capita","x_normalized_closeness_centrality_avg","x_prop_dom_urban","f_compact_contig_inter_dens","x_mean_slope","x_wghtd_mean_household_income_per_capita","x_pop_2010","x_prop_high_educ"),
+                       c("x_total_pop_growth_1990_2014","y_energy_per_capita","x_prop_dom_urban","x_state","x_pop_2010","f_compact_contig_inter_dens","x_normalized_closeness_centrality_avg"))
   data.frame( implication=unlist(lapply(implications,tos)),
               pvalue=unlist( lapply( implications, tst ) ) )
 
@@ -642,7 +652,7 @@ interact_plot(a, pred = 'f_compact_contig_inter_dens', modx = 'x_pop_2010', line
 
 # feols( formula(  all_models_specs[[1]][[1]] ) , data=df_log, cluster = "i_name_region")
 
-for ( i in names(all_models_specs) ){# i = names(all_models_specs)[5]
+for ( i in names(all_models_specs) ){# i = names(all_models_specs)[4]
 
   specs <- all_models_specs[i]
   specs <- unlist(specs)
@@ -650,11 +660,6 @@ for ( i in names(all_models_specs) ){# i = names(all_models_specs)[5]
   saveRDS(temp_model, file = paste0('./output/regression_output/', i,'.rds'))
 
   }
-
-
-
-
-
 
 
 
