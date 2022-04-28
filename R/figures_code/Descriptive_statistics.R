@@ -16,17 +16,18 @@ var_modelo <- c("y_energy_per_capita","f_compact_contig_inter_dens","x_circuity_
 df_UF_reg <- dplyr::select(df_UF,var_modelo)
 
 colnames(df_UF_reg) <- c(
-  "Energia per capita","Fator de contiguidade, compacidade intersecção",
+  "Energia per capita","Fator de contiguidade, compacidade intersecÃ§Ã£o",
  "Sinuosidade das vias","Densidade populacional experienciada 2km","Uso do Solo",
-  "Centralidade por proximidade","Idade Média da frota de veículos",
- "Declividade do solo","População Total em 2010",
- "Percentual de domicílios urbanos","Percentual de população com ensino superior",
- "Razão de dependência financeira",#"Dummy de estado",
- "Taxa de crescimento geométrico entre 1990 e 2014", "Renda média per capita")
+  "Centralidade por proximidade","Idade MÃ©dia da frota de veÃ­culos",
+ "Declividade do solo","PopulaÃ§Ã£o Total em 2010",
+ "Percentual de domicÃ­lios urbanos","Percentual de populaÃ§Ã£o com ensino superior",
+ "RazÃ£o de dependÃªncia financeira",#"Dummy de estado",
+ "Taxa de crescimento geomÃ©trico entre 1990 e 2014", "Renda mÃ©dia per capita")
 
 #### PLOTTING DATA ----
-st(df_UF_reg,title = "Estatística descritiva",
-   summ =  c('mean(x)',   'sd(x)', 'min(x)','max(x)'),summ.names = c("Média",
-   "Desvio padrão","Mínimo","Máximo"))
+DStat <- st(df_UF_reg,title = "EstatÃ­stica descritiva",
+   summ =  c('mean(x)',   'sd(x)', 'min(x)','max(x)'),summ.names = c("MÃ©dia",
+   "Desvio padrÃ£o","MÃ­nimo","MÃ¡ximo"))
 
-
+#### SAVING DATA ----
+write.csv(DStat, "Estatistica_Descritiva")
