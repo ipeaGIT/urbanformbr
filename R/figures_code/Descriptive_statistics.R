@@ -22,7 +22,7 @@ colnames(df_UF_reg) <- c(
  "Declividade do solo","População Total em 2010",
  "Percentual de domicílios urbanos","Percentual de população com ensino superior",
  "Razão de dependência financeira",#"Dummy de estado",
- "Taxa de crescimento geométrico entre 1990 e 2014", "Renda média per capita")
+ "Taxa de crescimento geométrico entre 1990 e 2015", "Renda média per capita")
 
 #### PLOTTING DATA ----
 DStat <- st(df_UF_reg,title = "Estatística descritiva",
