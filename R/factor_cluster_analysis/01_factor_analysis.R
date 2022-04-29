@@ -150,9 +150,9 @@ df_factor_results <- df_factor_results %>%
 table_loadings <- psych::fa.sort(r_factor_varimax$loadings[])
 
 df_vaccounted <- data.frame(
-  "SS loadings" = r_factor_varimax$Vaccounted[1,]
-  , "Proportion Var" = r_factor_varimax$Vaccounted[2,]
-  , "Cumulative Var" = r_factor_varimax$Vaccounted[3,]
+  "SS.loadings" = r_factor_varimax$Vaccounted[1,]
+  , "Proportion.Var" = r_factor_varimax$Vaccounted[2,]
+  , "Cumulative.Var" = r_factor_varimax$Vaccounted[3,]
 ) %>%
   t()
 
@@ -187,6 +187,56 @@ stargazer::stargazer(
   , out = "./output/factor_output/factor_var_accounted_table.html"
   , type = "html"
 )
+
+# * as .xls -----------------------------------------------------------------
+
+# table loadings
+df_table_loadings <- table_loadings %>%
+  as.data.frame()
+
+data.table::setDT(df_table_loadings, keep.rownames = "Variáveis")
+
+data.table::setnames(
+  df_table_loadings,
+  old = 2:length(df_table_loadings),
+  new = paste0("PC", 1:7)
+)
+
+v_variaveis <- c(
+  "Contiguidade"
+  , "Compacidade"
+  , "Sinuosidade vias"
+  , "Conectividade vias"
+  , "Densidade populacional"
+  , "Mix uso do solo"
+  , "Densidade vias"
+)
+
+df_table_loadings$Variáveis <- v_variaveis
+
+rio::export(df_table_loadings, "output/factor_output/factor_loadings.xlsx")
+
+# vaccounted
+df_vaccounted <- df_vaccounted %>%
+  as.data.frame()
+
+data.table::setDT(df_vaccounted, keep.rownames = "Estatísticas")
+
+data.table::setnames(
+  df_vaccounted,
+  old = 2:length(df_vaccounted),
+  new = paste0("PC", 1:7)
+)
+
+v_estatisticas <- c(
+  "Soma cargas fatoriais ao quadrado"
+  ,"Proporção variância explicada"
+  ,"Variância acumulada"
+)
+df_vaccounted$Estatísticas <- v_estatisticas
+
+rio::export(df_vaccounted, "output/factor_output/factor_var_accounted.xlsx")
+
 
 # correlogram -------------------------------------------------------------
 #
