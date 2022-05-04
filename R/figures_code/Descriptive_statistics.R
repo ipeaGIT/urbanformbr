@@ -27,7 +27,7 @@ colnames(df_UF_reg) <- c(
 #### PLOTTING DATA ----
 DStat <- st(df_UF_reg,title = "Estatística descritiva",
    summ =  c('mean(x)',   'sd(x)', 'min(x)','max(x)'),summ.names = c("Média",
-   "Desvio padrão","Mínimo","Máximo"))
+   "Desvio padrão","Mínimo","Máximo"), out = "csv")
 
 #### SAVING DATA ----
-write.csv(DStat, "Estatistica_Descritiva")
+writexl::write_xlsx(DStat,"descritptive_statiscs")
