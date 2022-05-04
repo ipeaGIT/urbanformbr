@@ -5,8 +5,12 @@
 # dataset-tile used to create a map at urbanformbr report
 # uca from Belo Horizonte is used
 
-# setup -------------------------------------------------------------------
+# tile containing belo horizonte: ID 10_13
+# link
+# http://cidportal.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_LDSMT_GLOBE_R2018A/GHS_BUILT_LDSMT_GLOBE_R2018A_3857_30/V2-0/tiles/GHS_BUILT_LDSMT_GLOBE_R2018A_3857_30_V2_0_9_13.zip
 
+# setup -------------------------------------------------------------------
+source("R/fun_support/setup.R")
 
 # create tempfile ---------------------------------------------------------
 
@@ -14,100 +18,25 @@ temp <- tempfile()
 
 
 # function ----------------------------------------------------------------
-666666666666 ATUALIZAR FUNCAO
-f_download_unzip <- function(base, ano, resolucao){
 
-  if (base == 'SMOD' & resolucao == 250){
+f_download_unzip <- function(tile_id){
 
-    message("Base 'SMOD' suporta apenas resolucao == '1K' ")
+  temp = tempfile()
 
-  } else if (base == 'BUILT' & ano == 2015) {
-
-    message("Base 'BUILT' suporta apenas ano == 1975,1990,2000,2014 ")
-
-  } else {
-
-    temp = tempfile()
-
-    f_endereco <- function(base, ano, resolucao){
-
-      root = 'http://cidportal.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL'
-
-      #if (resolucao %in% c(250,'1K')) {
-
-      if (base == 'BUILT') {
-
-        ghs_type = paste0('GHS_',base,'_LDSMT_GLOBE_R2018A')
-
-        globe = paste0('GHS_',base,'_LDS',ano,'_GLOBE_R2018A_54009_', resolucao)
-
-        v = 'V2-0'
-
-        ext = paste0(globe,'_','V2_0.zip')
-
-        endereco = paste(root,ghs_type,globe,v,ext,sep = '/')
-
-        return(endereco)
-
-      } else if (base == 'POP') {
-
-        ghs_type = paste0('GHS_',base,'_MT_GLOBE_R2019A')
-
-        globe = paste0('GHS_',base,'_E',ano,'_GLOBE_R2019A_54009_', resolucao)
-
-        v = 'V1-0'
-
-        ext = paste0(globe,'_','V1_0.zip')
-
-        endereco = paste(root,ghs_type,globe,v,ext,sep = '/')
-
-        return(endereco)
-
-      } else if(base == 'SMOD') {
-
-        ghs_type = paste0('GHS_',base,'_POP_GLOBE_R2019A')
-
-        globe = paste0('GHS_',base,'_POP',ano,'_GLOBE_R2019A_54009_', resolucao)
-
-        v = 'V2-0'
-
-        ext = paste0(globe,'_','V2_0.zip')
-
-        endereco = paste(root,ghs_type,globe,v,ext,sep = '/')
-
-        return(endereco)
-
-      } else {
-
-        message("Inserir uma das seguintes bases: BUILT, POP ou SMOD ")
-
-      }
-
-      #}
-
-    }
-
-  }
-
-  endereco = f_endereco(base, ano, resolucao)
+  endereco = paste0("http://cidportal.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_LDSMT_GLOBE_R2018A/GHS_BUILT_LDSMT_GLOBE_R2018A_3857_30/V2-0/tiles/GHS_BUILT_LDSMT_GLOBE_R2018A_3857_30_V2_0_",tile_id,".zip")
 
   download.file(endereco, temp)
 
-  unzip(zipfile = temp, exdir = paste0(ghsl_dir, "/", base))
+  if (!dir.exists("../../data-raw/ghsl/BUILT/multitemporal_30m")){
+    dir.create("../../data-raw/ghsl/BUILT/multitemporal_30m")
+  }
+
+  unzip(zipfile = temp, exdir ="../../data-raw/ghsl/BUILT/multitemporal_30m")
 
 }
 
 
-
-# * parallel processing ---------------------------------------------------
-
-future::plan(future::multisession)
-options(future.globals.maxSize = Inf)
-
 # run function ------------------------------------------------------------
-
-furrr::future_walk(.x = c(1975,1990,2000,2014), function(x)
-  f_download_unzip(base = 'BUILT',ano = x, resolucao = 250)
-)
+f_download_unzip()
 
 
