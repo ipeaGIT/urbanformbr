@@ -12,11 +12,13 @@ library(PupillometryR)
 
 
 # taxas de crescimento por cidade, período e tipo de crescimento
-urban_growth_df <- read_rds("../../data/urbanformbr/urban_growth/urban_growth.rds") %>%
+urban_growth_df <-
+  #read_rds("../../data/urbanformbr/urban_growth/urban_growth.rds") %>%
+  read_rds("data/urban_growth.rds") %>%
   ungroup() %>%
   mutate(growth_type = factor(growth_type,
-                              levels = c("upward", "infill", "extension", "leapfrog"),
-                              labels = c("Adensamento", "Preenchimento", "Extensão", "Leapfrog")))
+                              levels = c("upward", "extension", "infill", "leapfrog"),
+                              labels = c("Adensamento", "Extensão", "Preenchimento", "Leapfrog")))
 
 
 # porte da cidade
@@ -71,7 +73,7 @@ plot_growth_rates_by_period <- function(data, variable, start, end, remove_outli
   s <- sprintf("Período de %d a %d", start, end)
 
   # plot
-  data$growth_type <- fct_rev(data$growth_type)
+  # data$growth_type <- fct_rev(data$growth_type)
   data$size <- factor(data$size,
                       levels = c("médio", "grande"),
                       labels = c("Cidades Médias", "Cidades Grandes"))
