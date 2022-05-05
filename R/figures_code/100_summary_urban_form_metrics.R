@@ -250,11 +250,19 @@ plots_compacity <- plot_landscape_metric(metric_name = "x_compacity_2014", metri
 plots_contiguity <- plot_landscape_metric(metric_name = "x_contiguity_2014", metric_long_name = "Contiguidade", size = 45000)
 
 
+# adiciona nomes das métricas aos títulos das colunas
 plots_sinuosity[[1]] <- plots_sinuosity[[1]] + labs(subtitle = "Sinuosidade")
 plots_intersection_density[[1]] <- plots_intersection_density[[1]] + labs(subtitle = "Densidade de Interseções")
 plots_closeness[[1]] <- plots_closeness[[1]] + labs(subtitle = "Centralidade por Proximidade")
 plots_compacity[[1]] <- plots_compacity[[1]] + labs(subtitle = "Compacidade")
 plots_contiguity[[1]] <- plots_contiguity[[1]] + labs(subtitle = "Contiguidade")
+
+
+# adiciona níveis alto, médio e baixo aos nomes das linhas
+plots_compacity[[1]] <- plots_compacity[[1]] + labs(y = "alta") + theme(axis.title.y = element_text())
+plots_compacity[[2]] <- plots_compacity[[2]] + labs(y = "média") + theme(axis.title.y = element_text())
+plots_compacity[[3]] <- plots_compacity[[3]] + labs(y = "baixa") + theme(axis.title.y = element_text())
+
 
 all_plots <- c(plots_compacity, plots_contiguity,
                plots_sinuosity, plots_intersection_density, plots_closeness)
@@ -266,3 +274,8 @@ composite_plot
 ggsave(here::here("figures", "urban_form_summary.png"),
        plot = composite_plot, width = 297, height = 210,
        units = "mm", dpi = 300)
+
+
+
+
+
