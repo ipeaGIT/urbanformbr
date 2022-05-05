@@ -1,38 +1,33 @@
-#' https://tanthiamhuat.files.wordpress.com/2019/06/penalized-regression-essentials.pdf
+# this scripts prepare the data for the DAG and regression models
 
-
-library(pbapply)
 library(data.table)
-library(stargazer)
 library(readr)
 library(tidyverse)
-library(caret)
-library(glmnet)
-library(mctest)
-library(doParallel)
-library(foreach)
-library(jtools)
-library(interactions)
-library(fixest)
+
+
+
+
+# library(pbapply)
+# library(stargazer)
+# library(caret)
+# library(glmnet)
+# library(mctest)
+# library(doParallel)
+# library(foreach)
+# library(jtools)
+# library(interactions)
+# library(fixest)
 
 options(scipen = 99)
 `%nin%` <- Negate(`%in%`)
 
 
 
-############### 1. prep data --------------------------
 
 ############### 1.1 read data
-df_raw <- readr::read_rds("../../data/urbanformbr/pca_regression_df/pca_regression_df_ready_to_use.rds")
+# df_raw <- readr::read_rds("../../data/urbanformbr/pca_regression_df/pca_regression_df_ready_to_use.rds")
+df_raw <- data.table::fread("C:/Users/user/Downloads/consolidated_data1/urbanformbr_metrics_full.csv", encoding = 'UTF-8')
 glimpse(df_raw)
-
-
-## add columns with state and region
-df_raw$x_state <- substring(df_raw$i_code_urban_concentration, 1,2) %>% as.numeric()
-
-
-region_labels <- geobr::read_state() %>% setDT()
-df_raw[region_labels, on=c('x_state'='code_state'), c('name_state' , 'name_region') := list(i.name_state, i.name_region)]
 
 
 
@@ -47,103 +42,95 @@ df_raw[region_labels, on=c('x_state'='code_state'), c('name_state' , 'name_regio
 to_be_removed <- c(4322400, 4108304, 5003207, 4316808)
 df_raw <- subset(df_raw, i_code_urban_concentration %nin% to_be_removed)
 
-        # ### 666666666666666666666666666
-        # df_raw[ i_name_urban_concentration %like% 'Internacional']
-        # a[ name_urban_concentration %like% 'Santa Cruz do Sul']
-        #
-        # a <- geobr::read_urban_concentrations()
-        # a <- subset(a, pop_total_2010 >=100000)
-        # unique(a$code_urban_concentration) %>% length()
-        #
-        # subset(a, code_urban_concentration %in% to_be_removed)
-
 
 ############### 1.2 convert values to log
-#' because of non-positive values, we use
-#' inverse hyperbolic sine transformation,
-#'  which has the same effect and interpretation
-
-# cols not to log
 
 # id columns
-id_cols <- c('i_code_urban_concentration', 'i_name_urban_concentration', 'i_name_uca_case')
+id_cols <- c( names(df_raw)[ names(df_raw) %like% 'i_' ], 'x_state')
+glimpse(df_raw)
+
 
 # cols no to log because of non-positive values
-cols_not_to_log <- c(  'x_region','name_region',
-                       'x_state', 'name_state',
-                       'd_large_uca_pop'
+summary(df_raw$x_total_pop_growth_1990_2014)
+cols_not_to_log <- c( 'f_compact_contig_inter_dens'
+                      , 'x_total_pop_growth_1990_2014'
                       , 'd_tma'
-                     # ,  'x_land_use_mix'
-                      , 'x_pop_growth_15_00'
-                      , 'x_prop_work_from_home_res_not_nucleo'
-                      , 'x_prop_work_other_muni_res_nucleo'
-                      , 'x_prop_work_other_muni_res_not_nucleo'
-                      , 'f_compact_contig_inter_dens'
+                      , 'x_leapfrog_pop_growth_1990_2014'
+                      , 'x_infill_pop_growth_1990_2014'
+                      , 'x_extension_pop_growth_1990_2014'
                       , 'x_prop_pop_sub'
-                     , 'x_pop_growth_1975_2015'
-                     , 'x_prop_slope_above_10'
+                      , 'x_upward_pop_growth_1990_2014'
                       )
+
 cols_to_log <- colnames(df_raw)[ colnames(df_raw) %nin% c(id_cols, cols_not_to_log) ]
 
+# log transformation
 df_log <- copy(df_raw)
 df_log[, (cols_to_log) := lapply(.SD, function(x){ log(x) } ), .SDcols=cols_to_log]
-# df_log[, (cols_to_log) := lapply(.SD, function(x){ log(x + sqrt(x^2 + 1) ) } ), .SDcols=cols_to_log]
+
+#' because of non-positive values, we use
+#' inverse hyperbolic sine transformation,
+#' which has the same effect and interpretation
+df_log[, (cols_not_to_log) := lapply(.SD, function(x){ log(x + sqrt(x^2 + 1) ) } ), .SDcols=cols_not_to_log]
 
 glimpse(df_log)
 summary(df_log)
 
 
 
-############### 1.3 select variables to drop
-# dropping built area vars because we measure 'compactness / sprawl' with the x_avg_cell_distance var already
-drop1 <- c( # 'x_built_total_2014'
-            # 'x_urban_extent_size_2014'
-            # 'x_prop_built_consolidated_area_2014'
-            'd_tma'
-           ,'name_region'
-           , 'name_state'
-           #, 'x_urban_extent_size_2014'
-           )
+
+############### 1.3 select variables to keep
+
+cols_to_keep <- c( ## id columns
+              #     'i_code_urban_concentration'
+                   'x_state'
+              #    , 'i_name_urban_concentration'
+              #    , 'i_name_uca_case'
+              #    , 'i_name_state'
+              #    , 'i_name_region'
+
+                   ## dependent vars
+                   , 'y_energy_per_capita'
+                   # , 'y_wghtd_mean_commute_time'
+
+                   ## local context covariates
+                   #, 'x_sd_elevation'
+                   , 'x_mean_slope'
+                   , 'x_total_pop_growth_1990_2014'
+                   , 'x_mean_fleet_age' # ----- ? x_mean_age_auto ?
+                   , 'x_prop_dom_urban'
+                   # , 'x_prop_motos_dom'
+                   , 'x_prop_autos_dom'
+                   , 'x_wghtd_mean_household_income_per_capita'
+                   , 'x_prop_high_educ'
+                   , 'x_prop_razao_dep'
+                   , 'x_pop_2010'
+                   , 'x_street_pop'
+                   # , 'x_prop_pop_sub'
+                   # , 'd_tma'
+                   # , 'x_prop_employed'
+                   # , 'x_prop_formal'
+                   # ? 'x_prop_new_auto'
+
+                   ## urban form
+                   , 'f_compact_contig_inter_dens'
+                   , 'x_density_pop_02km_2014'
+                   # , 'x_density_pop_03km_2014'
+                   # , 'x_density_pop_05km_2014'
+                   # , 'x_density_pop_10km_2014'
+                   , 'x_land_use_mix'
+                   # , 'x_contiguity_2014'
+                   # , 'x_compacity_2014'
+                   , 'x_circuity_avg'
+                   , 'x_intersection_density_km'
+                   , 'x_normalized_closeness_centrality_avg'
+                   )
 
 
-drop2 <- c('x_sd_elevation' #, 'x_mean_slope' # we already use x_circuity_avg
-           , 'd_large_uca_pop'              # we control for pop continuous
-           # , 'x_rooms_per_household'        # we control for experienced density
-           # , 'x_residents_per_household'    # we control for experienced density
-          # , 'x_prop_black'                 # no strong theoretical justification
-           , 'x_street_length' #  we control for x_street_pop
-           )
 
-
-#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# drop on radius in experimented measures
-drop3 <- c(
-           # 'x_density_pop_10km_2015',
-           'x_built_area_coverage_05km_2014', 'x_built_area_coverage_10km_2014',
-           'x_land_use_mix_5km', 'x_land_use_mix_10km', 'x_land_use_mix_15km'
-           )
-
-
-# other multicolinear variables
-drop4 <- c( 'x_prop_services'  # colinear with x_prop_industry
-        #  , 'x_prop_employed'  # colinear with x_wghtd_mean_household_income_per_capita
-         # , 'x_prop_high_educ' # colinear with x_wghtd_mean_household_income_per_capita
-         # , 'x_prop_formal'    # colinear with x_wghtd_mean_household_income_per_capita
-         # , 'x_k_avg'           # colinear with x_wghtd_mean_household_income_per_capita
-)
-
-# work from home
-drop5 <- c(   'x_prop_work_from_home_res_nucleo'
-            , 'x_prop_work_from_home_res_not_nucleo'
-            , 'x_prop_work_other_muni_res_nucleo'
-            , 'x_prop_work_other_muni_res_not_nucleo')
-
-
-### drop vars
-df_fuel <- dplyr::select(df_log, - c('y_wghtd_mean_commute_time', all_of(c(id_cols, drop1, drop2, drop4, drop5)) ))
+### Keep vars
+df_fuel <- dplyr::select(df_log, all_of(cols_to_keep))
 head(df_fuel)
 
-
-
-
+fwrite(df_fuel, 'df_fuel.csv')
 
