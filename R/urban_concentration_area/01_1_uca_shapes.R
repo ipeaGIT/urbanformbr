@@ -95,7 +95,7 @@ f_uca_shapes <- function(){
   # 5 save resulting shape --------------------------------------------------
   saveRDS(
     object = dissolved,
-    file = '//storage6/usuarios/Proj_acess_oport/data/urbanformbr/urban_area_shapes/urban_area_pop_100000_dissolved.rds',
+    file = '../../data/urbanformbr/urban_area_shapes/urban_area_pop_100000_dissolved.rds',
     compress = 'xz'
   )
 
