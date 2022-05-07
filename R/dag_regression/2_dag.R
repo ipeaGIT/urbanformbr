@@ -652,7 +652,7 @@ interact_plot(a, pred = 'f_compact_contig_inter_dens', modx = 'x_pop_2010', line
 
 # feols( formula(  all_models_specs[[1]][[1]] ) , data=df_log, cluster = "i_name_region")
 
-for ( i in names(all_models_specs) ){# i = names(all_models_specs)[4]
+for ( i in names(all_models_specs) ){# i = names(all_models_specs)[1]
 
   specs <- all_models_specs[i]
   specs <- unlist(specs)
@@ -660,6 +660,27 @@ for ( i in names(all_models_specs) ){# i = names(all_models_specs)[4]
   saveRDS(temp_model, file = paste0('./output/regression_output/', i,'.rds'))
 
   }
+
+
+# # check marginal effects ----------------------
+
+library(ggplot2)
+library(margins)
+library(marginaleffects)
+
+# inverse hyperbolic sine
+invs <- function(x){ log(x + sqrt(x^2 + 1) ) }
+
+
+all_models_specs[1]
+
+mlog <- feols(fml = log(y_energy_per_capita) ~ invs(f_compact_contig_inter_dens) + log(x_circuity_avg) + log(x_density_pop_02km_2014) + log(x_land_use_mix) + log(x_normalized_closeness_centrality_avg) + log(x_mean_fleet_age) + log(x_mean_slope) + log(x_pop_2010) + log(x_prop_dom_urban) + log(x_prop_high_educ) + log( x_prop_razao_dep) + log(x_state) + invs(x_total_pop_growth_1990_2014) + log(x_wghtd_mean_household_income_per_capita) + I(log(x_pop_2010)*invs(f_compact_contig_inter_dens))
+              , data=df_raw, cluster='i_name_region')
+
+summary(mlog)
+
+plot_cme(mlog, effect = "f_compact_contig_inter_dens",
+         condition = 'x_pop_2010')
 
 
 
