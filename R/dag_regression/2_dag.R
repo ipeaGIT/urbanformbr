@@ -6,6 +6,7 @@ library(stargazer)
 
 
 # dag model ----------------------------------
+#' http://dagitty.net/dags.html?id=Uxpjl7
 
 d <- dagitty('dag {
 bb="0,0,1,1"
@@ -25,7 +26,7 @@ x_prop_high_educ [pos="0.223,0.675"]
 x_prop_razao_dep [pos="0.581,0.802"]
 x_state [pos="0.139,0.539"]
 x_street_pop [pos="0.528,0.645"]
-x_total_pop_growth_1990_2014 [pos="0.031,0.053"]
+x_total_pop_growth_1990_2014 [pos="0.126,0.052"]
 x_wghtd_mean_household_income_per_capita [pos="0.215,0.879"]
 y_energy_per_capita [outcome,pos="0.918,0.429"]
 VKT -> y_energy_per_capita
@@ -387,9 +388,7 @@ aaaaaa <- subset(test, implication %like% 'x_prop_autos_dom')
 aaaaaa <- subset(aaaaaa, implication %like% 'x_normalized_closeness_centrality_avg')
 
 
-a <- cor(df_log$x_normalized_closeness_centrality_avg  , df_log[, 8:81])
 
-a[a > 0.1]
 
   # vars mais repetidas
   implication <- setDT(test)[pvalue < 0.1]$implication
@@ -411,52 +410,53 @@ a[a > 0.1]
 
 
 #### DAG Figure ---------------------
-
-# convert DAG to tidy df
-dag_tidy <- tidy_dagitty(d)
-
-# label of variables
-vars_urban_form <- c('f_compact_contig_inter_dens', 'x_circuity_avg', 'x_density_pop_02km_2014', 'x_land_use_mix', 'x_normalized_closeness_centrality_avg', 'I(x_pop_2010 * f_compact_contig_inter_dens)')
-setDT(dag_tidy$data)
-dag_tidy$data[, var_type := fcase(name %in% 'y_energy_per_capita', 'outcome',
-                                    name %in% vars_urban_form, 'expousure')]
-
-# factor variables with lables
-dag_tidy$data$name <- factor(dag_tidy$data$name,
-                             levels= unique(dag_tidy$data$name),
-                             labels=c('f.compact_contg_interDenst'
-                                    , 'sinuosidade'
-                                    , 'densidade_pop'
-                                    , 'mix_uso_solo'
-                                    , 'idade_frota'
-                                    , 'declividade'
-                                    , 'closeness_centrl'
-                                    , 'pop_total'
-                                    , 'prop_dom_auto'
-                                    , 'prop_dom_urban'
-                                    , 'prop_alta_escol'
-                                    , 'pop_razao_dependnc'
-                                    , 'unidade_federacao'
-                                    , 'ruas_km_por_pop'
-                                    , 'pop_cresc_1990-2014'
-                                    , 'renda'
-                                    , 'energia_pct')
-                             )
-
-
-temp_fig <-ggplot(data = dag_tidy,
-                   aes( x = x, y = y, xend = xend, yend = yend, color=var_type), ) +
-              geom_dag_point(alpha=.7, size=10) +
-              geom_dag_edges( edge_colour='gray40', edge_width=.6, edge_alpha=.7,
-                              arrow_directed = grid::arrow(length = grid::unit(5, "pt"), type = "closed"),
-                              ) +
-              geom_dag_text(size=2.5, col = "black", nudge_y=-.06) +
-              theme_dag() +
-  theme(legend.position='none')
-
-
-ggsave(temp_fig, file='./figures/dag_simple.png', dpi=300,
-       width = 16, height = 12, units = 'cm')
+#
+# # convert DAG to tidy df
+# dag_tidy <- tidy_dagitty(d)
+#
+# # label of variables
+# vars_urban_form <- c('f_compact_contig_inter_dens', 'x_circuity_avg', 'x_density_pop_02km_2014', 'x_land_use_mix', 'x_normalized_closeness_centrality_avg', 'I(x_pop_2010 * f_compact_contig_inter_dens)')
+# setDT(dag_tidy$data)
+# dag_tidy$data[, var_type := fcase(name %in% 'y_energy_per_capita', 'outcome',
+#                                     name %in% vars_urban_form, 'expousure')]
+#
+# # factor variables with lables
+# dag_tidy$data$name <- factor(dag_tidy$data$name,
+#                              levels= unique(dag_tidy$data$name),
+#                              labels=c('VKT'
+#                                     , 'f.compact_contg_interDenst'
+#                                     , 'sinuosidade'
+#                                     , 'densidade_pop'
+#                                     , 'mix_uso_solo'
+#                                     , 'idade_frota'
+#                                     , 'declividade'
+#                                     , 'closeness_centrl'
+#                                     , 'pop_total'
+#                                     , 'prop_dom_auto'
+#                                     , 'prop_dom_urban'
+#                                     , 'prop_alta_escol'
+#                                     , 'pop_razao_dependnc'
+#                                     , 'unidade_federacao'
+#                                     , 'ruas_km_por_pop'
+#                                     , 'pop_cresc_1990-2014'
+#                                     , 'renda'
+#                                     , 'energia_pct')
+#                              )
+#
+#
+# temp_fig <-ggplot(data = dag_tidy,
+#                    aes( x = x, y = y, xend = xend, yend = yend, color=var_type), ) +
+#               geom_dag_point(alpha=.7, size=10) +
+#               geom_dag_edges( edge_colour='gray40', edge_width=.6, edge_alpha=.7,
+#                               arrow_directed = grid::arrow(length = grid::unit(5, "pt"), type = "closed"),
+#                               ) +
+#               geom_dag_text(size=2.5, col = "black", nudge_y=-.06) +
+#               theme_dag() +
+#   theme(legend.position='none')
+#
+#
+# ggsave(temp_fig, file='./figures/dag_simple.png', dpi=300,
+#        width = 16, height = 12, units = 'cm')
 
 
 #### determine adjustments (model specification) ---------------------
@@ -575,7 +575,7 @@ ggplot(fitted_data, aes(x = .fitted, y = .resid)) +
   # scale_color_distiller(palette = 'grays') +
   theme_minimal()
 
-#>>>> It seems errors are clustered by state
+#>>>> It seems errors are clustered by region
 
 
 # in case there is heteroscedasticity, use ols with robust standard errors
@@ -648,7 +648,7 @@ interact_plot(a, pred = 'f_compact_contig_inter_dens', modx = 'x_pop_2010', line
 
 
 
-### feols pra valer ------------------------------------
+### 666 feols pra valer ------------------------------------
 
 # feols( formula(  all_models_specs[[1]][[1]] ) , data=df_log, cluster = "i_name_region")
 

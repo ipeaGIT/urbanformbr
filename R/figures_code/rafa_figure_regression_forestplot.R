@@ -119,11 +119,13 @@ tipping_point = exp(0.010205020 - f / i)
 #> 123138.2
 
 
-#### Annex - Regression tables ----------------------------
+# Annex - Regression tables ----------------------------
 # https://vincentarelbundock.github.io/modelsummary/articles/modelsummary.html
 
 library(modelsummary)
-
+library(ggplot2)
+library(ggthemes)
+library(flextable)
 
 # read all models
 files <- list.files('./output/regression_output/', pattern = '.rds', full.names = T)
@@ -131,35 +133,39 @@ files <- list.files('./output/regression_output/', pattern = '.rds', full.names 
 
 
 for( i in files){ # i = files[4]
-print(i)
-# read model
-temp_model <- readRDS(i)
 
-# plot
-temp_fig <- modelplot(temp_model, coef_omit = 'Interc|x_state')
-temp_fig <- temp_fig + theme(legend.position = 'bottom')
+  print(i)
 
-ggsave(temp_fig,
-       file = paste0('./output/regression_output/annex_fig_',names(temp_model)[1], '.png'),
-       width = 16, height = 20, units='cm')
+  # read model
+  temp_model <- readRDS(i)
 
-# table
-modelsummary(temp_model,
-             stars= T,
-             # statistic = 'conf.int',
-             statistic = NULL,
-             estimate = "{estimate} {stars} [{conf.low}, {conf.high}]",
-             coef_omit = 'Interc|x_state',
-             output = paste0('./output/regression_output/annex_table_',names(temp_model)[1], '.png'))
+  # # plot
+  # temp_fig <- modelplot(temp_model, coef_omit = 'Interc|x_state')
+  # temp_fig <- temp_fig + theme(legend.position = 'bottom')
+  #
+  # ggsave(temp_fig,
+  #        file = paste0('./output/regression_output/annex_fig_',names(temp_model)[1], '.png'),
+  #        width = 16, height = 20, units='cm')
 
+  # table docx
+  modelsummary(temp_model,
+               stars= T,
+               # statistic = 'conf.int',
+               statistic = NULL,
+               estimate = "{estimate} {stars} [{conf.low}, {conf.high}]",
+               coef_omit = 'x_state',
+               gof_omit= c("Within|Pseudo"),
+               output = paste0('./output/regression_output/annex_table_',names(temp_model)[1], '.docx'))
 
-modelsummary(temp_model,
-             stars= T,
-             # statistic = 'conf.int',
-             statistic = NULL,
-             estimate = "{estimate} [{conf.low}, {conf.high}] {stars}",
-             coef_omit = 'Interc|x_state',
-             output = paste0('./output/regression_output/annex_table_',names(temp_model)[1], '.html'))
+  # table html
+  modelsummary(temp_model,
+               stars= T,
+               # statistic = 'conf.int',
+               statistic = NULL,
+               estimate = "{estimate} [{conf.low}, {conf.high}] {stars}",
+               coef_omit = 'x_state',
+               gof_omit= c("Within|Pseudo"),
+               output = paste0('./output/regression_output/annex_table_',names(temp_model)[1], '.html'))
 }
 
 

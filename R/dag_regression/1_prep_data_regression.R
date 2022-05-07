@@ -25,8 +25,8 @@ options(scipen = 99)
 
 
 ############### 1.1 read data
-# df_raw <- readr::read_rds("../../data/urbanformbr/pca_regression_df/pca_regression_df_ready_to_use.rds")
-df_raw <- data.table::fread("C:/Users/user/Downloads/consolidated_data1/urbanformbr_metrics_full.csv", encoding = 'UTF-8')
+
+df_raw <- fread("../../data/urbanformbr/consolidated_data/urbanformbr_metrics_full.csv", encoding = 'UTF-8')
 glimpse(df_raw)
 
 
@@ -36,10 +36,10 @@ glimpse(df_raw)
 #' Internacional de Foz do Iguaçu/Brasil - Ciudad del Este/Paraguai (PR) 4108304
 #' Internacional de Corumba/Brasil (MS) 5003207
 
-# and Santa Cruz do Sul/RS because of min. urban area in 1975
+#  Santa Cruz do Sul/RS because of min. urban area in 1975
 #' Santa Cruz do Sul/RS 4316808
 
-to_be_removed <- c(4322400, 4108304, 5003207, 4316808)
+to_be_removed <- c(4322400, 4108304, 5003207)
 df_raw <- subset(df_raw, i_code_urban_concentration %nin% to_be_removed)
 
 
