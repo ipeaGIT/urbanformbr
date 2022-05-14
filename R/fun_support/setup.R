@@ -65,6 +65,8 @@ list.of.packages <- c('ggplot2'      # visualizacao de dados
                       , "factoextra"
                       , "psych"
                       , "GGally"
+                      , "terra"
+                      , "maptiles"
                       )
 
 

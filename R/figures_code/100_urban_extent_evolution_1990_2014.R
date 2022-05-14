@@ -26,10 +26,10 @@ source("R/fun_support/colours.R")
 #teresina: 2211001
 
 nomes <- c(
-  "Belém/PA"
-  , "Belo Horizonte/MG"
+  #"Belém/PA",
+  "Belo Horizonte/MG"
   , "Salvador/BA"
-  , "Teresina/PI"
+  #, "Teresina/PI"
 )
 
 codigos <- c(
@@ -42,11 +42,11 @@ codigos <- c(
 )
 
 anos <- c(1990,2000,2014)
-  # function ----------------------------------------------------------------
+  # function extents ----------------------------------------------------------------
 f_prepare <- function(ano){
 
+  # code_uca <- 2927408
   # ano <- 1990
-  # df <- "urban extent"
 
   df_full <- readr::read_rds(sprintf("../../data/urbanformbr/ghsl/results/urban_extent_uca_%s_cutoff20.rds",ano))
 
@@ -70,7 +70,8 @@ f_prepare <- function(ano){
 }
 
 
-# run function ------------------------------------------------------------
+# * run f_extents -----------------------------------------------------------
+
 df_extents <- purrr::map_df(
   .x = anos,
   ~f_prepare(ano = .x)
@@ -79,15 +80,73 @@ df_extents <- purrr::map_df(
 df_extents <- df_extents %>%
   dplyr::arrange(code_urban_concentration, year)
 
-# read urban shapes (political administrative shape for all uca)
+# create column with colour values
+df_extents <- df_extents %>%
+  dplyr::mutate(
+    hex = data.table::fcase(
+      year == 1990, "#000004FF"
+      , year == 2000, "#BB3754FF"
+      , year == 2014, "#FCFFA4FF"
+      , default = NA
+    )
+  )
+
+# read and download data --------------------------------------------------
+
+
+# * urban shapes (political administrative shape dissolved ucas) ------------
+
 df_shapes <- readr::read_rds("../../data/urbanformbr/urban_area_shapes/urban_area_pop_100000_dissolved.rds")
 df_shapes <- subset(df_shapes, code_urban_concentration %in% codigos)
 
+# * ucas (non-dissolved) ----------------------------------------------------
 
-
-# reproject ---------------------------------------------------------------
 ucas <- geobr::read_urban_concentrations(simplified = F)
 
+
+# function tiles ----------------------------------------------------------
+
+f_tiles <- function(code_uca){
+
+  # code_uca <- 2927408
+  # subset uca
+  df_shapes_s <- subset(df_shapes, code_urban_concentration == code_uca)
+
+  # download tile
+  base_tile <- maptiles::get_tiles(
+    x = df_shapes_s
+    , crop = T
+    , provider = "CartoDB.PositronNoLabels"
+    , zoom = 11
+  )
+
+  # display map
+  #maptiles::plot_tiles(base_tile)
+
+  # convert tile to df
+  df_tile <- terra::as.data.frame(
+    x = base_tile, xy = T
+  ) %>%
+    dplyr::mutate(
+      hex = rgb(red, green, blue, maxColorValue = 255),
+      code_urban_concentration = code_uca
+    ) %>%
+    dplyr::select(-c(red, green, blue))
+
+  return(df_tile)
+
+}
+
+# * run f_tiles -----------------------------------------------------------
+
+df_tiles <- purrr::map(
+  .x = codigos,
+  ~f_tiles(code_uca = .x)
+)
+
+names(df_tiles) <- paste0("df_",codigos)
+
+# reproject ---------------------------------------------------------------
 
 df_shapes <- sf::st_transform(df_shapes, crs(ucas))
 df_extents <- sf::st_transform(df_extents, crs(ucas))
@@ -97,22 +156,31 @@ df_extents <- sf::st_transform(df_extents, crs(ucas))
 df_shapes <- df_shapes %>%
   mutate(centroid = sf::st_centroid(df_shapes) %>% st_geometry())
 
+# plot --------------------------------------------------------------------
 padding <- 0.55
 
-# plot --------------------------------------------------------------------
 df_shapes <- df_shapes %>%
   dplyr::arrange(name_urban_concentration)
 
-f_plot <- function(code){
+f_plot <- function(code_uca){
 
-  # code <- 3106200
-  extents_s <- subset(df_extents, code_urban_concentration == code)
+  # code_uca <- 3106200
+  extents_s <- subset(df_extents, code_urban_concentration == code_uca)
 
-  shapes_s <- subset(df_shapes, code_urban_concentration == code)
+  shapes_s <- subset(df_shapes, code_urban_concentration == code_uca)
 
-  ucas_s <- subset(ucas, code_urban_concentration == code)
+  ucas_s <- subset(ucas, code_urban_concentration == code_uca)
 
+  df_tiles_s <- pluck(df_tiles, grep(as.character(code_uca), names(df_tiles)))
+
+  MUDAR FILL HEX -> ANO : COMO RESOLVER?
+  666666666666666666
   ggplot() +
+    geom_tile(
+      data = df_tiles_s
+      , aes(x, y, fill = hex)
+      , colour = NA
+    ) +
     geom_sf(
       data = shapes_s
       ,aes()
@@ -122,13 +190,13 @@ f_plot <- function(code){
     ) +
     geom_sf(
       data = ucas_s
-      ,aes()
+      , aes()
       , fill = "light grey"
       , colour = "grey"
     ) +
     geom_sf(
       data = extents_s
-      ,aes(fill = forcats::fct_rev(factor(year)))
+      , aes(fill = forcats::fct_rev(factor(year)))
       , colour = NA
     ) +
     coord_sf(
@@ -143,7 +211,7 @@ f_plot <- function(code){
       ,expand = F
     ) +
     #scale_fill_manual(values = )
-    scale_fill_viridis_d(option = "inferno",direction = -1) +
+    scale_fill_viridis_d(option = "inferno", direction = -1) +
     theme_map() +
     #aop_style() +
     theme(
@@ -169,17 +237,17 @@ f_plot <- function(code){
 }
 
 gg_out <- purrr::map(
-  .x = df_shapes$code_urban_concentration,
-  ~f_plot(code = .x)
+  .x = codigos
+  ~f_plot(code_uca = .x)
 )
 
-a <- purrr::reduce(gg_out, .f = `+`)
+gg_final <- purrr::reduce(gg_out, .f = `+`)
 
 #png(here::here("figures", "teste.png"),
 #    width = 16, height = 16, units = "cm", res = 300, type = "cairo"
 #)
 
-a + patchwork::plot_layout(guides = "collect") & theme(legend.position = "bottom")
+gg_final + patchwork::plot_layout(guides = "collect") & theme(legend.position = "bottom")
 
 #dev.off
 
