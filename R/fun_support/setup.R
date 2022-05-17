@@ -67,6 +67,7 @@ list.of.packages <- c('ggplot2'      # visualizacao de dados
                       , "GGally"
                       , "terra"
                       , "maptiles"
+                      , "ggspatial"
                       )
 
 

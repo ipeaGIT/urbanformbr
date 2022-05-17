@@ -8,7 +8,6 @@
 # setup -------------------------------------------------------------------
 source("R/fun_support/setup.R")
 #library("ggmap")
-library(ggspatial)
 source("R/fun_support/style.R")
 source("R/fun_support/colours.R")
 
@@ -149,34 +148,6 @@ df_tiles <- purrr::map(
 names(df_tiles) <- paste0("df_",codigos)
 
 
-# f tiles 2: ggmap --------------------------------------------------------
-f_ggmap <- function(code_uca){
-
-  # code_uca <- 2927408
-  # subset uca
-  df_shapes_s <- subset(df_shapes, code_urban_concentration == code_uca)
-
-  # download tile
-  tile <-
-
-  # display map
-  #maptiles::plot_tiles(base_tile)
-
-  # convert tile to df
-  df_tile <- terra::as.data.frame(
-    x = base_tile, xy = T
-  ) %>%
-    dplyr::mutate(
-      hex = rgb(red, green, blue, maxColorValue = 255),
-      code_urban_concentration = code_uca
-    ) %>%
-    dplyr::select(-c(red, green, blue))
-
-  return(df_tile)
-
-}
-
-
 # reproject ---------------------------------------------------------------
 
 df_shapes <- sf::st_transform(df_shapes, crs(ucas))
@@ -204,47 +175,32 @@ f_plot <- function(code_uca){
 
   df_tiles_s <- pluck(df_tiles, grep(as.character(code_uca), names(df_tiles)))
 
-  MUDAR FILL HEX -> ANO : COMO RESOLVER?
-  666666666666666666
   ggplot() +
-    geom_tile(
-      data = df_tiles_s
-      , aes(x, y, fill = hex)
-      , colour = NA
+    # types of map tile: rosm::osm.types
+    ggspatial::annotation_map_tile(
+      zoom = 12
+      #, zoomin = 10
+      , type = "cartolight" #cartodark
     ) +
     geom_sf(
       data = shapes_s
       , aes()
-      , fill = "light grey"
-      , colour = "darkgray"
-      , size = 0.75
-    ) +
-    geom_sf(
-      data = ucas_s
-      , aes()
-      , fill = "light grey"
-      , colour = "grey"
+      , fill = NA
     ) +
     geom_sf(
       data = extents_s
       , aes(fill = forcats::fct_rev(factor(year)))
       , colour = NA
+      , alpha = 1
     ) +
-    coord_sf(
-      xlim = c(
-        shapes_s$centroid[[1]][1] - padding,
-        shapes_s$centroid[[1]][1] + padding
-        )
-      ,ylim = c(
-        shapes_s$centroid[[1]][2] - padding,
-        shapes_s$centroid[[1]][2] + padding
-      )
-      ,expand = F
-    ) +
-    #scale_fill_manual(values = )
-    scale_fill_viridis_d(option = "inferno", direction = -1) +
+    ggspatial::annotation_scale(location = "tl") +
+    ggspatial::annotation_north_arrow(
+      location = "br"
+      , height = unit(1, "cm")
+      , width = unit(1, "cm")
+      ) +
+    scale_fill_viridis_d(option = "inferno", direction = 1) +
     theme_map() +
-    #aop_style() +
     theme(
       axis.line.x = element_blank()
       ,axis.text = element_blank()
@@ -255,20 +211,19 @@ f_plot <- function(code_uca){
       #,panel.spacing.y = unit(-.5, "cm")
       #,plot.margin = unit(c(0.25,0.25,0.25,0.25), "cm")
       #,text = element_text(family = "Helvetica", colour = "#808080", size = 14),
-
     ) +
     labs(
       subtitle = shapes_s$name_urban_concentration
       , fill = "Ano"
     ) +
-    guides(fill = guide_legend(reverse = T,
-                               override.aes = list(colour = "black")
-                               ))
+    guides(
+      fill = guide_legend(reverse = T, override.aes = list(colour = "black"))
+    )
 
 }
 
 gg_out <- purrr::map(
-  .x = codigos
+  .x = codigos,
   ~f_plot(code_uca = .x)
 )
 
@@ -283,17 +238,12 @@ gg_final + patchwork::plot_layout(guides = "collect") & theme(legend.position = 
 #dev.off
 
 
-# test tmap ---------------------------------------------------------------
 
 # test ggspatial ----------------------------------------------------------
-ggplot() +
-  ggspatial::annotation_map_tile(zoomin = 0, type = "cartolight") +
-  geom_sf(data = shapes_s, aes(), fill=NA) +
-  geom_sf(data = extents_s, aes())
 
 
 # save plot ---------------------------------------------------------------
-ggsave(filename = here::here("figures", "urban_extent_evolution.png"),
+ggsave(filename = here::here("figures", "teste.png"),
        width = 16, height = 11, units = "cm", dpi = 300, device = "png")
 
 
