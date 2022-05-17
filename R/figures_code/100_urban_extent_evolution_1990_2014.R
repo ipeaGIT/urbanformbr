@@ -7,6 +7,8 @@
 
 # setup -------------------------------------------------------------------
 source("R/fun_support/setup.R")
+#library("ggmap")
+library(ggspatial)
 source("R/fun_support/style.R")
 source("R/fun_support/colours.R")
 
@@ -146,6 +148,35 @@ df_tiles <- purrr::map(
 
 names(df_tiles) <- paste0("df_",codigos)
 
+
+# f tiles 2: ggmap --------------------------------------------------------
+f_ggmap <- function(code_uca){
+
+  # code_uca <- 2927408
+  # subset uca
+  df_shapes_s <- subset(df_shapes, code_urban_concentration == code_uca)
+
+  # download tile
+  tile <-
+
+  # display map
+  #maptiles::plot_tiles(base_tile)
+
+  # convert tile to df
+  df_tile <- terra::as.data.frame(
+    x = base_tile, xy = T
+  ) %>%
+    dplyr::mutate(
+      hex = rgb(red, green, blue, maxColorValue = 255),
+      code_urban_concentration = code_uca
+    ) %>%
+    dplyr::select(-c(red, green, blue))
+
+  return(df_tile)
+
+}
+
+
 # reproject ---------------------------------------------------------------
 
 df_shapes <- sf::st_transform(df_shapes, crs(ucas))
@@ -164,7 +195,7 @@ df_shapes <- df_shapes %>%
 
 f_plot <- function(code_uca){
 
-  # code_uca <- 3106200
+  # code_uca <- 2927408
   extents_s <- subset(df_extents, code_urban_concentration == code_uca)
 
   shapes_s <- subset(df_shapes, code_urban_concentration == code_uca)
@@ -183,7 +214,7 @@ f_plot <- function(code_uca){
     ) +
     geom_sf(
       data = shapes_s
-      ,aes()
+      , aes()
       , fill = "light grey"
       , colour = "darkgray"
       , size = 0.75
@@ -250,6 +281,16 @@ gg_final <- purrr::reduce(gg_out, .f = `+`)
 gg_final + patchwork::plot_layout(guides = "collect") & theme(legend.position = "bottom")
 
 #dev.off
+
+
+# test tmap ---------------------------------------------------------------
+
+# test ggspatial ----------------------------------------------------------
+ggplot() +
+  ggspatial::annotation_map_tile(zoomin = 0, type = "cartolight") +
+  geom_sf(data = shapes_s, aes(), fill=NA) +
+  geom_sf(data = extents_s, aes())
+
 
 # save plot ---------------------------------------------------------------
 ggsave(filename = here::here("figures", "urban_extent_evolution.png"),
