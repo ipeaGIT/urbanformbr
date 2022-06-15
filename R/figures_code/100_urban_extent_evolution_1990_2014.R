@@ -254,20 +254,21 @@ gg_out <- purrr::map(
 # patchwork::wrap_plots()
 gg_final <- purrr::reduce(gg_out, .f = `+`)
 
-#png(here::here("figures", "teste.png"),
-#    width = 16, height = 16, units = "cm", res = 300, type = "cairo"
-#)
+
+# save plot ---------------------------------------------------------------
+
+png(here::here("figures", "urban_extent_evolution.png"),
+    width = 16, height = 11, units = "cm", res = 300, type = "cairo"
+)
 
 gg_final +
   patchwork::plot_layout(guides = "collect") &
   theme(legend.position = "bottom")
 
-#dev.off
+dev.off()
 
-
-# save plot ---------------------------------------------------------------
-ggsave(filename = here::here("figures", "urban_extenet_evolution.png"),
-       width = 16, height = 11, units = "cm", dpi = 300, device = "png")
+#ggsave(filename = here::here("figures", "urban_extent_evolution.png"),
+#       width = 16, height = 11, units = "cm", dpi = 300, device = "png")
 
 
 
