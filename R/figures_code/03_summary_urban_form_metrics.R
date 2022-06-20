@@ -16,7 +16,7 @@ metrics_df <- dplyr::select(metrics_df, starts_with("i_"),
                             x_intersection_density_km, x_normalized_closeness_centrality_avg,
                             x_circuity_avg) %>%
   arrange(desc(x_pop_2010)) %>%
-  slice(1:30)
+  dplyr::slice(1:30)
 
 metrics_long_df <- tidyr::pivot_longer(metrics_df, cols = starts_with("x_"), names_to = "metric")
 
@@ -271,9 +271,9 @@ all_plots <- c(plots_compacity, plots_contiguity,
 composite_plot <- wrap_plots(all_plots, ncol = 5, byrow = FALSE)
 composite_plot
 
-ggsave(here::here("figures", "urban_form_summary.png"),
-       plot = composite_plot, width = 297, height = 210,
-       units = "mm", dpi = 300)
+ggsave(here::here("figures", "figura_3_urban_form_summary.pdf"),
+       plot = composite_plot, width = 30, height = 21,
+       units = "cm", dpi = 300)
 
 
 

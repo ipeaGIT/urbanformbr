@@ -40,7 +40,7 @@ urban_extent_processed %>%
   labs(fill = "",
        title = "Porto Alegre / RS - expansão urbana entre 1990 e 2014")
 
-ggsave(filename = here::here("figures", "types_of_growth.png"),
+ggsave(filename = here::here("figures", "figura_2_types_of_growth.pdf"),
        width = 10, height = 8, units = "cm", dpi = 300, scale = 1.8)
 
 

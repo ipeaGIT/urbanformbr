@@ -82,7 +82,7 @@ fig_dens <-
 fig_final <- fig_comp / fig_frag / fig_dens + plot_annotation(tag_levels = 'A')
 fig_final
 
-ggsave(fig_final, file='./figures/landscape_metrics_over_time.png', dpi = 300,
+ggsave(fig_final, file='./figures/figura_11_landscape_metrics_over_time.pdf', dpi = 300,
        width = 16, height = 24, units = 'cm')
 
 

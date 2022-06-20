@@ -9,12 +9,12 @@ mapviewOptions(platform = "leaflet")
 
 
 # taxas de crescimento por cidade, período e tipo de crescimento
-metrics_df <- read_csv("data/urbanformbr_metrics_full.csv") %>%
+metrics_df <- read_csv("../../data/urbanformbr/consolidated_data/urbanformbr_metrics_full.csv") %>%
   select(starts_with("i_"), "x_pop_2010")
 
 urban_growth_df <-
-  #read_rds("../../data/urbanformbr/urban_growth/urban_growth.rds") %>%
-  read_rds("data/urban_growth.rds") %>%
+  read_rds("../../data/urbanformbr/urban_growth/urban_growth.rds") %>%
+  # read_rds("data/urban_growth.rds") %>%
   ungroup() %>%
   filter(period_start == 1990, period_end == 2014) %>%
   select(code_urban_concentration:period_end, growth_type, pop_geo_growth, built_geo_growth) %>%
@@ -36,79 +36,6 @@ metrics_df <- left_join(metrics_df, urban_growth_df,
 
 
 # Plot figure -------------------------------------------------------------
-
-
-# Population Growth -------------------------------------------------------
-
-p1 <- metrics_df %>%
-  arrange(x_pop_2010) %>%
-  ggplot(aes(x = pop_growth_inner, y = pop_growth_outer)) +
-  geom_hline(yintercept = 0, size = 0.1) +
-  geom_vline(xintercept = 0, size = 0.1) +
-  geom_point(aes(color = size), alpha = 1, size = 1) +
-  geom_abline() +
-  expand_limits(x=c(-0.02, 0.12), y=c(-0.02, 0.12)) +
-  scale_x_percent() +
-  scale_y_percent() +
-  scale_colour_aop(palette = "blue", reverse = TRUE) +
-  coord_equal() +
-  labs(x = "Adensamento\nPreenchimento", y = "Extensão\nLeapfrog",
-       color = "Tamanho da cidade",
-       subtitle = "a)\tCresc. populacional") +
-  theme_light() +
-  theme(legend.position = "bottom")
-p1
-
-# Built Area Growth -------------------------------------------------------
-
-p2 <- metrics_df %>%
-  arrange(x_pop_2010) %>%
-  ggplot(aes(x = built_growth_inner, y = built_growth_outer)) +
-  geom_hline(yintercept = 0, size = 0.1) +
-  geom_vline(xintercept = 0, size = 0.1) +
-  geom_point(aes(color = size), alpha = 1, size = 1) +
-  geom_abline() +
-  expand_limits(x=c(-0.02, 0.12), y=c(-0.02, 0.12)) +
-  scale_x_percent() +
-  scale_y_percent() +
-  scale_colour_aop(palette = "blue", reverse = TRUE) +
-  coord_equal() +
-  labs(x = "Adensamento\nPreenchimento", y = "Extensão\nLeapfrog",
-       color = "Tamanho da cidade",
-       subtitle = "b)\tCresc. da área construída") +
-  theme_light() +
-  theme(legend.position = "bottom")
-p2
-
-# Population vs Built Area ------------------------------------------------
-
-p3 <- metrics_df %>%
-  arrange(x_pop_2010) %>%
-  ggplot(aes(x = pop_growth_total, y = built_growth_total)) +
-  geom_hline(yintercept = 0, size = 0.1) +
-  geom_vline(xintercept = 0, size = 0.1) +
-  geom_point(aes(color = size), alpha = 1, size = 1) +
-  geom_abline() +
-  expand_limits(x=c(-0.02, 0.12), y=c(-0.02, 0.12)) +
-  scale_x_percent() +
-  scale_y_percent() +
-  scale_size_continuous(range = c(0.5, 5)) +
-  scale_colour_aop(palette = "blue", reverse = TRUE) +
-  coord_equal() +
-  labs(x = "População", y = "Área Construída",
-       color = "Tamanho da cidade",
-       subtitle = "c)\tCresc. populacional vs\n\tárea construída") +
-  theme_light() +
-  theme(legend.position = "bottom")
-p3
-
-p1 + p2 + p3 +
-  plot_layout(guides = "collect") &
-  theme(legend.position='bottom')
-
-ggsave(filename = "figures/scatterplot_urban_growth.png", width = 16, height = 7,
-       units = "cm", scale = 1.5, dpi = 300)
-
 
 # Crescimento Populacional vs Crescimento Físico --------------------------
 
@@ -195,16 +122,11 @@ p3 <- p1 + p2 +
   theme(legend.position='bottom')
 
 p3
-ggsave(p3, filename = "figures/scatterplot_urban_growth.png", width = 16, height = 7,
+ggsave(p3, filename = "figures/figura_10_scatterplot_urban_growth.pdf", width = 16, height = 7,
        units = "cm", scale = 1.5, dpi = 300)
 
 
 
 
-rate_df %>%
-  count(rate_class)
-rate_df %>%
-  count(size, rate_class) %>%
-  group_by(size) %>%
-  mutate(p = n / sum(n))
+
 

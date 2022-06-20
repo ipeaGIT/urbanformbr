@@ -4,7 +4,7 @@ source('R/fun_support/setup.R')
 source("R/fun_support/colours.R")
 mapviewOptions(platform = "leaflet")
 
-library(PupillometryR)
+#library(PupillometryR)
 
 
 
@@ -13,8 +13,8 @@ library(PupillometryR)
 
 # taxas de crescimento por cidade, período e tipo de crescimento
 urban_growth_df <-
-  #read_rds("../../data/urbanformbr/urban_growth/urban_growth.rds") %>%
-  read_rds("data/urban_growth.rds") %>%
+  read_rds("../../data/urbanformbr/urban_growth/urban_growth.rds") %>%
+  # read_rds("data/urban_growth.rds") %>%
   ungroup() %>%
   mutate(growth_type = factor(growth_type,
                               levels = c("upward", "extension", "infill", "leapfrog"),
@@ -79,12 +79,10 @@ plot_growth_rates_by_period <- function(data, variable, start, end, remove_outli
                       labels = c("Cidades Médias", "Cidades Grandes"))
 
   ggplot(data, aes(x=growth_type , y=geo_growth ,fill= growth_type, color=growth_type)) +
-    geom_flat_violin(alpha=.5, position = position_nudge(x = .05, y = 0)) +
-    geom_jitter( alpha=.2,  position = position_nudge(x = -.1, y = 0)) +
-    geom_boxplot( fill=NA,
-                  alpha = 0.3,
-                  width = .1,
-                  colour = "black",
+    # geom_flat_violin(alpha=.5, position = position_nudge(x = .05, y = 0)) +
+    # geom_jitter( alpha=.2,  position = position_nudge(x = -.1, y = 0)) +
+    geom_boxplot( alpha = 0.3,
+                  width = .2,
                   outlier.shape = NA,
                   position = position_dodge(width = 0.9)) +
     scale_y_continuous(labels = percent) +
@@ -101,17 +99,17 @@ plot_growth_rates_by_period <- function(data, variable, start, end, remove_outli
 }
 
 
-plot_growth_rates_by_period(data = urban_growth_df,
-                            variable = "pop",
-                            start = 1990, end = 2014)
-ggsave(filename = here::here("figures", "growth_rates_pop.png"),
-       width = 12, height = 10, units = "cm", dpi = 300, scale = 1.5)
+# plot_growth_rates_by_period(data = urban_growth_df,
+#                             variable = "pop",
+#                             start = 1990, end = 2014)
+# ggsave(filename = here::here("figures", "growth_rates_pop.png"),
+#        width = 12, height = 10, units = "cm", dpi = 300, scale = 1.5)
 
 
 plot_growth_rates_by_period(data = urban_growth_df,
                             variable = "built",
                             start = 1990, end = 2014)
 
-ggsave(filename = here::here("figures", "growth_rates_built.png"),
+ggsave(filename = here::here("figures", "figura_9_growth_rates_built.pdf"),
        width = 12, height = 10, units = "cm", dpi = 300, scale = 1.5)
 
