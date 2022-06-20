@@ -9,6 +9,8 @@ library(data.table)
 library("geobr")
 source("R/urb_pop/colors_plot.R")
 source("R/urb_pop/aop_style1.R")
+source("R/fun_support/style.R")
+source("R/fun_support/colours.R")
 
 mapview::mapviewOptions(platform = 'mapdeck')
 
@@ -42,7 +44,6 @@ temp_pop1[,variavel := "Proporção da população"]
 # rbindlist
 temp_pop2 <- list(temp_pop,temp_pop1) %>% data.table::rbindlist()
 
-# Prep PNAD ----
 
 pnadc_temp <- data.table::data.table("variavel" = "Proporção da população"
                                      , "valor" = 100 * pnadc$mean
@@ -97,7 +98,8 @@ ggplot(data = situacao) +
 
 dir.create("figures")
 dir.create("figures/urb_pop")
-ggsave("figures/urb_pop/figura_5_urb_pop_oveview.png",scale=1.0,
+
+ggsave("figures/figura_5_urb_pop_oveview.pdf",
        width = 15,height = 15,dpi = 300,units = "cm")
 
 
@@ -294,9 +296,9 @@ ggplot(data = tmp_plot) +
   scale_color_brewer(palette = "Reds",direction = -1) +
   labs(x = "Intervalo de análise",
        y = "Taxa de crescimento (%)",
-       title = "Taxa de crescimento",
+       #title = "Taxa de crescimento",
        color = "Faixa populacional",
-       subtitle = "Crescimento geométrico conforme faixa populacional desde 1970"
+       #subtitle = "Crescimento geométrico conforme faixa populacional desde 1970"
        , caption = 'Taxa apresentada para média, 1º e 3º quartil;\nFonte: Censos IBGE (1970, 1980, 1991, 2010) e projeção populacional (2020).\nFaixas populacionais definidas conforme Áreas Mínimas Comparáveis (AMC), desde 1970.'
   ) +
   scale_y_continuous(sec.axis = sec_axis(~ .))+
@@ -325,13 +327,13 @@ ggplot(data = tmp_plot) +
         panel.grid.minor = element_blank())
 #coord_cartesian(xlim = limits_x, expand = FALSE)
 
-ggsave("figures/urb_pop/faixa_br.png",scale=1,
+ggsave("figures/figura_7_faixa_br.pdf",scale=1,
        width = 27*0.7,height = 18*0.7,dpi = 300,units = "cm")
 
 
 
 
-##### get 12 most populated cities-----
+# figura 8----------
 
 
 
@@ -465,12 +467,11 @@ ggplot(data = tmp_plot) +
   )) +
   labs(x = "Intervalo de análise",
        y = "Taxa de crescimento (%)",
-       title = "Taxa de crescimento",
+      # title = "Taxa de crescimento",
        color = "Municípios",
-       subtitle = "Crescimento geométrico conforme categoria de municípios da Região Metropolitana"
+      #subtitle = "Crescimento geométrico conforme categoria de municípios da Região Metropolitana"
        , caption = 'Fonte: Censos IBGE (1970, 1980, 1991, 2010) e projeção populacional (2020).\nFaixas populacionais definidas conforme Áreas Mínimas Comparáveis (AMC), desde 1970.'
   ) +
-  #scale_y_continuous(sec.axis = sec_axis(~ .))+
   scale_x_discrete(breaks = c("r70_80_adj",
                               "r80_91_adj",
                               "r91_00_adj",
@@ -481,27 +482,19 @@ ggplot(data = tmp_plot) +
                               "1991-\n2000",
                               "2000-\n2010",
                               "2010-\n2020")) +
-  #aop_style1() +
   theme_bw()+
   theme(legend.position = "right",
         axis.text.x = element_text(angle = 0, hjust = 0.5,size=8),
         axis.text.y = element_text(angle = 0, hjust = 1,size=8),
         axis.line.x = element_line(size = 0.5, color = "grey"),
-        #axis.ticks = element_line(
-        #  colour = "grey15",
-        #  size = 0.5,
-        #  linetype = 1),
-        #panel.grid.major.x = element_line(size = 0.15, color = "grey"),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank())
-#coord_cartesian(xlim = limits_x, expand = FALSE)
 
-ggsave("figures/urb_pop/figura_8_urb_pop_by_rm.png",scale=1,
+ggsave("figures/figura_8_urb_pop_by_rm.pdf",
        width = 20,height = 20,dpi = 300,units = "cm")
 
 
-# GREAT REGIONS--------------
-#
+# figura 6 -------
 # calcula a populacao por amc
 pop_muni_df2 <- list(data.table::copy(pop_muni)[,escopo := "regional"],
                      data.table::copy(pop_muni)[,escopo := "Brasil"][,name_region := "Brasil"]) %>%
@@ -584,7 +577,6 @@ ggplot(data = tmp_plot,aes(x = posicao_taxa,y = taxa,
   geom_line(aes(group = name_region_f,alpha=0.75),size=0.75) +
   geom_hline(yintercept = 0, color= "grey55",
              size =0, linetype= "dotted") +
-  #scale_color_brewer(palette = "Reds",direction = -1) +
   scale_color_manual(values =
                        c(as.vector(aop_colors$qualitativo[c(3)])
                          , as.vector(aop_colors$qualitativas[6])
@@ -592,18 +584,15 @@ ggplot(data = tmp_plot,aes(x = posicao_taxa,y = taxa,
                          , as.vector(aop_colors$caqui[5])
                          , as.vector(aop_colors$qualitativas[c(1)])
                          , as.vector(aop_colors$cinzas[3]))
-                     #, guide = guide_legend(override.aes = list(
-                     #   alpha = 0.75,linetype = "solid"
-                     # ))
   ) +
   labs(x = "Intervalo de análise",
        y = "Taxa de crescimento (%)",
-       title = "Taxa de crescimento",
+       #title = "Taxa de crescimento",
        color = "Regiões",
-       subtitle = "Crescimento geométrico conforme regiões brasileiras"
+       #subtitle = "Crescimento geométrico conforme regiões brasileiras"
        , caption = 'Fonte: Censos IBGE (1970, 1980, 1991, 2010) e projeção populacional (2020).\nFaixas populacionais definidas conforme Áreas Mínimas Comparáveis (AMC), desde 1970.'
   ) +
-  guides(alpha = FALSE)+
+  guides(alpha = "none")+
   #scale_y_continuous(sec.axis = sec_axis(~ .))+
   scale_x_discrete(breaks = c("r70_80_adj",
                               "r80_91_adj",
@@ -615,22 +604,184 @@ ggplot(data = tmp_plot,aes(x = posicao_taxa,y = taxa,
                               "1991-2000",
                               "2000-2010",
                               "2010-2020")) +
-  #aop_style1() +
   theme_bw()+
-  #guides(color = guide_legend(override.aes = list(alpha=0.75) ) )
   theme(legend.position = "right",
-        #colour = guide_legend(override.aes = list(alpha=0.75)),
         axis.text.x = element_text(angle = 0, hjust = 0.5,size=8),
         axis.text.y = element_text(angle = 0, hjust = 1,size=8),
         axis.line.x = element_line(size = 0.5, color = "grey"),
-        #axis.ticks = element_line(
-        #  colour = "grey15",
-        #  size = 0.5,
-        #  linetype = 1),
-        #panel.grid.major.x = element_line(size = 0.15, color = "grey"),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank())
-#coord_cartesian(xlim = limits_x, expand = FALSE)
 
-ggsave("figures/figura_6_urb_pop_regioes.png",scale=1,
+ggsave("figures/figura_6_urb_pop_regioes.pdf",scale=1,
        width = 27*0.7,height = 18*0.7,dpi = 300,units = "cm")
+
+# Figura 7 ------
+rm(list=ls())
+gc(reset = T, full = T)
+
+# add 2020 projection on census 1970 - 2010 data
+
+pop <- readr::read_rds("../../data/urbanformbr/population/population_muni_ibge.rds")
+pop_proj_2020 <- readr::read_rds("../../data/urbanformbr/population/table_6579_ibge.rds")
+pop_muni <- list(pop,pop_proj_2020) %>% data.table::rbindlist(use.names = TRUE
+                                                              ,fill = TRUE)
+
+pop_muni[,c("situacao_do_domicilio",
+            "situacao_do_domicilio_codigo",
+            "sexo_codigo","sexo") := NULL]
+
+# read amc
+amc_muni <- readr::read_rds("../../data/urbanformbr/population/comparable_areas_ibge.rds")
+
+# merge amc data to muni_data
+pop_muni[amc_muni,on = c("municipio_codigo" = "code_muni_2010"),
+         code_amc := i.code_amc]
+
+# add state and great regions to data
+gr_geobr <- geobr::read_state() %>% setDT()
+muni_geobr <- geobr::read_municipality() %>% setDT() %>%
+  dplyr::mutate(code_muni = as.character(code_muni))
+pop_muni[muni_geobr, on = c("municipio_codigo" = "code_muni"),
+         abbrev_state := i.abbrev_state]
+pop_muni[gr_geobr, on = c("abbrev_state"),
+         name_region := i.name_region]
+
+# add metro area
+metro_area <- geobr::read_metro_area() %>% setDT() %>%
+  dplyr::mutate(code_muni= as.character(code_muni))
+pop_muni[metro_area,
+         on = c("municipio_codigo"="code_muni"),
+         name_metro := i.name_metro]
+
+# pop_muni[ano_codigo %in% c(2010,2020) &
+#            name_metro %like% "Manaus"][
+#              order(municipio_codigo)][,
+#                                       .(valor,municipio,ano_codigo)]
+# check conta antes
+# sum(pop_muni$valor,na.rm = TRUE)
+# [1] 931277871
+
+# calcula a populacao por amc
+pop_muni_df <- data.table::copy(pop_muni)[, lapply(.SD,sum,na.rm=TRUE),
+                                          by = .(code_amc,abbrev_state,
+                                                 name_region,ano),
+                                          .SDcols = "valor"]
+
+# confere conta depois
+# sum(pop_muni$valor,na.rm = TRUE)
+# [1] 931277871
+
+# categoriza por populacao
+
+label_classpop <- c("< 5 mil","5 mil  - 10 mil","10 mil - 20 mil","20 mil - 50 mil",
+                    "50 mil - 100 mil","100 mil - 500 mil","> 500 mil")
+
+pop_2010 <- data.table::copy(pop_muni_df)[ano == 2010]
+pop_2010[valor < 5e3,
+         class_pop_2010 := label_classpop[1]]
+pop_2010[valor >= 5e3 & valor < 10e3 ,
+         class_pop_2010 := label_classpop[2]]
+pop_2010[valor >= 10e3 & valor < 20e3,
+         class_pop_2010 := label_classpop[3]]
+pop_2010[valor >= 20e3 & valor < 50e3,
+         class_pop_2010 := label_classpop[4]]
+pop_2010[valor >= 50e3 & valor < 100e3,
+         class_pop_2010 := label_classpop[5]]
+pop_2010[valor >= 100e3 & valor < 500e3,
+         class_pop_2010 := label_classpop[6]]
+pop_2010[valor >= 500e3 ,
+         class_pop_2010 := label_classpop[7]]
+
+pop_muni_df[pop_2010,on = "code_amc", class_pop_2010 := i.class_pop_2010]
+rm(pop_2010)
+
+table(pop_muni_df$class_pop_2010, useNA = 'always')
+subset(pop_muni_df, is.na(class_pop_2010))
+
+
+### taxa geometrica de crescimento
+
+# Spread data from long to wide
+dt_2020 <- data.table::dcast(pop_muni_df,
+                             code_amc + class_pop_2010 ~ ano,
+                             value.var = "valor", fun = sum)
+names(dt_2020)[3:8] <- paste0('valor_', names(dt_2020)[3:8])
+head(dt_2020)
+
+# calculate growth rates
+dt_2020[,r70_80 := 100 * ((valor_1980 / valor_1970)^(1/(1980-1970)) - 1)]
+dt_2020[,r80_91 := 100 * ((valor_1991 / valor_1980)^(1/(1991-1980)) - 1)]
+dt_2020[,r91_00 := 100 * ((valor_2000 / valor_1991)^(1/(2000-1991)) - 1)]
+dt_2020[,r00_10 := 100 * ((valor_2010 / valor_2000)^(1/(2010-2000)) - 1)]
+dt_2020[,r10_20 := 100 * ((valor_2020 / valor_2010)^(1/(2020-2010)) - 1)]
+
+dt_2020[is.infinite(r70_80) | is.nan(r70_80),r70_80 := NA]
+dt_2020[is.infinite(r80_91) | is.nan(r80_91),r80_91 := NA]
+dt_2020[is.infinite(r91_00) | is.nan(r91_00),r91_00 := NA]
+dt_2020[is.infinite(r00_10) | is.nan(r00_10),r00_10 := NA]
+dt_2020[is.infinite(r10_20) | is.nan(r10_20),r10_20 := NA]
+
+tmp_plot <- data.table::copy(dt_2020)
+
+tmp_plot <- data.table::melt(data = tmp_plot,
+                             id_vars = c('code_amc','abbrev_state','name_region',
+                                         'class_pop_2010'),
+                             measure.vars = list( 'taxa' = c('r70_80','r80_91','r91_00',
+                                                             'r00_10','r10_20')),
+                             variable.name = "posicao_taxa",
+                             value.name = "taxa")
+
+
+tmp_plot[taxa >20]
+
+## adjust factors
+tmp_plot$class_pop_2010_f <- factor(tmp_plot$class_pop_2010,
+                                    levels = c("< 5 mil",
+                                               "5 mil  - 10 mil",
+                                               "10 mil - 20 mil",
+                                               "20 mil - 50 mil",
+                                               "50 mil - 100 mil",
+                                               "100 mil - 500 mil",
+                                               "> 500 mil"),
+                                    labels = c("< 5 mil",
+                                               "5 mil  - 10 mil",
+                                               "10 mil - 20 mil",
+                                               "20 mil - 50 mil",
+                                               "50 mil - 100 mil",
+                                               "100 mil - 500 mil",
+                                               "> 500 mil"))
+tmp_plot$posicao_taxa_f <- factor(tmp_plot$posicao_taxa,
+                                  levels = c("r70_80",
+                                             "r80_91",
+                                             "r91_00",
+                                             'r00_10',
+                                             "r10_20"),
+                                  labels = c("1970 - 1980",
+                                             "1980 - 1991",
+                                             "1991 - 2000",
+                                             "2000 - 2010",
+                                             "2010 - 2020"))
+
+
+## plot pop
+
+ggplot(data=subset(tmp_plot, !is.na(class_pop_2010_f))) +
+  geom_hline(yintercept = 0, color= "grey55", size =1, linetype= "dotted") +
+  geom_boxplot(aes(x=posicao_taxa_f, y=taxa, color=class_pop_2010_f),
+               outlier.alpha= .1) +
+  ylim(c(-10, 12)) +
+  labs(x = "Período",
+       y = "Taxa de crescimento (%)",
+      color = "Faixa populacional\n em 2010",
+      , caption = 'Fonte: Censos IBGE (1970, 1980, 1991, 2010) e projeção populacional (2020).<br>Faixas populacionais definidas conforme Áreas Mínimas Comparáveis (AMC) entre 1970-2010'
+  ) +
+  scale_colour_aop(reverse=T) +
+  aop_style1() +
+  theme(legend.position = 'right')
+
+
+ggsave("./figures/figura_7_faixa_br_box.pdf",scale=1,
+       width = 16, height = 12,dpi = 300,units = "cm",bg = "white")
+
+
+# end ----
