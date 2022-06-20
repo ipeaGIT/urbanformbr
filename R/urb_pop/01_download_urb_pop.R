@@ -107,7 +107,7 @@ pnadc.df2 <- PNADcIBGE::get_pnadc(year=2020,
                                   design=FALSE,
                                   savedir=tempdir())
 
-pnadc.svy2 <- pnadc_design(data_pnadc=pnadc.df2)
+pnadc.svy2 <- PNADcIBGE::pnadc_design(data_pnadc=pnadc.df2)
 # Calculating unemployment rate
 pnadc.svy2_rate <- survey::svymean(x=~V1022, design=pnadc.svy2, na.rm=TRUE)
 
