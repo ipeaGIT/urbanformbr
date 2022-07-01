@@ -132,5 +132,5 @@ cols_to_keep <- c( ## id columns
 df_fuel <- dplyr::select(df_log, all_of(cols_to_keep))
 head(df_fuel)
 
-fwrite(df_fuel, 'df_fuel.csv')
+#  fwrite(df_fuel, 'df_fuel.csv')
 
