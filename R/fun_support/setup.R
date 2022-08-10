@@ -68,6 +68,7 @@ list.of.packages <- c('ggplot2'      # visualizacao de dados
                       , "terra"
                       , "maptiles"
                       , "ggspatial"
+                      , "fields"
                       )
 
 

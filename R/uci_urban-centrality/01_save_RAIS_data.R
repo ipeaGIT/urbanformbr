@@ -5,7 +5,6 @@
 # setup -------------------------------------------------------------------
 source("R/fun_support/setup.R")
 
-
 # setup parallel ----------------------------------------------------------
 
 #future::plan(future::multicore, workers = future::availableCores() / 2)
@@ -296,6 +295,28 @@ df_merge %>%
 # distinct based on two columns
 df_merge <- df_merge %>%
   dplyr::distinct(id_estab, logradouro, .keep_all = T)
+
+# identify which uca every estab belongs ----------------------------------
+df_uca_muni <- df_uca_muni %>%
+  dplyr::mutate(
+    codemun = substring(code_muni, first = 1, last = 6)
+    #,code_uca = as.character(code_urban_concentration)
+    )
+
+data.table::setDT(df_uca_muni)
+
+df_merge[
+  df_uca_muni,
+  on = c("codemun"),
+  `:=`(
+    code_urban_concentration = i.code_urban_concentration
+    , code_muni = i.code_muni
+  )
+]
+
+df_merge <- df_merge %>%
+  dplyr::relocate(code_urban_concentration, .after = id_estab) %>%
+  dplyr::relocate(code_muni, .before = name_muni)
 
 # save data ---------------------------------------------------------------
 saveRDS(
