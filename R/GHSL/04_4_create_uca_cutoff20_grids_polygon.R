@@ -25,13 +25,16 @@ f_create_uca_grids <- function(year) {
     urban_areas$code_urban_concentration,
     urban_areas$name_uca_case,
     function(code_uca, name_uca) {
+
       raster_built <- sprintf("../../data/urbanformbr/ghsl/BUILT/urban_extent_cutoff_20_raster/GHS_BUILT_LDS%s_%s_urban_extent_cutoff_20_1K_raster.tif", year, code_uca)
 
       if (year == 2014) {y <- 2015} else {y <- year}
+
       raster_pop <- sprintf("../../data/urbanformbr/ghsl/POP/urban_extent_cutoff_20_raster/GHS_POP_E%s_%s_urban_extent_cutoff_20_1K_raster.tif", y, code_uca)
 
 
       if (file.exists(raster_built) & file.exists(raster_pop)) {
+
         urban_area <- raster(raster_built) %>%
           rasterToPolygons() %>%
           st_as_sf() %>%
