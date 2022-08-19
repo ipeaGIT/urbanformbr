@@ -321,7 +321,7 @@ df_merge <- df_merge %>%
 # save data ---------------------------------------------------------------
 saveRDS(
   object = df_merge,
-  file = '../../data/urbanformbr/rais/2010/rais_2010_geocoded_sum_of_workers',
+  file = '../../data/urbanformbr/rais/2010/rais_2010_geocoded_sum_of_workers.rds',
   compress = 'xz'
 )
 
