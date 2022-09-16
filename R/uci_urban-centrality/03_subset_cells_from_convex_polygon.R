@@ -48,13 +48,23 @@ f_convex <- function(){
       df_non_empty <- subset(df_rais_subset, !is.na(workers_per_cell))
 
       # create unioned convex polygon -------------------------------------------
-      df_convex_full <- st_convex_hull(st_union(df_non_empty))
+      df_convex_hull <- st_convex_hull(st_union(df_non_empty))
 
       # st intersects: grid cells & convex polygon ------------------------------
       # select grid cells that intersect with convex hull polygon
       df_intersects <- df_rais_subset[
-        sf::st_intersects(df_rais_subset, df_convex_full) %>% lengths() > 0,
+        sf::st_intersects(df_rais_subset, df_convex_hull) %>% lengths() > 0,
       ]
+
+      # check polygons
+      # pol_adm <- df_uca %>% filter(code_urban_concentration==code_uca) %>% select(geometry)
+      #
+      # ggplot() +
+      #   geom_sf(data = pol_adm, aes(geometry = geometry)) +
+      #   geom_sf(data = df_rais_subset) +
+      #   geom_sf(data = df_non_empty, fill = "blue") +
+      #   geom_sf(data = df_convex_hull, colour = "red", fill = NA)
+      #
 
     }
   )

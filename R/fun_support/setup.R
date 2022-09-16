@@ -73,6 +73,7 @@ list.of.packages <- c('ggplot2'      # visualizacao de dados
                       , "wk"
                       , "s2"
                       , "vctrs"
+                      , "rdist"
                       )
 
 

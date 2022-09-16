@@ -97,6 +97,9 @@ df_tma <- data.table::fread("../../data/urbanformbr/consolidated_data/classify_t
 df_factors <- data.table::fread("../../data/urbanformbr/consolidated_data/factor_analysis_metrics.csv")
 
 
+# * uci urban centrality index --------------------------------------------
+df_uci <- data.table::fread("../../data/urbanformbr/consolidated_data/uci_urban_centrality_index.csv")
+
 # merge data --------------------------------------------------------------
 df_merge <- dplyr::left_join(df_reference, df_factors) %>%
   dplyr::left_join(df_tma) %>%
@@ -107,7 +110,8 @@ df_merge <- dplyr::left_join(df_reference, df_factors) %>%
   dplyr::left_join(df_exp_density) %>%
   dplyr::left_join(df_landuse) %>%
   dplyr::left_join(df_frag_comp) %>%
-  dplyr::left_join(df_topo)
+  dplyr::left_join(df_topo) %>%
+  dplyr::left_join(df_uci)
 
 
 
